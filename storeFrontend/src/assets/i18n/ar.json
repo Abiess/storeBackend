@@ -1367,10 +1367,13 @@
       "shipType": "نوع السفينة",
       "destination": "الوجهة",
       "eta": "الوصول المتوقع",
+      "speed": "السرعة",
+      "course": "المسار",
       "draught": "الغاطس",
       "dimensions": "الأبعاد (طول×عرض)",
       "navigationStatus": "حالة الملاحة",
       "position": "الموقع",
+      "lastSeen": "آخر إشارة",
       "inPortSince": "في الميناء منذ",
       "dwellTime": "مدة الرسو",
       "close": "إغلاق"

@@ -1679,10 +1679,13 @@
       "shipType": "Type de navire",
       "destination": "Destination",
       "eta": "ETA",
+      "speed": "Vitesse",
+      "course": "Cap",
       "draught": "Tirant d'eau",
       "dimensions": "Dimensions (L×l)",
       "navigationStatus": "Statut de navigation",
       "position": "Position",
+      "lastSeen": "Dernier signal",
       "inPortSince": "Au port depuis",
       "dwellTime": "Durée d'escale",
       "close": "Fermer"

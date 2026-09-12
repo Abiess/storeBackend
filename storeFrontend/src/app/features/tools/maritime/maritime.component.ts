@@ -253,6 +253,11 @@ export class MaritimeComponent implements OnInit, OnDestroy {
     return status ? (this.statusLabelKeys[status] || 'maritime.status.unknown') : 'maritime.status.unknown';
   }
 
+  /** Bestehende, projektweite Badge-CSS-Klasse für einen Betriebsstatus (für das Vessel-Detail-Panel). */
+  statusBadgeClass(status?: string | null): string {
+    return (status && this.statusBadgeClasses[status]) || 'status-inactive';
+  }
+
   eventTypeLabel(type?: string | null): string {
     return type ? (this.eventTypeLabelKeys[type] || 'maritime.status.unknown') : 'maritime.status.unknown';
   }

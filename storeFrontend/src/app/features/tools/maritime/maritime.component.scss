@@ -258,7 +258,39 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
   margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.maritime-vessel-detail__title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+// Wiederverwendung der bestehenden ResponsiveDataList-Badge-Optik (status-active/-shipped/...),
+// hier lokal dupliziert, da dieser Badge NICHT innerhalb von ResponsiveDataListComponent liegt.
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  background: #f1f5f9;
+  color: #475569;
+
+  &.status-active { background: #dcfce7; color: #16a34a; }
+  &.status-draft { background: #fef9c3; color: #ca8a04; }
+  &.status-archived { background: #fee2e2; color: #dc2626; }
+  &.status-processing { background: #dbeafe; color: #2563eb; }
+  &.status-shipped { background: #d1fae5; color: #065f46; }
+  &.status-inactive { background: #f3f4f6; color: #6b7280; }
 }
 
 .maritime-vessel-detail__close {

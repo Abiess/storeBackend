@@ -100,4 +100,18 @@ class PortStatusCalculatorTest {
         VesselPortStatus status = PortStatusCalculator.compute(null, null, null, null, null, PORT);
         assertEquals(VesselPortStatus.UNKNOWN, status);
     }
+
+    /**
+     * Regression/real-world test case (VesselFinder reference screenshot): "GOLDEN BRIDGE"
+     * (IMO 8902345, MMSI 209410000) reported moored at 35.27228 N / 2.92535 W with SOG=0 kn,
+     * Course=199.1° inside the Nador port area. This point lies within NADOR's existing
+     * portZoneBox ([[35.22,-2.98],[35.30,-2.87]]) - no geometry change was necessary, this test
+     * only documents/locks in that the existing Nador zone already classifies this real position
+     * correctly as MOORED.
+     */
+    @Test
+    void naderPortZone_goldenBridgeReferencePosition_returnsMoored() {
+        VesselPortStatus status = PortStatusCalculator.compute(35.27228, -2.92535, 0.0, 199.1, null, MaritimePort.NADOR);
+        assertEquals(VesselPortStatus.MOORED, status);
+    }
 }

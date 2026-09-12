@@ -3358,10 +3358,13 @@
       "shipType": "Schiffstyp",
       "destination": "Ziel",
       "eta": "ETA",
+      "speed": "Geschwindigkeit",
+      "course": "Kurs",
       "draught": "Tiefgang",
       "dimensions": "Abmessungen (L×B)",
       "navigationStatus": "Navigationsstatus",
       "position": "Position",
+      "lastSeen": "Letzte Meldung",
       "inPortSince": "Im Hafen seit",
       "dwellTime": "Liegezeit",
       "close": "Schließen"
