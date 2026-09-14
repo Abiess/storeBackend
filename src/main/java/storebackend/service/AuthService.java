@@ -8,19 +8,25 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import storebackend.dto.AppEntitlementDTO;
 import storebackend.dto.AuthResponse;
 import storebackend.dto.RegistrationResponse;
 import storebackend.dto.LoginRequest;
 import storebackend.dto.RegisterRequest;
 import storebackend.entity.Plan;
 import storebackend.entity.User;
+import storebackend.entity.UserAppEntitlement;
+import storebackend.enums.AppAccessMode;
 import storebackend.enums.Role;
 import storebackend.exception.EmailNotVerifiedException;
 import storebackend.repository.PlanRepository;
+import storebackend.repository.UserAppEntitlementRepository;
 import storebackend.repository.UserRepository;
 import storebackend.security.JwtUtil;
+import storebackend.util.AppAccessChecker;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,6 +40,8 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final PlanRepository planRepository;
     private final EmailVerificationService emailVerificationService;
+    private final UserAppEntitlementRepository userAppEntitlementRepository;
+    private final AppAccessChecker appAccessChecker;
 
     @Value("${email.verification.skip-for-login:false}")
     private boolean skipEmailVerificationForLogin;
@@ -105,12 +113,22 @@ public class AuthService {
 
         // Create UserDTO with name and primary role
         String primaryRole = user.getRoles().isEmpty() ? "USER" : user.getRoles().iterator().next().name();
+
+        // App-Entitlement-Konzept (Phase 1): userweiter LEGACY/MANAGED-Modus
+        // + Rohliste der expliziten Entitlement-Einträge (additiv, siehe AppAccessChecker)
+        AppAccessMode appAccessMode = appAccessChecker.getAccessMode(user.getId());
+        List<AppEntitlementDTO> apps = userAppEntitlementRepository.findByUserId(user.getId()).stream()
+            .map(this::toAppEntitlementDTO)
+            .collect(Collectors.toList());
+
         AuthResponse.UserDTO userDTO = new AuthResponse.UserDTO(
             user.getId(),
             user.getEmail(),
             user.getName(),
             primaryRole,
-            user.getRoles().stream().map(Enum::name).collect(Collectors.toList())
+            user.getRoles().stream().map(Enum::name).collect(Collectors.toList()),
+            appAccessMode,
+            apps
         );
 
         return new AuthResponse(token, userDTO);
@@ -126,5 +144,14 @@ public class AuthService {
 
     public int getJwtSecretLength() {
         return jwtUtil.getSecretLength();
+    }
+
+    /**
+     * App-Entitlement-Konzept (Phase 1): mappt einen rohen Entitlement-Eintrag
+     * 1:1 in das additive Auth-Response-DTO (keine Ableitung/Auffüllung).
+     */
+    private AppEntitlementDTO toAppEntitlementDTO(UserAppEntitlement entitlement) {
+        Long storeId = entitlement.getStore() != null ? entitlement.getStore().getId() : null;
+        return new AppEntitlementDTO(entitlement.getApp(), storeId, entitlement.isEnabled());
     }
 }
