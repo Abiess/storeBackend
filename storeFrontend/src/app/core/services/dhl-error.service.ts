@@ -30,6 +30,12 @@ export interface DhlErrorResponse {
     count?: number;
     requestedCapacity?: number;
     occupiedCount?: number;
+    // PARCEL_NOT_FOUND (siehe DhlController.findParcel()): optionale
+    // CANCELLED-Historie zum gesuchten Tracking-Code (rein informativ,
+    // kein aktiver Lagerbestand - siehe DhlParcelStatus.CANCELLED).
+    historicalStatus?: string;
+    cancelledAt?: string;
+    cancellationReason?: string;
   };
 }
 

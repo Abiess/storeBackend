@@ -76,6 +76,40 @@ public class DhlParcelService {
     }
 
     /**
+     * ALLE DhlParcelStatus-Werte (STORED, PICKED_UP, CANCELLED) - im
+     * Unterschied zu ACTIVE_PARCEL_STATUSES ausschließlich für die
+     * informative Historien-Abfrage in findMostRecentParcelIncludingHistory()
+     * verwendet (siehe dort). KEIN Ersatz für ACTIVE_PARCEL_STATUSES / den
+     * aktiven Lagerbestand.
+     */
+    private static final List<DhlParcelStatus> ALL_PARCEL_STATUSES =
+        List.of(DhlParcelStatus.values());
+
+    /**
+     * Sucht den neuesten Datensatz zu Store + Tracking-Code UNABHÄNGIG vom
+     * Status - inklusive CANCELLED-Historie. Nutzt bewusst dieselbe
+     * Repository-Query wie findActiveParcel(), lediglich mit dem
+     * vollständigen Status-Katalog statt nur den aktiven Status-Werten.
+     *
+     * Wird ausschließlich für die informative 404-Antwort von
+     * DhlController.findParcel() verwendet, damit dort zwischen
+     * "nie eingelagert" und "bereits storniert" unterschieden werden kann.
+     * Der aktive Lagerbestand (findParcel()/findActiveParcel()) bleibt davon
+     * unberührt und exklusiv auf STORED/PICKED_UP beschränkt.
+     *
+     * @param storeId Store ID
+     * @param rawTrackingCode Roher Tracking-Code (wird normalisiert)
+     * @return Optional<DhlParcel> - neuester Datensatz jeglichen Status, falls vorhanden
+     */
+    @Transactional(readOnly = true)
+    public Optional<DhlParcel> findMostRecentParcelIncludingHistory(Long storeId, String rawTrackingCode) {
+        String normalizedCode = normalizeTrackingCode(rawTrackingCode);
+        List<DhlParcel> allParcels = parcelRepository
+            .findByStoreIdAndTrackingCodeAndStatusInOrderByIdDesc(storeId, normalizedCode, ALL_PARCEL_STATUSES);
+        return allParcels.isEmpty() ? Optional.empty() : Optional.of(allParcels.get(0));
+    }
+
+    /**
      * Normalisiert DHL Tracking-Code
      * 
      * Input-Varianten:

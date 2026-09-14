@@ -3668,7 +3668,16 @@
       "trackingPlaceholder": "JVGL0605379700518040",
       "search": "البحث عن الطرد",
       "notes": "ملاحظات",
-      "confirmPickup": "تأكيد الاستلام"
+      "confirmPickup": "تأكيد الاستلام",
+      "notStoredTitle": "غير مخزّن في نقطة الاستلام هذه",
+      "notStoredHint": "لم يتم العثور على أي تخزين حالي لرقم التتبع هذا.",
+      "storeNow": "تخزين الآن",
+      "searchAgain": "البحث مرة أخرى",
+      "cancelledHistoryHint": "يوجد سجل تخزين تم إلغاؤه لرقم التتبع هذا",
+      "dhlCompletedTitle": "وفقًا لشركة DHL، تم بالفعل إنهاء هذه الشحنة.",
+      "dhlCompletedHint": "لا يوجد سجل تخزين لهذه الشحنة في Markt.ma.",
+      "storeSpecialCase": "تخزين على أي حال (حالة خاصة)",
+      "storeSpecialCaseConfirm": "تُبلغ DHL بالفعل أن هذه الشحنة تم تسليمها/استلامها. هل تريد تخزينها يدويًا مع ذلك كحالة خاصة (مثل الإرجاع)؟"
     },
     "main": {
       "pickupDescription": "تجهيز الطرد لاستلام العميل",

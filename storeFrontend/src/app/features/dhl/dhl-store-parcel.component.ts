@@ -577,6 +577,19 @@ export class DhlStoreParcelComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((code) => this.runValidation(code));
+
+    // Übernahme aus dem "Paket abholen"-Flow (dhl-pickup-parcel.component.ts):
+    // Wurde eine DHL-Sendung dort bereits als VALID bestätigt, aber lokal
+    // nicht als eingelagert gefunden ("Jetzt einlagern"), wird der
+    // Tracking-Code als Query-Param übergeben. Die bestehende DHL-Validierung
+    // (runValidation()) läuft hier einmalig erneut - dieselbe autoritative
+    // Prüfung, die auch beim manuellen/gescannten Einlagern verwendet wird.
+    const prefillCode = this.route.snapshot.queryParamMap.get('trackingCode');
+    if (prefillCode && prefillCode.trim()) {
+      const normalized = prefillCode.trim().toUpperCase();
+      this.trackingCode = normalized;
+      this.runValidation(normalized);
+    }
   }
 
   private extractStoreId(): void {

@@ -3703,7 +3703,16 @@
       "scanTracking": "Tracking-Code vom Abholschein scannen",
       "search": "Paket suchen",
       "title": "Paket abholen",
-      "notes": "Hinweise"
+      "notes": "Hinweise",
+      "notStoredTitle": "Nicht in diesem Paketshop eingelagert",
+      "notStoredHint": "Zu dieser Sendungsnummer wurde kein aktueller Einlagerungseintrag gefunden.",
+      "storeNow": "Jetzt einlagern",
+      "searchAgain": "Erneut suchen",
+      "cancelledHistoryHint": "Für diese Sendungsnummer besteht eine stornierte Einlagerung",
+      "dhlCompletedTitle": "Diese Sendung ist laut DHL bereits abgeschlossen.",
+      "dhlCompletedHint": "Für diese Sendung existiert kein Einlagerungseintrag in Markt.ma.",
+      "storeSpecialCase": "Trotzdem einlagern (Sonderfall)",
+      "storeSpecialCaseConfirm": "DHL meldet diese Sendung bereits als zugestellt/abgeholt. Trotzdem als Sonderfall (z. B. Rückläufer) manuell einlagern?"
     },
     "storeParcel": {
       "trackingHint": "Scannen Sie den Code vom DHL-Etikett oder geben Sie ihn manuell ein",

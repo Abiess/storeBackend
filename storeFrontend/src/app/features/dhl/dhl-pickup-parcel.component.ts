@@ -8,6 +8,7 @@ import { debounceTime } from 'rxjs/operators';
 import { DhlService, DhlFindParcelRequest, DhlPickupParcelRequest, DhlParcel, DhlTrackingValidationResponse } from '@app/core/services/dhl.service';
 import { DhlErrorService } from '@app/core/services/dhl-error.service';
 import { DhlScanAudioService } from '@app/core/services/dhl-scan-audio.service';
+import { TranslationService } from '@app/core/services/translation.service';
 import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barcode-input.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 
@@ -143,6 +144,46 @@ export type TrackingInvalidReason = 'NOT_FOUND' | 'VALIDATION_ERROR';
           <span *ngIf="loading()">{{ 'common.loading' | translate }}...</span>
         </button>
 
+        <!-- Sendung von DHL bestätigt, aber lokal in diesem Store kein aktueller
+             Einlagerungseintrag gefunden (Backend: PARCEL_NOT_FOUND). Kein technischer
+             Fehler - je nach DHL-Status wird entweder die bestehende Einlagerung
+             angeboten oder (DHL_ALREADY_COMPLETED) nur eine bewusst bestätigte
+             Sonderaktion. -->
+        <div *ngIf="parcelNotStored() as reason" class="status-box"
+             [class.status-not-stored]="reason !== 'DHL_ALREADY_COMPLETED'"
+             [class.status-dhl-completed]="reason === 'DHL_ALREADY_COMPLETED'">
+
+          <ng-container *ngIf="reason === 'DHL_ALREADY_COMPLETED'; else notStoredBlock">
+            <div class="status-title">{{ 'dhl.pickupParcel.dhlCompletedTitle' | translate }}</div>
+            <div class="status-details">{{ 'dhl.pickupParcel.dhlCompletedHint' | translate }}</div>
+            <div class="not-stored-actions">
+              <button class="btn-secondary" type="button" (click)="retrySearch()">
+                {{ 'dhl.pickupParcel.searchAgain' | translate }}
+              </button>
+              <button class="btn-special-case" type="button" (click)="goToStoreParcelSpecialCase()">
+                {{ 'dhl.pickupParcel.storeSpecialCase' | translate }}
+              </button>
+            </div>
+          </ng-container>
+
+          <ng-template #notStoredBlock>
+            <div class="status-title">{{ 'dhl.pickupParcel.notStoredTitle' | translate }}</div>
+            <div class="status-details">{{ 'dhl.pickupParcel.notStoredHint' | translate }}</div>
+            <div class="status-details" *ngIf="reason === 'CANCELLED_HISTORY' && cancelledHistoryInfo() as info">
+              {{ 'dhl.pickupParcel.cancelledHistoryHint' | translate }}
+              <span *ngIf="info.cancelledAt">({{ info.cancelledAt | date:'short' }})</span>
+            </div>
+            <div class="not-stored-actions">
+              <button class="btn-primary" type="button" (click)="goToStoreParcel()">
+                {{ 'dhl.pickupParcel.storeNow' | translate }}
+              </button>
+              <button class="btn-secondary" type="button" (click)="retrySearch()">
+                {{ 'dhl.pickupParcel.searchAgain' | translate }}
+              </button>
+            </div>
+          </ng-template>
+        </div>
+
         <div *ngIf="error()" class="error-box">
           {{ error() }}
         </div>
@@ -162,9 +203,22 @@ export type TrackingInvalidReason = 'NOT_FOUND' | 'VALIDATION_ERROR';
           {{ foundParcel()?.notes }}
         </div>
 
-        <button class="btn-primary" (click)="confirmPickup()">
-          {{ 'dhl.pickupParcel.confirmPickup' | translate }}
-        </button>
+        <!-- Status PICKED_UP: bereits abgeholt - bestehenden Abholzeitpunkt
+             anzeigen, KEINE erneute Abholung anbieten (Backend würde ohnehin
+             mit ParcelAlreadyPickedUpException ablehnen, siehe
+             DhlParcelService.pickupParcel()). -->
+        <div *ngIf="foundParcel()?.status === 'PICKED_UP'; else confirmPickupBlock" class="status-box status-not-stored">
+          <div class="status-title">{{ 'dhl.errors.parcelAlreadyPickedUp' | translate }}</div>
+          <div class="status-details">{{ 'dhl.errors.parcelAlreadyPickedUpDetails' | translate }}</div>
+          <div class="status-details" *ngIf="foundParcel()?.pickedUpAt">
+            {{ 'dhl.errors.pickedUpAt' | translate }}: {{ foundParcel()?.pickedUpAt | date:'short' }}
+          </div>
+        </div>
+        <ng-template #confirmPickupBlock>
+          <button class="btn-primary" (click)="confirmPickup()">
+            {{ 'dhl.pickupParcel.confirmPickup' | translate }}
+          </button>
+        </ng-template>
 
         <button class="btn-secondary" (click)="cancel()">
           {{ 'common.cancel' | translate }}
@@ -426,6 +480,42 @@ export type TrackingInvalidReason = 'NOT_FOUND' | 'VALIDATION_ERROR';
       color: #856404;
     }
 
+    .status-not-stored {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      color: #856404;
+      margin-top: 0.75rem;
+    }
+
+    .status-dhl-completed {
+      background: #f8d7da;
+      border: 2px solid #dc3545;
+      color: #721c24;
+      margin-top: 0.75rem;
+    }
+
+    .not-stored-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .not-stored-actions .btn-primary,
+    .not-stored-actions .btn-secondary,
+    .not-stored-actions .btn-special-case {
+      padding: 0.65rem 1.25rem;
+      font-size: 1rem;
+    }
+
+    .not-stored-actions .btn-special-case {
+      background: transparent;
+      border: 1px solid #721c24;
+      color: #721c24;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -488,6 +578,7 @@ export class DhlPickupParcelComponent implements OnInit {
   private dhlService = inject(DhlService);
   private dhlErrorService = inject(DhlErrorService);
   private dhlScanAudioService = inject(DhlScanAudioService);
+  private translationService = inject(TranslationService);
   private destroyRef = inject(DestroyRef);
 
   @ViewChild('barcodeInput') barcodeInputRef?: BarcodeInputComponent;
@@ -502,6 +593,27 @@ export class DhlPickupParcelComponent implements OnInit {
   error = signal<string | null>(null);
   foundParcel = signal<DhlParcel | null>(null);
   pickedUpParcel = signal<DhlParcel | null>(null);
+
+  /**
+   * Fachliche Einordnung, wenn findParcel() nach bestätigter DHL-Validierung
+   * keinen aktiven lokalen Lagerbestand liefert (HTTP 404, PARCEL_NOT_FOUND,
+   * siehe DhlController.findParcel()):
+   * - NOT_STORED: nie eingelagert, DHL-Sendung ist laut DHL noch aktiv
+   *   (unterwegs/abholbereit) → normale Einlagerung anbieten.
+   * - CANCELLED_HISTORY: kein aktueller Datensatz, aber es existiert eine
+   *   CANCELLED-Historie (details.historicalStatus, siehe
+   *   DhlParcelService.findMostRecentParcelIncludingHistory()) → Hinweis
+   *   zusätzlich anzeigen, normale Einlagerung bleibt erlaubt (Backend lässt
+   *   Wiedereinlagerung nach Stornierung bewusst zu).
+   * - DHL_ALREADY_COMPLETED: DHL meldet die Sendung bereits als
+   *   abgeschlossen (zugestellt/abgeholt, siehe validatedResult()
+   *   .standardEventCode/.shipmentStatus) → KEINE normale Einlagerung
+   *   anbieten, nur eine bewusst bestätigte Sonderaktion.
+   */
+  parcelNotStored = signal<'NOT_STORED' | 'CANCELLED_HISTORY' | 'DHL_ALREADY_COMPLETED' | null>(null);
+
+  /** Zusatzinfo zur CANCELLED-Historie (siehe parcelNotStored() === 'CANCELLED_HISTORY'). */
+  cancelledHistoryInfo = signal<{ cancelledAt?: string; cancellationReason?: string } | null>(null);
 
   // Nutzer-Einstellung "Scan-Töne" (localStorage, siehe DhlScanAudioService)
   scanSoundsEnabled = signal<boolean>(true);
@@ -634,6 +746,8 @@ export class DhlPickupParcelComponent implements OnInit {
   onTrackingCodeChange(value: string): void {
     this.trackingCode = value;
     this.error.set(null);
+    this.parcelNotStored.set(null);
+    this.cancelledHistoryInfo.set(null);
 
     if (this.validationState() !== 'IDLE') {
       this.validationState.set('IDLE');
@@ -660,6 +774,8 @@ export class DhlPickupParcelComponent implements OnInit {
   onManualInput(value: string): void {
     this.trackingCode = value.toUpperCase();
     this.error.set(null);
+    this.parcelNotStored.set(null);
+    this.cancelledHistoryInfo.set(null);
 
     if (this.validationState() !== 'IDLE') {
       this.validationState.set('IDLE');
@@ -827,6 +943,8 @@ export class DhlPickupParcelComponent implements OnInit {
 
     this.loading.set(true);
     this.error.set(null);
+    this.parcelNotStored.set(null);
+    this.cancelledHistoryInfo.set(null);
 
     const request: DhlFindParcelRequest = {
       trackingCode: this.trackingCode.trim()
@@ -849,9 +967,120 @@ export class DhlPickupParcelComponent implements OnInit {
       error: (err) => {
         console.error('❌ Find parcel failed:', err);
         this.loading.set(false);
+
+        // DHL hat die Sendung bestätigt, aber es gibt keinen aktuellen
+        // Einlagerungseintrag in diesem Store (Backend: PARCEL_NOT_FOUND,
+        // HTTP 404 - siehe DhlController.findParcel()). Das ist ein
+        // fachlicher, kein technischer Fall. Je nach DHL-Status (bereits
+        // von DHL als abgeschlossen gemeldet vs. noch aktiv) und einer
+        // evtl. vorhandenen CANCELLED-Historie wird unterschiedlich reagiert
+        // - siehe parcelNotStored()-Dokumentation oben.
+        if (err?.status === 404) {
+          if (this.isDhlShipmentAlreadyCompleted(this.validatedResult())) {
+            this.parcelNotStored.set('DHL_ALREADY_COMPLETED');
+            return;
+          }
+
+          const details = err.error?.details;
+          if (details?.historicalStatus === 'CANCELLED') {
+            this.cancelledHistoryInfo.set({
+              cancelledAt: details.cancelledAt,
+              cancellationReason: details.cancellationReason
+            });
+            this.parcelNotStored.set('CANCELLED_HISTORY');
+            return;
+          }
+
+          this.parcelNotStored.set('NOT_STORED');
+          return;
+        }
+
         this.dhlErrorService.handleError(err);
       }
     });
+  }
+
+  /**
+   * Prüft, ob DHL diese Sendung bereits als abgeschlossen (zugestellt/abgeholt)
+   * meldet. Verwendet dafür VORRANGIG UND AUSSCHLIESSLICH den bereits
+   * vorhandenen strukturierten DHL-Wert standardEventCode (validatedResult()
+   * - stammt 1:1 aus der VORHER erfolgten /tracking/validate-Bestätigung).
+   * "ZU" = DHL Standard-Event-Code für "Zugestellt" (siehe Testdaten in
+   * DhlTrackingClientTest.java: status="Delivered", standard-event-code="ZU").
+   *
+   * Der freie DHL-Text shipmentStatus ist für diese Entscheidung NICHT
+   * zuverlässig genug: z.B. enthält auch "Die Sendung konnte NICHT
+   * zugestellt werden und wird in die Filiale gebracht" das Wort
+   * "zugestellt", obwohl die Sendung gerade NICHT abgeschlossen ist. Sobald
+   * ein standardEventCode vorhanden ist, wird deshalb NUR dieser ausgewertet
+   * und shipmentStatus komplett ignoriert. Erfindet KEIN neues DHL-Statusfeld.
+   */
+  private isDhlShipmentAlreadyCompleted(result: DhlTrackingValidationResponse | null): boolean {
+    if (!result) {
+      return false;
+    }
+
+    const code = (result.standardEventCode || '').trim().toUpperCase();
+    if (code) {
+      return code === 'ZU';
+    }
+
+    // Fallback NUR wenn KEIN strukturierter Code vorhanden ist. Auch hier
+    // keine allgemeine Substring-Prüfung auf "zugestellt"/"delivered" o.ä.,
+    // da diese auch in negativen Meldungen ("konnte nicht zugestellt
+    // werden") vorkommen - eindeutige Negationen werden deshalb zuerst
+    // ausgeschlossen, bevor eine eindeutig positive Abschlussmeldung geprüft wird.
+    const statusText = (result.shipmentStatus || '').toLowerCase();
+    if (!statusText) {
+      return false;
+    }
+    const isNegated = /nicht\s+(zugestellt|delivered)|konnte\s+nicht|failed|not\s+delivered/.test(statusText);
+    if (isNegated) {
+      return false;
+    }
+    return /\bzugestellt\b/.test(statusText) || /\bdelivered\b/.test(statusText);
+  }
+
+  /**
+   * "Jetzt einlagern": wechselt zur bestehenden Einlagerungs-Funktion
+   * (dhl-store-parcel.component.ts) und übergibt den bereits von DHL
+   * bestätigten Tracking-Code. Der Store-Flow validiert den Code beim
+   * Laden erneut über den bestehenden /tracking/validate-Ablauf (siehe
+   * dhl-store-parcel.component.ts ngOnInit()) - keine neue Übertragung
+   * der DHL-Validierungsdaten nötig.
+   */
+  goToStoreParcel(): void {
+    const code = this.trackingCode.trim();
+    this.router.navigate(['/stores', this.storeId, 'dhl', 'store'], {
+      queryParams: code ? { trackingCode: code } : undefined
+    });
+  }
+
+  /**
+   * Sonderfall: DHL meldet die Sendung bereits als abgeschlossen (siehe
+   * isDhlShipmentAlreadyCompleted()). Eine manuelle (Wieder-)Einlagerung
+   * kann fachlich trotzdem notwendig sein (z.B. Rückläufer) - deshalb nur
+   * nach bewusster Bestätigung und AUSSCHLIESSLICH über den bereits
+   * bestehenden Einlagerungs-Flow (goToStoreParcel()). Keine neue Struktur,
+   * nur ein zusätzlicher Bestätigungsschritt davor.
+   */
+  goToStoreParcelSpecialCase(): void {
+    const confirmed = window.confirm(
+      this.translationService.translate('dhl.pickupParcel.storeSpecialCaseConfirm')
+    );
+    if (!confirmed) {
+      return;
+    }
+    this.goToStoreParcel();
+  }
+
+  /**
+   * "Erneut suchen": verwirft den "nicht eingelagert"-Hinweis und setzt den
+   * Scan-Vorgang komplett zurück (identisches Verhalten wie cancel()/reset()),
+   * damit ein neuer Tracking-Code gescannt/eingegeben werden kann.
+   */
+  retrySearch(): void {
+    this.reset();
   }
 
   confirmPickup(): void {
@@ -892,6 +1121,8 @@ export class DhlPickupParcelComponent implements OnInit {
     this.pickedUpParcel.set(null);
     this.loading.set(false);
     this.trackingMode.set('scanner');
+    this.parcelNotStored.set(null);
+    this.cancelledHistoryInfo.set(null);
 
     // TEIL C: Validierungszustand zurücksetzen
     this.validationState.set('IDLE');

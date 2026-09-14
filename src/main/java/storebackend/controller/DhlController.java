@@ -418,10 +418,39 @@ public class DhlController {
                 long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
                 String normalized = parcelService.normalizeTrackingCode(request.getTrackingCode());
                 activityLogService.logManualSearch(storeId, user, normalized, durationMs);
-                
-                return ResponseEntity.notFound().build();
+
+                // Strukturierte 404-Antwort statt leerem Body (siehe GlobalExceptionHandler +
+                // DhlErrorService.handleError() im Frontend - dieselbe Exception wird bereits
+                // von /parcels/pickup verwendet, wenn kein aktiver Datensatz gefunden wird).
+                // So kann das Frontend zwischen "kein aktueller Lagerbestand" und einem
+                // sonstigen technischen 404 unterscheiden, statt nur einen leeren Status zu sehen.
+                ParcelNotFoundException notFound = new ParcelNotFoundException(normalized);
+
+                // Zusätzlich (rein informativ): existiert zu diesem Tracking-Code eine
+                // CANCELLED-Historie (kein aktiver Datensatz, siehe findActiveParcel()),
+                // wird das den Details der 404-Antwort beigefügt. So kann das Frontend
+                // "nie eingelagert" von "bereits storniert" unterscheiden, statt beides
+                // identisch als "nie eingelagert" darzustellen (siehe DhlParcelStatus.CANCELLED).
+                parcelService.findMostRecentParcelIncludingHistory(storeId, normalized)
+                    .filter(historyEntry -> historyEntry.getStatus() == storebackend.enums.DhlParcelStatus.CANCELLED)
+                    .ifPresent(cancelledEntry -> {
+                        notFound.withDetail("historicalStatus", cancelledEntry.getStatus().name());
+                        if (cancelledEntry.getCancelledAt() != null) {
+                            notFound.withDetail("cancelledAt", cancelledEntry.getCancelledAt().toString());
+                        }
+                        if (cancelledEntry.getCancellationReason() != null) {
+                            notFound.withDetail("cancellationReason", cancelledEntry.getCancellationReason());
+                        }
+                    });
+
+                throw notFound;
             }
 
+        } catch (ParcelNotFoundException e) {
+            // Fachlicher Fehler: kein aktueller Einlagerungseintrag zu diesem Tracking-Code.
+            // GlobalExceptionHandler wandelt dies in eine strukturierte 404-Antwort
+            // (code=PARCEL_NOT_FOUND) um, die das Frontend bereits interpretieren kann.
+            throw e;
         } catch (IllegalArgumentException e) {
             // AUDIT LOG: Failed scan
             long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);

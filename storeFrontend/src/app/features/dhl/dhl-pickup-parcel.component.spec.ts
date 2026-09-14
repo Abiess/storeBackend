@@ -537,8 +537,12 @@ describe('DhlPickupParcelComponent - TEIL C TrackingValidationState', () => {
       expect(component.foundParcel()?.shelfLocation).toBe('A7');
     }));
 
-    it('lokal nicht vorhanden → bestehende Fehlermeldung über DhlErrorService', fakeAsync(() => {
-      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+    it('lokal nicht vorhanden, DHL-Sendung noch aktiv → "Jetzt einlagern" statt technischem Fehler', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse({
+        // Kein "ZU" (Zugestellt) → DHL betrachtet die Sendung als noch aktiv.
+        standardEventCode: 'AA',
+        shipmentStatus: 'In Zustellung'
+      })));
       const notFoundErr = new HttpErrorResponse({ status: 404, statusText: 'Not Found' });
       mockDhlService.findParcel.and.returnValue(throwError(() => notFoundErr));
 
@@ -546,8 +550,100 @@ describe('DhlPickupParcelComponent - TEIL C TrackingValidationState', () => {
       component.findParcel();
       tick();
 
-      expect(mockDhlErrorService.handleError).toHaveBeenCalledWith(notFoundErr);
+      // Kein technischer Fehler über DhlErrorService - stattdessen fachlicher Hinweis
+      // mit Angebot zur bestehenden Einlagerung.
+      expect(mockDhlErrorService.handleError).not.toHaveBeenCalled();
+      expect(component.parcelNotStored()).toBe('NOT_STORED');
       expect(component.step()).toBe('scan');
+    }));
+
+    it('lokal nicht vorhanden, laut DHL bereits zugestellt/abgeholt → KEIN normales "Jetzt einlagern"', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse({
+        // "ZU" = DHL Standard-Event-Code für "Zugestellt" (siehe DhlTrackingClientTest).
+        standardEventCode: 'ZU',
+        shipmentStatus: 'Delivered'
+      })));
+      const notFoundErr = new HttpErrorResponse({ status: 404, statusText: 'Not Found' });
+      mockDhlService.findParcel.and.returnValue(throwError(() => notFoundErr));
+
+      triggerValidation(VALID_CODE);
+      component.findParcel();
+      tick();
+
+      expect(mockDhlErrorService.handleError).not.toHaveBeenCalled();
+      expect(component.parcelNotStored()).toBe('DHL_ALREADY_COMPLETED');
+      expect(component.step()).toBe('scan');
+    }));
+
+    it('lokal nicht vorhanden, shipmentStatus enthält "zugestellt" als NEGATION (nicht zugestellt), standardEventCode "ZF" → weiterhin aktiv, "Jetzt einlagern" bleibt möglich', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse({
+        // Enthält das Wort "zugestellt", ist aber KEINE Abschlussmeldung -
+        // der strukturierte Code "ZF" (nicht "ZU") muss hier den Ausschlag geben,
+        // nicht der freie Text.
+        standardEventCode: 'ZF',
+        shipmentStatus: 'Die Sendung konnte nicht zugestellt werden und wird in die Filiale gebracht.'
+      })));
+      const notFoundErr = new HttpErrorResponse({ status: 404, statusText: 'Not Found' });
+      mockDhlService.findParcel.and.returnValue(throwError(() => notFoundErr));
+
+      triggerValidation(VALID_CODE);
+      component.findParcel();
+      tick();
+
+      expect(mockDhlErrorService.handleError).not.toHaveBeenCalled();
+      expect(component.parcelNotStored()).toBe('NOT_STORED');
+      expect(component.step()).toBe('scan');
+    }));
+
+    it('lokal nicht vorhanden, shipmentStatus beschreibt Abholung in der Filiale, standardEventCode "ZU" → abgeschlossen, KEIN normales "Jetzt einlagern"', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse({
+        standardEventCode: 'ZU',
+        shipmentStatus: 'Der Empfänger hat die Sendung in der Filiale abgeholt.'
+      })));
+      const notFoundErr = new HttpErrorResponse({ status: 404, statusText: 'Not Found' });
+      mockDhlService.findParcel.and.returnValue(throwError(() => notFoundErr));
+
+      triggerValidation(VALID_CODE);
+      component.findParcel();
+      tick();
+
+      expect(mockDhlErrorService.handleError).not.toHaveBeenCalled();
+      expect(component.parcelNotStored()).toBe('DHL_ALREADY_COMPLETED');
+      expect(component.step()).toBe('scan');
+    }));
+
+    it('lokal STORED gefunden → normaler Abholprozess (Abholung bestätigen möglich)', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      mockDhlService.findParcel.and.returnValue(of(mockFoundParcel()));
+
+      triggerValidation(VALID_CODE);
+      component.findParcel();
+      tick();
+      fixture.detectChanges();
+
+      expect(component.foundParcel()?.status).toBe('STORED');
+      expect(component.step()).toBe('show-location');
+      const confirmBtn: HTMLButtonElement | null = fixture.nativeElement.querySelector('.step-location .btn-primary');
+      expect(confirmBtn).toBeTruthy();
+    }));
+
+    it('lokal PICKED_UP gefunden → bestehenden Abholzeitpunkt/Status anzeigen, KEINE erneute Abholung anbieten', fakeAsync(() => {
+      mockDhlService.validateTrackingCode.and.returnValue(of(mockValidResponse()));
+      mockDhlService.findParcel.and.returnValue(of({
+        ...mockFoundParcel(),
+        status: 'PICKED_UP',
+        pickedUpAt: '2026-09-02T09:30:00Z'
+      }));
+
+      triggerValidation(VALID_CODE);
+      component.findParcel();
+      tick();
+      fixture.detectChanges();
+
+      expect(component.foundParcel()?.status).toBe('PICKED_UP');
+      expect(component.step()).toBe('show-location');
+      const confirmBtn: HTMLButtonElement | null = fixture.nativeElement.querySelector('.step-location .btn-primary');
+      expect(confirmBtn).toBeNull();
     }));
   });
 

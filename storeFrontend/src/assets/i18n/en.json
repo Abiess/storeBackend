@@ -3683,7 +3683,16 @@
       "pickupAnother": "Pickup another parcel",
       "search": "Find Parcel",
       "confirmPickup": "Confirm Pickup",
-      "trackingPlaceholder": "JVGL0605379700518040"
+      "trackingPlaceholder": "JVGL0605379700518040",
+      "notStoredTitle": "Not stored in this parcel shop",
+      "notStoredHint": "No current storage entry was found for this tracking number.",
+      "storeNow": "Store now",
+      "searchAgain": "Search again",
+      "cancelledHistoryHint": "A cancelled storage entry exists for this tracking number",
+      "dhlCompletedTitle": "According to DHL, this shipment has already been completed.",
+      "dhlCompletedHint": "No storage entry exists for this shipment in Markt.ma.",
+      "storeSpecialCase": "Store anyway (special case)",
+      "storeSpecialCaseConfirm": "DHL already reports this shipment as delivered/picked up. Store it manually anyway as a special case (e.g. return)?"
     },
     "errors": {
       "parcelAlreadyPickedUp": "Already Picked Up",
