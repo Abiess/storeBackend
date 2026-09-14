@@ -15,6 +15,8 @@ import storebackend.service.DhlParcelService;
 import storebackend.service.DhlActivityLogService;
 import storebackend.util.StoreAccessChecker;
 import storebackend.exception.*;
+import storebackend.enums.AppKey;
+import storebackend.security.RequiresApp;
 
 import java.util.List;
 import java.util.Map;
@@ -50,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/api/stores/{storeId}/dhl")
 @RequiredArgsConstructor
 @Slf4j
+@RequiresApp(AppKey.DHL) // Phase 3: DHL-Paketshop-App, Scope = storeId (STORE_ID_PARAM, Default)
 public class DhlController {
     
     private final DhlParcelService parcelService;

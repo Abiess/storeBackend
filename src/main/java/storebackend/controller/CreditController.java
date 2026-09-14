@@ -13,6 +13,8 @@ import storebackend.dto.CreditTransactionDTO;
 import storebackend.entity.User;
 import storebackend.service.CreditService;
 import storebackend.util.StoreAccessChecker;
+import storebackend.enums.AppKey;
+import storebackend.security.RequiresApp;
 
 import java.util.List;
 
@@ -36,6 +38,7 @@ import java.util.List;
 @RequestMapping("/api/stores/{storeId}/loyalty/credit")
 @RequiredArgsConstructor
 @Slf4j
+@RequiresApp(AppKey.LOYALTY) // Phase 3: LOYALTY-App (Credit ist Teil von Loyalty), Scope = storeId
 public class CreditController {
 
     private final CreditService creditService;

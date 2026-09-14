@@ -271,6 +271,37 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
+  // ==================== DHL App (app-zentrische Alias-Routen) ====================
+  // DHL ist langfristig eine eigenständige App und kein Shop-Untermodul.
+  // Das bestehende DHL-Backend/DB bleibt unverändert an storeId gebunden
+  // (weiterhin nur ein technischer Mandanten-/Datenkontext). Diese Routen
+  // laden dieselben, bereits vorhandenen Komponenten unter einem
+  // app-zentrischen Pfad – die klassischen 'stores/:storeId/dhl...'-Routen
+  // oben bleiben unverändert als Legacy-Alias bestehen (kein Breaking-Change).
+  {
+    path: 'apps/dhl/:storeId',
+    loadComponent: () => {
+      console.log('✅ Route matched: apps/dhl/:storeId');
+      return import('./features/dhl/dhl.component').then(m => m.DhlComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/dhl/:storeId/store',
+    loadComponent: () => import('./features/dhl/dhl-store-parcel.component').then(m => m.DhlStoreParcelComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/dhl/:storeId/pickup',
+    loadComponent: () => import('./features/dhl/dhl-pickup-parcel.component').then(m => m.DhlPickupParcelComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/dhl/:storeId/plan',
+    loadComponent: () => import('./features/dhl/dhl-warehouse-plan.component').then(m => m.DhlWarehousePlanComponent),
+    canActivate: [authGuard]
+  },
+
   // ==================== Category Management (Primary Routes) ====================
   // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
   {

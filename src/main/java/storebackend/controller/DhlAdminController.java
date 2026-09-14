@@ -22,6 +22,9 @@ import storebackend.service.dhl.DhlAuthClient;
 import storebackend.service.dhl.DhlLabelService;
 import storebackend.service.dhl.DhlOrderUpdateService;
 import storebackend.service.dhl.DhlShippingClient;
+import storebackend.enums.AppKey;
+import storebackend.enums.AppScopeSource;
+import storebackend.security.RequiresApp;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,6 +35,19 @@ import java.util.Map;
  * 
  * Health/Config: /api/admin/dhl/*
  * Order-specific: /api/admin/orders/{orderId}/dhl/*
+ *
+ * Phase 3 (Backend App-Isolation): Dies ist SHOP-Domain (DHL als
+ * Versanddienstleister für Bestellungen), NICHT die eigenständige
+ * DHL-Paketshop-App (siehe DhlController/DhlLayoutController/DhlSlotController).
+ *
+ * testConnection()/healthCheck()/getConfig() (/api/admin/dhl/*) tragen bewusst
+ * KEIN @RequiresApp: sie haben weder storeId noch orderId im Pfad, ein
+ * belastbarer Scope ist damit aktuell nicht auflösbar. Ein STORE-App-Gate ohne
+ * auflösbaren Scope müsste per Sicherheitsgrundsatz IMMER verweigern - das
+ * würde für diese globalen Config-/Health-Endpunkte auch LEGACY-User treffen
+ * und wäre eine Verhaltensänderung. Sie bleiben daher unverändert nur durch
+ * @PreAuthorize("isAuthenticated()") geschützt; eine spätere, bewusste
+ * Scope-Modellierung ist ein offener Folgeschritt, keine Aufgabe dieser Phase.
  */
 @RestController
 @RequiredArgsConstructor
@@ -237,9 +253,14 @@ public class DhlAdminController {
      * POST /api/admin/orders/{orderId}/dhl/validate
      * 
      * Zugriff: Authentifizierte User (Store Owner Check im Service)
+     *
+     * Phase 3: SHOP-Domain (DHL als Versanddienstleister EINER Bestellung,
+     * NICHT die eigenständige DHL-Paketshop-App) - Scope wird über die Order
+     * aufgelöst (ORDER_ID_PARAM -> Order.store.id).
      */
     @PostMapping("/api/admin/orders/{orderId}/dhl/validate")
     @PreAuthorize("isAuthenticated()")
+    @RequiresApp(value = AppKey.SHOP, scope = AppScopeSource.ORDER_ID_PARAM)
     @Transactional  // ← NICHT mehr readOnly - Order Paketdaten werden gespeichert!
     public ResponseEntity<?> validateShipment(
         @PathVariable Long orderId,
@@ -442,9 +463,14 @@ public class DhlAdminController {
      * 
      * Erstellt DHL Label, speichert PDF in MinIO und aktualisiert Order
      * IDEMPOTENT: Wenn Label bereits existiert, wird vorhandenes zurückgegeben
+     *
+     * Phase 3: SHOP-Domain (DHL als Versanddienstleister EINER Bestellung,
+     * NICHT die eigenständige DHL-Paketshop-App) - Scope wird über die Order
+     * aufgelöst (ORDER_ID_PARAM -> Order.store.id).
      */
     @PostMapping({"/api/admin/orders/{orderId}/dhl/create-label", "/api/admin/orders/{orderId}/dhl/label"})
     @PreAuthorize("isAuthenticated()")
+    @RequiresApp(value = AppKey.SHOP, scope = AppScopeSource.ORDER_ID_PARAM)
     @Transactional
     public ResponseEntity<?> createLabel(
         @PathVariable Long orderId,

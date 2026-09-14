@@ -9,6 +9,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import storebackend.security.AppAccessInterceptor;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.List;
 public class WebConfig implements WebMvcConfigurer {
 
     private final MetricsInterceptor metricsInterceptor;
+    private final AppAccessInterceptor appAccessInterceptor;
 
     @Bean
     public RestTemplate restTemplate() {
@@ -27,6 +29,12 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(metricsInterceptor)
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/actuator/**", "/swagger-ui/**", "/v3/api-docs/**");
+
+        // Phase 3: App-Entitlement-Enforcement (zusätzliche äußere Schranke,
+        // greift nur bei mit @RequiresApp annotierten Controllern/Methoden).
+        registry.addInterceptor(appAccessInterceptor)
                 .addPathPatterns("/api/**")
                 .excludePathPatterns("/actuator/**", "/swagger-ui/**", "/v3/api-docs/**");
     }

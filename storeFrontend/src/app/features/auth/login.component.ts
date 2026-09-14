@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
+import { AppAccessService } from '../../core/services/app-access.service';
+import { AppAccessMode } from '../../core/models';
 import { StoreService } from '../../core/services/store.service';
 import { TeamInvitationService } from '../../core/services/team-invitation.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
@@ -219,6 +221,7 @@ export class LoginComponent implements OnInit {
   constructor(
       private fb: FormBuilder,
       private authService: AuthService,
+      private appAccessService: AppAccessService,
       private storeService: StoreService,
       private teamInvitationService: TeamInvitationService,
       private router: Router,
@@ -309,6 +312,15 @@ export class LoginComponent implements OnInit {
 
       this.authService.login(loginData).subscribe({
         next: () => {
+          // App-Entitlement Phase 2: MANAGED-User werden direkt zu ihrer
+          // erlaubten App-Startseite geleitet – kein "Meine Stores"-Einstieg.
+          // LEGACY-User (Standardfall, appAccessMode fehlt oder ist LEGACY)
+          // durchlaufen den bisherigen Flow unverändert.
+          if (this.authService.getCurrentUser()?.appAccessMode === AppAccessMode.MANAGED) {
+            this.router.navigateByUrl(this.appAccessService.getPrimaryAppHomeUrl());
+            return;
+          }
+
           // Prüfen ob ein pendingInvitationToken existiert
           const invitationToken = sessionStorage.getItem('pendingInvitationToken');
           

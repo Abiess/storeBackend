@@ -7,6 +7,7 @@ import { LanguageService } from '@app/core/services/language.service';
 import { StoreService } from '@app/core/services/store.service';
 import { PwaInstallService } from '@app/core/services/pwa-install.service';
 import { StoreContextService } from '@app/core/services/store-context.service';
+import { AppAccessService } from '@app/core/services/app-access.service';
 import { BusinessType } from '@app/core/models';
 import { LucideAngularModule } from 'lucide-angular';
 // Icons global registriert via LUCIDE_ICONS in app.config.ts
@@ -67,7 +68,8 @@ export class AdminSidebarComponent implements OnInit {
         public languageService: LanguageService,
         private storeService: StoreService,
         private storeContext: StoreContextService,
-        public pwaInstall: PwaInstallService
+        public pwaInstall: PwaInstallService,
+        private appAccessService: AppAccessService
     ) {
         this.router.events
             .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
@@ -111,7 +113,10 @@ export class AdminSidebarComponent implements OnInit {
         let resolvedStoreId: number | null = this.storeId;
 
         if (resolvedStoreId == null) {
-            const urlMatch = this.router.url.match(/\/stores\/(\d+)/);
+            // Unterstützt sowohl die klassische Shop-URL (/stores/:id/...)
+            // als auch die app-zentrische DHL-Route (/apps/dhl/:id/...) als
+            // Quelle für den technischen Store-/Mandantenkontext.
+            const urlMatch = this.router.url.match(/\/stores\/(\d+)/) || this.router.url.match(/\/apps\/dhl\/(\d+)/);
 
             if (urlMatch?.[1] != null) {
                 const parsedId = Number(urlMatch[1]);
@@ -204,7 +209,10 @@ export class AdminSidebarComponent implements OnInit {
                     {
                         labelKey: 'sidebarAdmin.items.dhl',
                         icon: 'truck',
-                        route: `${baseRoute}/dhl`,
+                        // App-zentrische Route (Ziel-Bild: DHL als eigenständige App).
+                        // Der bisherige Pfad `${baseRoute}/dhl` bleibt als
+                        // Legacy-Alias weiterhin voll funktionsfähig.
+                        route: resolvedStoreId != null ? `/apps/dhl/${resolvedStoreId}` : `${baseRoute}/dhl`,
                         requiresStore: true
                     },
                     {
@@ -389,12 +397,14 @@ export class AdminSidebarComponent implements OnInit {
         if (this.isMobile) this.isOpen = false;
     }
 
-    /** Gibt nur sichtbare Gruppen zurück (visible !== false) */
+    /** Gibt nur sichtbare Gruppen zurück (visible !== false + mindestens ein sichtbares Item) */
     get visibleGroups(): NavGroup[] {
-        return this.navGroups.filter(g => g.visible !== false);
+        return this.navGroups
+            .filter(g => g.visible !== false)
+            .filter(g => this.visibleItems(g).length > 0);
     }
 
-    /** Gibt nur sichtbare Items einer Gruppe zurück (visible !== false + businessType-Filter) */
+    /** Gibt nur sichtbare Items einer Gruppe zurück (visible !== false + businessType-Filter + App-Zugriff) */
     visibleItems(group: NavGroup): NavItem[] {
         return group.items.filter(item => {
             // Grundlegende Sichtbarkeit
@@ -405,6 +415,14 @@ export class AdminSidebarComponent implements OnInit {
                 if (!item.visibleForBusinessTypes.includes(this.currentBusinessType)) {
                     return false;
                 }
+            }
+
+            // App-Entitlement Phase 2: MANAGED-User sehen nur Navigation zu
+            // Apps, für die sie explizit freigeschaltet sind. LEGACY-User
+            // sehen die Sidebar unverändert wie bisher (isRouteAllowed()
+            // liefert dann immer true).
+            if (!this.appAccessService.isRouteAllowed(item.route)) {
+                return false;
             }
             
             return true;

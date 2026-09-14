@@ -19,6 +19,8 @@ import storebackend.repository.StoreRepository;
 import storebackend.service.MediaService;
 import storebackend.service.StoreUsageService;
 import storebackend.util.StoreAccessChecker;
+import storebackend.enums.AppKey;
+import storebackend.security.RequiresApp;
 
 import java.util.List;
 
@@ -26,6 +28,7 @@ import java.util.List;
 @RequestMapping("/api/stores/{storeId}/media")
 @Tag(name = "Media", description = "Media upload and management APIs - Upload images to MinIO")
 @RequiredArgsConstructor
+@RequiresApp(AppKey.SHOP) // Phase 3: Store-Medienbibliothek ist SHOP-Administration, Scope = storeId
 public class MediaController {
 
     private final MediaService mediaService;

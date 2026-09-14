@@ -20,11 +20,40 @@ export interface User {
   plan?: PlanDetails; // FIXED: Changed from Plan enum to PlanDetails interface
   createdAt: string;
   updatedAt: string;
+  /** App-Entitlement Phase 1 (additiv, optional für Rückwärtskompatibilität). */
+  appAccessMode?: AppAccessMode;
+  /** App-Entitlement Phase 1: explizite Liste der Berechtigungen (nur bei MANAGED relevant). */
+  apps?: AppEntitlement[];
 }
 
 export interface AuthResponse {
   token: string;
   user: User;
+}
+
+// ============================================
+// APP ENTITLEMENTS (Phase 1/2 – Multi-App-Plattform)
+// ============================================
+/** Spiegelt storebackend.enums.AppKey 1:1. */
+export enum AppKey {
+  SHOP = 'SHOP',
+  DHL = 'DHL',
+  LOYALTY = 'LOYALTY',
+  MARITIME = 'MARITIME',
+  ISSUE_ANALYSIS = 'ISSUE_ANALYSIS'
+}
+
+/** Spiegelt storebackend.enums.AppAccessMode 1:1. */
+export enum AppAccessMode {
+  LEGACY = 'LEGACY',
+  MANAGED = 'MANAGED'
+}
+
+/** Spiegelt storebackend.dto.AppEntitlementDTO 1:1. */
+export interface AppEntitlement {
+  app: AppKey;
+  storeId: number | null;
+  enabled: boolean;
 }
 
 export interface RegistrationResponse {

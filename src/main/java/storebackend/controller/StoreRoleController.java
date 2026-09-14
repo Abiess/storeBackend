@@ -13,6 +13,8 @@ import storebackend.entity.User;
 import storebackend.repository.StoreRepository;
 import storebackend.service.StoreRoleService;
 import storebackend.util.StoreAccessChecker;
+import storebackend.enums.AppKey;
+import storebackend.security.RequiresApp;
 
 import java.util.List;
 
@@ -24,6 +26,7 @@ import java.util.List;
 @RequestMapping("/api/stores/{storeId}/roles")
 @Tag(name = "Store Roles", description = "Team & Rollen-Verwaltung für einen Store")
 @RequiredArgsConstructor
+@RequiresApp(AppKey.SHOP) // Phase 3: Team-/Rollenverwaltung ist SHOP-Administration, Scope = storeId
 public class StoreRoleController {
 
     private final StoreRoleService storeRoleService;

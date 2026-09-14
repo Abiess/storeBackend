@@ -8,6 +8,9 @@ import storebackend.dto.IssueImageAnalysisDTO;
 import storebackend.exception.AiServiceException;
 import storebackend.service.AiImageCaptioningService;
 import storebackend.service.OpenRouterService;
+import storebackend.enums.AppKey;
+import storebackend.enums.AppScopeSource;
+import storebackend.security.RequiresApp;
 
 import java.util.Map;
 
@@ -25,6 +28,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/test")
 @Slf4j
+@RequiresApp(value = AppKey.ISSUE_ANALYSIS, scope = AppScopeSource.NONE) // Phase 3: GLOBAL-App, kein storeId
 public class IssueAnalysisTestController {
 
     private final OpenRouterService openRouterService;

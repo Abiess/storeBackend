@@ -17,6 +17,9 @@ import storebackend.dto.MaritimeVesselsResponse;
 import storebackend.dto.VesselPortEventDTO;
 import storebackend.dto.VesselPortEventsResponse;
 import storebackend.enums.MaritimePort;
+import storebackend.enums.AppKey;
+import storebackend.enums.AppScopeSource;
+import storebackend.security.RequiresApp;
 import storebackend.service.AisStreamClientService;
 import storebackend.service.MarineWeatherService;
 import storebackend.service.VesselPortEventService;
@@ -39,6 +42,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/maritime")
 @Slf4j
+@RequiresApp(value = AppKey.MARITIME, scope = AppScopeSource.NONE) // Phase 3: GLOBAL-App, kein storeId
 public class MaritimeController {
 
     private final AisStreamClientService aisStreamClientService;

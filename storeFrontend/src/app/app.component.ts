@@ -9,6 +9,7 @@ import { ClarityService } from './core/services/clarity.service';
 import { WhatsappConfigService } from './core/services/whatsapp-config.service';
 import { TranslationService } from './core/services/translation.service';
 import { PwaUpdateService } from './core/services/pwa-update.service';
+import { AppAccessService } from './core/services/app-access.service';
 import { environment } from '@env/environment';
 import { ChatbotWidgetComponent } from './components/chatbot-widget/chatbot-widget.component';
 import { WhatsappWidgetComponent } from './components/whatsapp-widget/whatsapp-widget.component';
@@ -255,7 +256,8 @@ export class AppComponent implements OnInit {
     private renderer: Renderer2,
     private whatsappConfig: WhatsappConfigService,
     private translationService: TranslationService,
-    private pwaUpdate: PwaUpdateService
+    private pwaUpdate: PwaUpdateService,
+    private appAccessService: AppAccessService
   ) {
     // ✅ Effect: Bei Sprachwechsel WhatsApp-Nachricht aktualisieren
     effect(() => {
@@ -292,6 +294,14 @@ export class AppComponent implements OnInit {
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe(e => {
+        // App-Entitlement Phase 2: direkte URL-Navigation zu Apps blocken,
+        // auf die der (MANAGED-)User keinen Zugriff hat. LEGACY-User sind
+        // von isUrlAllowed() immer erlaubt → kein Verhaltensunterschied.
+        if (!this.appAccessService.isUrlAllowed(e.urlAfterRedirects)) {
+          this.router.navigateByUrl(this.appAccessService.getPrimaryAppHomeUrl());
+          return;
+        }
+
         this.evaluateShell(e.urlAfterRedirects);
         // PageView pro Navigation tracken (no-op wenn Pixel nicht aktiv)
         this.metaPixel.trackPageView();

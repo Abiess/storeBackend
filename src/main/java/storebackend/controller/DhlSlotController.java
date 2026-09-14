@@ -16,6 +16,8 @@ import storebackend.service.DhlShelfSlotService;
 import storebackend.service.DhlShelfSlotService.SlotStats;
 import storebackend.service.DhlParcelService;
 import storebackend.util.StoreAccessChecker;
+import storebackend.enums.AppKey;
+import storebackend.security.RequiresApp;
 
 import java.util.List;
 import java.util.Map;
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/stores/{storeId}/dhl/slots")
 @RequiredArgsConstructor
 @Slf4j
+@RequiresApp(AppKey.DHL) // Phase 3: DHL-Paketshop-App, Scope = storeId (STORE_ID_PARAM, Default)
 public class DhlSlotController {
     
     private final DhlShelfSlotService slotService;

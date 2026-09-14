@@ -9,6 +9,8 @@ import storebackend.dto.*;
 import storebackend.entity.User;
 import storebackend.service.DhlLayoutService;
 import storebackend.util.StoreAccessChecker;
+import storebackend.enums.AppKey;
+import storebackend.security.RequiresApp;
 
 import java.util.List;
 
@@ -28,6 +30,7 @@ import java.util.List;
 @RequestMapping("/api/stores/{storeId}/dhl")
 @RequiredArgsConstructor
 @Slf4j
+@RequiresApp(AppKey.DHL) // Phase 3: DHL-Paketshop-App, Scope = storeId (STORE_ID_PARAM, Default)
 public class DhlLayoutController {
     
     private final DhlLayoutService layoutService;

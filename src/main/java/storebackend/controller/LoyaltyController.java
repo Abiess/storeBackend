@@ -19,6 +19,8 @@ import storebackend.dto.LoyaltyReplaceCardRequest;
 import storebackend.entity.User;
 import storebackend.service.LoyaltyService;
 import storebackend.util.StoreAccessChecker;
+import storebackend.enums.AppKey;
+import storebackend.security.RequiresApp;
 
 /**
  * Loyalty Controller (Bonuspunkte-MVP)
@@ -46,6 +48,7 @@ import storebackend.util.StoreAccessChecker;
 @RequestMapping("/api/stores/{storeId}/loyalty")
 @RequiredArgsConstructor
 @Slf4j
+@RequiresApp(AppKey.LOYALTY) // Phase 3: LOYALTY-App, Scope = storeId (STORE_ID_PARAM, Default)
 public class LoyaltyController {
 
     private final LoyaltyService loyaltyService;
