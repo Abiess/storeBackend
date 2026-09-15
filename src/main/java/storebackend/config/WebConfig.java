@@ -50,6 +50,12 @@ public class WebConfig implements WebMvcConfigurer {
             "https://localhost:*",             // Local development HTTPS
             "http://*.localhost:*",            // Local subdomains
             "https://*.localhost:*",           // Local subdomains HTTPS
+            // Mobile Factory M2 – Capacitor Android/iOS (WebView-Origin OHNE Port):
+            // "https://localhost:*" matcht NICHT "https://localhost" (kein Port),
+            // da simpleMatch das literale ":" im Pattern verlangt. Capacitor sendet
+            // aber exakt "https://localhost" als Origin (server.androidScheme: 'https',
+            // kein server.url gesetzt) -> ohne diesen Eintrag 403 auf den Preflight.
+            "https://localhost",               // Capacitor Android/iOS WebView (kein Port)
             "https://markt.ma",                // Production frontend
             "http://markt.ma",                 // Production frontend (HTTP)
             "https://www.markt.ma",            // Production frontend with www
