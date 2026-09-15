@@ -1,0 +1,101 @@
+name: Build Android APK
+
+# ──────────────────────────────────────────────────────────────────────────
+# Mobile Factory M2.2 – reiner Debug-APK-Build (kein VPS, kein Play Store).
+#
+# Ablauf:
+#   Angular Production Build (storeFrontend)
+#   → Capacitor Sync Android (bestehendes android/-Projekt, keine Neuanlage)
+#   → Gradle assembleDebug
+#   → app-debug.apk als GitHub Actions Artifact
+#
+# Bewusst NICHT enthalten:
+#   - kein Deploy zu VPS/Nginx/Backend
+#   - keine Release-Signierung, kein AAB, kein Play-Store-Upload
+#   - keine Änderung an deploy.yml / deploy-frontend.yml
+# ──────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'storeFrontend/**'
+      - '.github/workflows/build-android-apk.yml'
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Node-Version identisch zu deploy.yml / deploy-frontend.yml (20),
+      # damit der npm-Lockfile (lockfileVersion 3) überall gleich validiert wird.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: storeFrontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: storeFrontend
+        run: npm ci
+
+      - name: Build Angular app (production)
+        working-directory: storeFrontend
+        run: npm run build:prod
+
+      - name: Capacitor sync (android)
+        working-directory: storeFrontend
+        run: npx cap sync android
+
+      # Java 21 (Temurin) – passend zu Android Gradle Plugin 8.13.0 /
+      # Gradle 8.14.3 (siehe android/build.gradle, android/gradle/wrapper),
+      # identisch zur Java-Version im Backend-Deploy-Workflow.
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      # compileSdk/targetSdk 36 (storeFrontend/android/variables.gradle) ist
+      # ggf. neuer als das auf dem Runner-Image vorinstallierte SDK-Level –
+      # explizit nachziehen, damit der Build nicht an einer fehlenden
+      # Platform/Build-Tools-Version scheitert.
+      - name: Ensure required Android SDK packages
+        run: |
+          set -e
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -maxdepth 2 -name sdkmanager | head -1)"
+          fi
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Make gradlew executable
+        working-directory: storeFrontend/android
+        run: chmod +x ./gradlew
+
+      - name: Build debug APK
+        working-directory: storeFrontend/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Verify APK exists
+        run: |
+          APK=storeFrontend/android/app/build/outputs/apk/debug/app-debug.apk
+          if [ ! -f "$APK" ]; then
+            echo "❌ $APK nicht gefunden!"
+            find storeFrontend/android/app/build/outputs -type f
+            exit 1
+          fi
+          echo "✅ APK gefunden: $(du -h "$APK" | cut -f1)"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: markt-ma-android-debug
+          path: storeFrontend/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
