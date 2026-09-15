@@ -16,7 +16,9 @@ import storebackend.dto.StoreSliderSettingsDTO;
 import storebackend.entity.Media;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.repository.StoreRepository;
+import storebackend.security.RequiresApp;
 import storebackend.service.MediaService;
 import storebackend.service.StoreSliderService;
 import storebackend.util.StoreAccessChecker;
@@ -36,6 +38,7 @@ public class StoreSliderController {
 
     @GetMapping
     @Operation(summary = "Get complete slider (settings + images) for a store")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: kein permitAll für diesen Pfad in SecurityConfig, effektiv authentifiziert
     public ResponseEntity<StoreSliderDTO> getSlider(@PathVariable Long storeId) {
         return ResponseEntity.ok(sliderService.getSliderByStoreId(storeId));
     }
@@ -60,6 +63,7 @@ public class StoreSliderController {
     @PostMapping("/gallery/{mediaId}")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Add existing media to service website gallery")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Owner-Check
     public ResponseEntity<StoreSliderImageDTO> addToGallery(
             @PathVariable Long storeId,
             @PathVariable Long mediaId,
@@ -83,6 +87,7 @@ public class StoreSliderController {
     @DeleteMapping("/gallery/{imageId}")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Remove image metadata from service website gallery")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Owner-Check
     public ResponseEntity<?> removeFromGallery(
             @PathVariable Long storeId,
             @PathVariable Long imageId,
@@ -102,6 +107,7 @@ public class StoreSliderController {
     @PutMapping("/gallery/{imageId}/caption")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Update gallery image caption")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Owner-Check
     public ResponseEntity<?> updateGalleryCaption(
             @PathVariable Long storeId,
             @PathVariable Long imageId,
@@ -121,6 +127,7 @@ public class StoreSliderController {
     @PutMapping("/gallery/reorder")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Reorder gallery images")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Owner-Check
     public ResponseEntity<?> reorderGallery(
             @PathVariable Long storeId,
             @RequestBody Map<String, List<Long>> payload,
@@ -140,6 +147,7 @@ public class StoreSliderController {
     @PutMapping("/settings")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Update slider settings")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Owner-Check
     public ResponseEntity<?> updateSettings(
             @PathVariable Long storeId,
             @RequestBody StoreSliderSettingsDTO dto,
@@ -158,6 +166,7 @@ public class StoreSliderController {
     @PostMapping(value = "/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Upload owner slider image")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Owner-Check
     public ResponseEntity<?> uploadImage(
             @PathVariable Long storeId,
             @RequestParam("file") MultipartFile file,
@@ -178,6 +187,7 @@ public class StoreSliderController {
     @PutMapping("/images/{imageId}")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Update slider image (order, active status, alt text)")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Owner-Check
     public ResponseEntity<?> updateImage(
             @PathVariable Long storeId,
             @PathVariable Long imageId,
@@ -197,6 +207,7 @@ public class StoreSliderController {
     @PutMapping("/images/reorder")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Reorder slider images")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Owner-Check
     public ResponseEntity<?> reorderImages(
             @PathVariable Long storeId,
             @RequestBody Map<String, List<Long>> payload,
@@ -217,6 +228,7 @@ public class StoreSliderController {
     @DeleteMapping("/images/{imageId}")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Delete slider image")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Owner-Check
     public ResponseEntity<?> deleteImage(
             @PathVariable Long storeId,
             @PathVariable Long imageId,
@@ -236,6 +248,7 @@ public class StoreSliderController {
     @PostMapping("/initialize")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Initialize slider settings for stores that don't have them yet")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Owner-Check
     public ResponseEntity<?> initializeSlider(
             @PathVariable Long storeId,
             @RequestParam(value = "category", defaultValue = "general") String category,

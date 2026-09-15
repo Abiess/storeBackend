@@ -10,8 +10,10 @@ import storebackend.dto.TelegramImportResultDto;
 import storebackend.entity.Store;
 import storebackend.entity.TelegramStoreConfig;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.TelegramStoreConfigRepository;
+import storebackend.security.RequiresApp;
 import storebackend.service.TelegramBotService;
 import storebackend.service.TelegramImportService;
 
@@ -26,6 +28,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/stores/{storeId}/telegram")
+@RequiresApp(AppKey.SHOP) // Phase 3.2: alle Methoden verifyOwnership(), keine PUBLIC-Methoden
 @RequiredArgsConstructor
 public class TelegramController {
 

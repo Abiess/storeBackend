@@ -11,8 +11,10 @@ import storebackend.entity.SeoAsset;
 import storebackend.entity.SeoSettings;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.repository.SeoAssetRepository;
 import storebackend.repository.StoreRepository;
+import storebackend.security.RequiresApp;
 import storebackend.service.MinioService;
 import storebackend.service.seo.SeoSettingsService;
 import storebackend.util.StoreAccessChecker;
@@ -52,6 +54,7 @@ public class SeoSettingsController {
 
     /** PUT /api/stores/{storeId}/seo */
     @PutMapping
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Owner-Check (Update)
     public ResponseEntity<?> updateSeoSettings(
             @PathVariable Long storeId,
             @RequestBody SeoSettingsDTO dto,
@@ -71,6 +74,7 @@ public class SeoSettingsController {
 
     /** POST /api/stores/{storeId}/seo/assets?type=og-image */
     @PostMapping("/assets")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Owner-Check (Asset-Upload)
     public ResponseEntity<?> uploadSeoAsset(
             @PathVariable Long storeId,
             @RequestParam String type,

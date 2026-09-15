@@ -8,7 +8,9 @@ import org.springframework.web.bind.annotation.*;
 import storebackend.dto.StoreBannerSettingsDTO;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.repository.StoreRepository;
+import storebackend.security.RequiresApp;
 import storebackend.service.StoreBannerService;
 import storebackend.util.StoreAccessChecker;
 
@@ -19,6 +21,7 @@ import storebackend.util.StoreAccessChecker;
  */
 @RestController
 @RequestMapping("/api/stores/{storeId}/banner")
+@RequiresApp(AppKey.SHOP) // Phase 3.2: beide Methoden authentifiziert + Owner-Check, keine PUBLIC-Methoden
 @RequiredArgsConstructor
 public class StoreBannerController {
 

@@ -10,6 +10,8 @@ import storebackend.dto.ChatMessageDTO;
 import storebackend.dto.ChatSessionDTO;
 import storebackend.dto.SendMessageRequest;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
+import storebackend.security.RequiresApp;
 import storebackend.service.ChatService;
 
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 @PreAuthorize("hasAnyRole('STORE_MANAGER', 'STORE_OWNER')")
+@RequiresApp(AppKey.SHOP) // Phase 3.2: klassenweite Rollenprüfung bereits vorhanden, keine PUBLIC-Methoden
 public class ChatManagementController {
 
     private final ChatService chatService;

@@ -7,6 +7,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.seo.RenderStructuredDataRequest;
 import storebackend.dto.seo.StructuredDataTemplateDTO;
+import storebackend.enums.AppKey;
+import storebackend.security.RequiresApp;
 import storebackend.service.seo.StructuredDataService;
 
 import java.util.List;
@@ -16,6 +18,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/stores/{storeId}/structured-data")
+@RequiresApp(AppKey.SHOP) // Phase 3.2: alle Methoden @PreAuthorize(storeAccessValidator...), keine PUBLIC-Methoden
 @RequiredArgsConstructor
 public class StructuredDataController {
 

@@ -21,11 +21,13 @@ import storebackend.entity.Store;
 import storebackend.entity.SupplierInvoiceDocument;
 import storebackend.entity.SupplierInvoiceParseResult;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.enums.InvoiceDocumentType;
 import storebackend.enums.InvoiceParseStatus;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.SupplierInvoiceParseResultRepository;
 import storebackend.dto.ParsedInvoiceFields;
+import storebackend.security.RequiresApp;
 import storebackend.service.*;
 import storebackend.util.StoreAccessChecker;
 
@@ -39,6 +41,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/stores/{storeId}/supplier-invoices")
 @Tag(name = "Supplier Invoice Documents", description = "Secure upload and management of supplier invoices (PDF and images)")
+@RequiresApp(AppKey.SHOP) // Phase 3.2: alle Methoden @PreAuthorize(storeAccessChecker.isStoreAdmin), keine PUBLIC-Methoden
 @RequiredArgsConstructor
 @Slf4j
 public class SupplierInvoiceDocumentController {

@@ -18,7 +18,9 @@ import storebackend.dto.CreateProductRequest;
 import storebackend.dto.ProductDTO;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.repository.StoreRepository;
+import storebackend.security.RequiresApp;
 import storebackend.service.AiImageCaptioningService;
 import storebackend.service.ProductService;
 import storebackend.service.StoreService;
@@ -111,6 +113,7 @@ public class ProductController {
             @ApiResponse(responseCode = "403", description = "Not authorized")
     })
     @PostMapping
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Permission-Check
     public ResponseEntity<ProductDTO> createProduct(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @Valid @RequestBody CreateProductRequest request,
@@ -142,6 +145,7 @@ public class ProductController {
 
     @Operation(summary = "Update product", description = "Updates an existing product including category assignment")
     @PutMapping("/{productId}")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Permission-Check
     public ResponseEntity<ProductDTO> updateProduct(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @Parameter(description = "Product ID") @PathVariable Long productId,
@@ -165,6 +169,7 @@ public class ProductController {
 
     @Operation(summary = "Partial update product", description = "Updates only the provided fields (status, featured, etc.)")
     @PatchMapping("/{productId}")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Permission-Check
     public ResponseEntity<ProductDTO> patchProduct(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @Parameter(description = "Product ID") @PathVariable Long productId,
@@ -188,6 +193,7 @@ public class ProductController {
 
     @Operation(summary = "Delete product", description = "Deletes a product (Owner only)")
     @DeleteMapping("/{productId}")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Owner-Check
     public ResponseEntity<Void> deleteProduct(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @Parameter(description = "Product ID") @PathVariable Long productId,
@@ -211,6 +217,7 @@ public class ProductController {
 
     @Operation(summary = "Set product as featured", description = "Marks a product as featured/highlighted")
     @PostMapping("/{productId}/featured")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert + Permission-Check
     public ResponseEntity<ProductDTO> setFeatured(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @Parameter(description = "Product ID") @PathVariable Long productId,
@@ -310,6 +317,7 @@ public class ProductController {
             @ApiResponse(responseCode = "400", description = "Invalid image or AI service error")
     })
     @PostMapping("/ai-suggest")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (User erforderlich)
     public ResponseEntity<?> generateAiProductSuggestion(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @Parameter(description = "Product image file") @RequestParam("image") MultipartFile image,
@@ -395,6 +403,7 @@ public class ProductController {
         @ApiResponse(responseCode = "500", description = "Server error")
     })
     @PostMapping("/ai-suggest-v2")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (User erforderlich)
     public ResponseEntity<?> generateAiSuggestionV2(
             @PathVariable Long storeId,
             @RequestParam("image") MultipartFile image,
@@ -473,6 +482,7 @@ public class ProductController {
 
     @Operation(summary = "Check AI service status", description = "Debug endpoint to check if AI service is configured")
     @GetMapping("/ai-status")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: user==null-Check + hasPermission(PRODUCT_READ) im Methodenkörper, effektiv authentifiziert
     public ResponseEntity<?> checkAiStatus(@PathVariable Long storeId, @AuthenticationPrincipal User user) {
 
         log.info("=== AI STATUS CHECK ===");

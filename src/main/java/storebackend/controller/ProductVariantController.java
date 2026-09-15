@@ -12,8 +12,10 @@ import storebackend.dto.GenerateVariantsRequest;
 import storebackend.dto.ProductVariantDTO;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.UserRepository;
+import storebackend.security.RequiresApp;
 import storebackend.service.ProductVariantService;
 import storebackend.service.StoreService;
 
@@ -108,6 +110,7 @@ public class ProductVariantController {
 
     @Operation(summary = "Create a new variant")
     @PostMapping
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Variant erstellen)
     public ResponseEntity<ProductVariantDTO> createVariant(
             @PathVariable Long storeId,
             @PathVariable Long productId,
@@ -127,6 +130,7 @@ public class ProductVariantController {
 
     @Operation(summary = "Update variant")
     @PutMapping("/{variantId}")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Variant aktualisieren)
     public ResponseEntity<ProductVariantDTO> updateVariant(
             @PathVariable Long storeId,
             @PathVariable Long productId,
@@ -160,6 +164,7 @@ public class ProductVariantController {
 
     @Operation(summary = "Delete variant")
     @DeleteMapping("/{variantId}")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Variant löschen)
     public ResponseEntity<Void> deleteVariant(
             @PathVariable Long storeId,
             @PathVariable Long productId,
@@ -179,6 +184,7 @@ public class ProductVariantController {
 
     @Operation(summary = "Generate all variant combinations from options")
     @PostMapping("/generate")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Variants generieren)
     public ResponseEntity<List<ProductVariantDTO>> generateVariants(
             @PathVariable Long storeId,
             @PathVariable Long productId,

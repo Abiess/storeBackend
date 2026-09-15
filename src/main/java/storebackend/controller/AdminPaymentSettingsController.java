@@ -9,6 +9,8 @@ import storebackend.dto.PaymentSettingsDTO;
 import storebackend.dto.PaymentSettingsUpdateRequest;
 import storebackend.enums.PaymentProvider;
 import storebackend.service.AdminPaymentService;
+import storebackend.enums.AppKey;
+import storebackend.security.RequiresApp;
 
 import java.util.List;
 
@@ -22,6 +24,7 @@ import java.util.List;
 @RequestMapping("/api/stores/{storeId}/admin/payment-settings")
 @RequiredArgsConstructor
 @Slf4j
+@RequiresApp(AppKey.SHOP) // Phase 3.1: Payment-Konfiguration ist SHOP-Administration, Scope = storeId; keine PUBLIC-Methoden vorhanden
 public class AdminPaymentSettingsController {
     
     private final AdminPaymentService adminPaymentService;

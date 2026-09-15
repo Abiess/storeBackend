@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import storebackend.dto.seo.RedirectResolveResponse;
 import storebackend.dto.seo.RedirectRuleDTO;
+import storebackend.enums.AppKey;
+import storebackend.security.RequiresApp;
 import storebackend.service.seo.RedirectService;
 
 import java.io.BufferedReader;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/stores/{storeId}/redirects")
+@RequiresApp(AppKey.SHOP) // Phase 3.2: alle Methoden @PreAuthorize(storeAccessValidator...), keine PUBLIC-Methoden trotz permitAll-Eintrag in SecurityConfig
 @RequiredArgsConstructor
 public class RedirectController {
 

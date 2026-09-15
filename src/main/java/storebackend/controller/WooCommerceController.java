@@ -11,7 +11,9 @@ import storebackend.dto.woocommerce.*;
 import storebackend.dto.woocommerce.api.WooCategoryDto;
 import storebackend.dto.woocommerce.api.WooProductDto;
 import storebackend.entity.*;
+import storebackend.enums.AppKey;
 import storebackend.repository.*;
+import storebackend.security.RequiresApp;
 import storebackend.service.woocommerce.WooCommerceApiClient;
 
 import java.time.LocalDateTime;
@@ -35,6 +37,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/stores/{storeId}/woocommerce")
+@RequiresApp(AppKey.SHOP) // Phase 3.2: alle Methoden verifyOwnership(), keine PUBLIC-Methoden
 @RequiredArgsConstructor
 @Slf4j
 public class WooCommerceController {

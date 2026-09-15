@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.*;
 import storebackend.dto.DropshippingSourceDTO;
 import storebackend.dto.FulfillmentUpdateRequest;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
+import storebackend.enums.AppScopeSource;
+import storebackend.security.RequiresApp;
 import storebackend.service.DropshippingService;
 
 import java.math.BigDecimal;
@@ -134,6 +137,7 @@ public class DropshippingController {
 
     @Operation(summary = "Get all supplier links for a store")
     @GetMapping("/stores/{storeId}/sources")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: storeId-Scope (default STORE_ID_PARAM)
     @PreAuthorize("hasRole('ROLE_RESELLER')")
     public ResponseEntity<List<DropshippingSourceDTO>> getSupplierLinksForStore(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
@@ -157,6 +161,7 @@ public class DropshippingController {
     @Operation(summary = "Get order items with dropshipping info",
                description = "Returns order items with supplier links and fulfillment status")
     @GetMapping("/orders/{orderId}/items")
+    @RequiresApp(value = AppKey.SHOP, scope = AppScopeSource.ORDER_ID_PARAM) // Phase 3.2: Order-Scope statt storeId
     @PreAuthorize("hasRole('ROLE_RESELLER')")
     public ResponseEntity<List<DropshippingService.OrderItemWithDropshippingDTO>> getOrderItemsWithDropshipping(
             @Parameter(description = "Order ID") @PathVariable Long orderId,
@@ -204,6 +209,7 @@ public class DropshippingController {
     @Operation(summary = "Calculate total margin for store",
                description = "Returns average profit margin across all dropshipping products")
     @GetMapping("/stores/{storeId}/margin")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: storeId-Scope (default STORE_ID_PARAM)
     @PreAuthorize("hasRole('ROLE_RESELLER')")
     public ResponseEntity<MarginResponse> calculateTotalMargin(
             @Parameter(description = "Store ID") @PathVariable Long storeId,

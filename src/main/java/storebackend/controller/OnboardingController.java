@@ -7,7 +7,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.repository.*;
+import storebackend.security.RequiresApp;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +24,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/stores/{storeId}/onboarding")
+@RequiresApp(AppKey.SHOP) // Phase 3.2: beide Methoden authentifiziert + Owner-Check
 @RequiredArgsConstructor
 @Slf4j
 public class OnboardingController {

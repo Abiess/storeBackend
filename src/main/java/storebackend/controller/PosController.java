@@ -11,6 +11,8 @@ import storebackend.dto.PosOrderResponse;
 import storebackend.entity.User;
 import storebackend.util.StoreAccessChecker;
 import storebackend.service.PosOrderService;
+import storebackend.enums.AppKey;
+import storebackend.security.RequiresApp;
 
 /**
  * POS Controller
@@ -29,6 +31,7 @@ import storebackend.service.PosOrderService;
 @RequestMapping("/api/stores/{storeId}/pos")
 @RequiredArgsConstructor
 @Slf4j
+@RequiresApp(AppKey.SHOP) // Phase 3.1: Kassensystem ist SHOP-Administration, Scope = storeId; keine PUBLIC-Methoden vorhanden
 public class PosController {
     private final PosOrderService posOrderService;
     private final StoreAccessChecker storeAccessChecker;

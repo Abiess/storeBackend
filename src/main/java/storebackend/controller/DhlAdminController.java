@@ -41,13 +41,28 @@ import java.util.Map;
  * DHL-Paketshop-App (siehe DhlController/DhlLayoutController/DhlSlotController).
  *
  * testConnection()/healthCheck()/getConfig() (/api/admin/dhl/*) tragen bewusst
- * KEIN @RequiresApp: sie haben weder storeId noch orderId im Pfad, ein
- * belastbarer Scope ist damit aktuell nicht auflösbar. Ein STORE-App-Gate ohne
- * auflösbaren Scope müsste per Sicherheitsgrundsatz IMMER verweigern - das
- * würde für diese globalen Config-/Health-Endpunkte auch LEGACY-User treffen
- * und wäre eine Verhaltensänderung. Sie bleiben daher unverändert nur durch
- * @PreAuthorize("isAuthenticated()") geschützt; eine spätere, bewusste
- * Scope-Modellierung ist ein offener Folgeschritt, keine Aufgabe dieser Phase.
+ * weiterhin KEIN @RequiresApp: sie haben weder storeId noch orderId im Pfad,
+ * ein belastbarer STORE-Scope ist damit nicht auflösbar. Ein STORE-App-Gate
+ * ohne auflösbaren Scope müsste per Sicherheitsgrundsatz IMMER verweigern -
+ * das würde für diese globalen Config-/Health-Endpunkte auch LEGACY-User
+ * treffen und wäre eine Verhaltensänderung. Außerdem sind es keine
+ * Store-/SHOP-Endpunkte und keine DHL-Paketshop-App-Endpunkte, sondern reine
+ * Plattform-Betriebs-/Diagnose-Endpunkte für die EINE zentrale, plattformweite
+ * DHL-Konfiguration (DhlProperties, s. application.yml/DHL_* Env-Variablen) -
+ * fachlich also PLATFORM-Domain, nicht SHOP- oder DHL-App-Domain.
+ *
+ * Phase 3.1: Diese drei Endpunkte lieferten (u.a. per Health-Check ein reales
+ * DHL-Token sowie Konfigurationsmerkmale wie clientIdSet/clientSecretSet) bei
+ * @PreAuthorize("isAuthenticated()") Informationen an JEDEN eingeloggten User,
+ * unabhängig von Rolle oder App-Entitlement - somit auch an einen
+ * MANAGED-User mit ausschließlich DHL-Paketshop-Zugriff (kein SHOP, keine
+ * Plattform-Admin-Rolle). Das ist die minimal richtige Lücke, die hier
+ * geschlossen wird: Absicherung über die BESTEHENDE Rollenprüfung
+ * (ROLE_PLATFORM_ADMIN, siehe z.B. CommissionController/OrderTrackingController),
+ * NICHT über @RequiresApp(DHL) - eine App-Entitlement-Prüfung wäre hier
+ * fachlich falsch, weil es weder SHOP-Carrier-Konfiguration für einen
+ * konkreten Store noch die eigenständige DHL-Paketshop-App ist, sondern
+ * plattformweite Betriebs-/Diagnosefunktion.
  */
 @RestController
 @RequiredArgsConstructor
@@ -68,10 +83,11 @@ public class DhlAdminController {
      * Erzeugt KEIN Label, verursacht KEINE Kosten.
      * Prüft nur: Config valid, Token abrufbar, Shipping API erreichbar.
      * 
-     * Zugriff: Authentifizierte User
+     * Zugriff: NUR Plattform-Admin (Phase 3.1 - vorher fälschlich jeder
+     * authentifizierte User, s. Klassen-Javadoc oben).
      */
     @PostMapping("/api/admin/dhl/test-connection")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ROLE_PLATFORM_ADMIN')")
     public ResponseEntity<?> testConnection() {
         Map<String, Object> response = new LinkedHashMap<>();
         
@@ -150,10 +166,11 @@ public class DhlAdminController {
      * Health Check: DHL Config + Auth + Shipping API
      * GET /api/admin/dhl/health
      * 
-     * Zugriff: Alle authentifizierten User (Store Owner können DHL Status prüfen)
+     * Zugriff: NUR Plattform-Admin (Phase 3.1 - vorher fälschlich jeder
+     * authentifizierte User; ruft ein reales DHL-Token ab, s. Klassen-Javadoc oben).
      */
     @GetMapping("/api/admin/dhl/health")
-    @PreAuthorize("isAuthenticated()")  // Jeder eingeloggte User
+    @PreAuthorize("hasRole('ROLE_PLATFORM_ADMIN')")
     public ResponseEntity<?> healthCheck() {
         Map<String, Object> response = new LinkedHashMap<>();
         
@@ -224,10 +241,11 @@ public class DhlAdminController {
      * Get DHL Config (ohne Secrets)
      * GET /api/admin/dhl/config
      * 
-     * Zugriff: Alle authentifizierten User
+     * Zugriff: NUR Plattform-Admin (Phase 3.1 - vorher fälschlich jeder
+     * authentifizierte User; verrät u.a. ob Client-ID/Secret gesetzt sind).
      */
     @GetMapping("/api/admin/dhl/config")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ROLE_PLATFORM_ADMIN')")
     public ResponseEntity<?> getConfig() {
         Map<String, Object> config = new LinkedHashMap<>();
         config.put("enabled", dhlProperties.isEnabled());

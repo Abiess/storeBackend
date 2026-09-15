@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.*;
 import storebackend.dto.ProductOptionDTO;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.UserRepository;
+import storebackend.security.RequiresApp;
 import storebackend.service.ProductOptionService;
 
 import java.util.List;
@@ -85,6 +87,7 @@ public class ProductOptionController {
     }
 
     @PostMapping
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Option erstellen)
     public ResponseEntity<ProductOptionDTO> createProductOption(
             @PathVariable Long storeId,
             @PathVariable Long productId,
@@ -107,6 +110,7 @@ public class ProductOptionController {
     }
 
     @PutMapping("/{optionId}")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Option aktualisieren)
     public ResponseEntity<ProductOptionDTO> updateProductOption(
             @PathVariable Long storeId,
             @PathVariable Long productId,
@@ -129,6 +133,7 @@ public class ProductOptionController {
     }
 
     @DeleteMapping("/{optionId}")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Option löschen)
     public ResponseEntity<Void> deleteProductOption(
             @PathVariable Long storeId,
             @PathVariable Long productId,
@@ -154,6 +159,7 @@ public class ProductOptionController {
      * Regeneriert alle Varianten basierend auf den aktuellen Optionen
      */
     @PostMapping("/../variants/regenerate")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Variants neu generieren)
     public ResponseEntity<RegenerateResponse> regenerateVariants(
             @PathVariable Long storeId,
             @PathVariable Long productId) {

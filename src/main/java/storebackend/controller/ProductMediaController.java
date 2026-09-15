@@ -6,7 +6,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.ProductMediaDTO;
 import storebackend.entity.*;
+import storebackend.enums.AppKey;
 import storebackend.repository.*;
+import storebackend.security.RequiresApp;
 import storebackend.service.ProductMediaService;
 
 import java.util.List;
@@ -49,6 +51,7 @@ public class ProductMediaController {
     }
 
     @PostMapping
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Media hinzufügen)
     public ResponseEntity<ProductMedia> addMediaToProduct(
             @PathVariable Long storeId,
             @PathVariable Long productId,
@@ -83,6 +86,7 @@ public class ProductMediaController {
     }
 
     @PutMapping("/{mediaId}")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Media aktualisieren)
     public ResponseEntity<ProductMedia> updateProductMedia(
             @PathVariable Long storeId,
             @PathVariable Long productId,
@@ -113,6 +117,7 @@ public class ProductMediaController {
     }
 
     @PostMapping("/{mediaId}/set-primary")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Primärbild setzen)
     public ResponseEntity<ProductMedia> setPrimaryImage(
             @PathVariable Long storeId,
             @PathVariable Long productId,
@@ -134,6 +139,7 @@ public class ProductMediaController {
     }
 
     @DeleteMapping("/{mediaId}")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Media löschen)
     public ResponseEntity<Void> deleteProductMedia(
             @PathVariable Long storeId,
             @PathVariable Long productId,

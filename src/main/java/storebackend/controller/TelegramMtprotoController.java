@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.*;
 import storebackend.dto.TelegramImportResultDto;
 import storebackend.entity.TelegramMtprotoConfig;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.TelegramMtprotoConfigRepository;
+import storebackend.security.RequiresApp;
 import storebackend.service.TelegramMtprotoService;
 
 import java.util.List;
@@ -42,6 +44,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/stores/{storeId}/telegram/mtproto")
+@RequiresApp(AppKey.SHOP) // Phase 3.2: alle Methoden verifyOwnership(), keine PUBLIC-Methoden
 @RequiredArgsConstructor
 public class TelegramMtprotoController {
 

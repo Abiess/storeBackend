@@ -10,7 +10,9 @@ import storebackend.dto.ChatbotStatisticsDTO;
 import storebackend.entity.ChatbotIntent;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.repository.StoreRepository;
+import storebackend.security.RequiresApp;
 import storebackend.service.ChatbotIntentService;
 import storebackend.util.StoreAccessChecker;
 
@@ -19,6 +21,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/stores/{storeId}/chatbot/intents")
+@RequiresApp(AppKey.SHOP) // Phase 3.2: alle Methoden authentifiziert + Owner-Check
 @RequiredArgsConstructor
 @Slf4j
 public class ChatbotIntentManagementController {

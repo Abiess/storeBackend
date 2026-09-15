@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.*;
 import storebackend.dto.ImportProductRequest;
 import storebackend.dto.StoreProductDTO;
 import storebackend.entity.Store;
+import storebackend.enums.AppKey;
+import storebackend.security.RequiresApp;
 import storebackend.service.StoreProductService;
 import storebackend.service.StoreService;
 
@@ -20,6 +22,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/stores/{storeId}/imported-products")
+@RequiresApp(AppKey.SHOP) // Phase 3.2: alle Methoden hasAuthority('ROLE_RESELLER') + storeId-Scope (Reseller-Verwaltung des eigenen Stores)
 @RequiredArgsConstructor
 public class StoreProductController {
 

@@ -13,6 +13,8 @@ import storebackend.service.DeliveryNoteService;
 import storebackend.service.OrderService;
 import storebackend.service.StoreService;
 import storebackend.util.StoreAccessChecker;
+import storebackend.enums.AppKey;
+import storebackend.security.RequiresApp;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -22,6 +24,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/stores/{storeId}/orders")
 @RequiredArgsConstructor
+@RequiresApp(AppKey.SHOP) // Phase 3.1: Bestellverwaltung ist SHOP-Administration, Scope = storeId; keine PUBLIC-Methoden vorhanden
 public class OrderController {
     private final OrderService orderService;
     private final StoreRepository storeRepository;

@@ -6,7 +6,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import storebackend.dto.RevenueSplitDTO;
 import storebackend.entity.Order;
+import storebackend.enums.AppKey;
 import storebackend.repository.OrderRepository;
+import storebackend.security.RequiresApp;
 import storebackend.service.RevenueShareService;
 
 import java.math.BigDecimal;
@@ -55,6 +57,7 @@ public class CommissionController {
      * GET /api/commissions/stores/{storeId}/pending
      */
     @GetMapping("/stores/{storeId}/pending")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: RESELLER-Rolle + storeId-Scope (default STORE_ID_PARAM)
     @PreAuthorize("hasRole('ROLE_RESELLER')")
     public ResponseEntity<BigDecimal> getResellerPendingCommissions(@PathVariable Long storeId) {
         BigDecimal pending = revenueShareService.getPendingCommissionsForReseller(storeId);

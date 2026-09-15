@@ -10,6 +10,8 @@ import storebackend.dto.analytics.OrderStatsDTO;
 import storebackend.dto.analytics.RevenueSummaryDTO;
 import storebackend.dto.analytics.TopProductDTO;
 import storebackend.service.StoreAnalyticsService;
+import storebackend.enums.AppKey;
+import storebackend.security.RequiresApp;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -26,6 +28,7 @@ import java.util.List;
 @RequestMapping("/api/stores/{storeId}/analytics")
 @RequiredArgsConstructor
 @Slf4j
+@RequiresApp(AppKey.SHOP) // Phase 3.1: Store-Analytics ist SHOP-Administration, Scope = storeId; keine PUBLIC-Methoden vorhanden
 public class AnalyticsController {
     
     private final StoreAnalyticsService analyticsService;

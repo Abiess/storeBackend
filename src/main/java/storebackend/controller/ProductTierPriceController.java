@@ -10,9 +10,11 @@ import storebackend.entity.Product;
 import storebackend.entity.ProductTierPrice;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.repository.ProductRepository;
 import storebackend.repository.ProductTierPriceRepository;
 import storebackend.repository.StoreRepository;
+import storebackend.security.RequiresApp;
 import storebackend.service.ProductTierPriceService;
 import storebackend.service.StoreService;
 
@@ -29,6 +31,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/stores/{storeId}/products/{productId}/tier-prices")
+@RequiresApp(AppKey.SHOP) // Phase 3.2: SecurityConfig erzwingt bereits Auth für den gesamten Pfad (keine PUBLIC-GETs), Scope = storeId
 @RequiredArgsConstructor
 @Slf4j
 public class ProductTierPriceController {

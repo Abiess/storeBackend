@@ -9,8 +9,10 @@ import storebackend.dto.CreateThemeRequest;
 import storebackend.dto.StoreThemeDTO;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.ThemeTemplateRepository;
+import storebackend.security.RequiresApp;
 import storebackend.service.DemoContentService;
 import storebackend.service.ThemeService;
 import storebackend.util.StoreAccessChecker;
@@ -47,6 +49,7 @@ public class ThemeController {
      * Hole alle Themes eines Stores (für Store-Owner)
      */
     @GetMapping("/store/{storeId}")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: storeId-Pfad + Owner-Check
     public ResponseEntity<?> getStoreThemes(
             @PathVariable Long storeId,
             @AuthenticationPrincipal User user) {
@@ -139,6 +142,7 @@ public class ThemeController {
      * POST /api/themes/store/{storeId}/apply-template/{templateId}?name=Optional
      */
     @PostMapping("/store/{storeId}/apply-template/{templateId}")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: storeId-Pfad + Owner-Check
     public ResponseEntity<?> applyTemplate(
             @PathVariable Long storeId,
             @PathVariable Long templateId,
@@ -166,6 +170,7 @@ public class ThemeController {
      * POST /api/themes/store/{storeId}/onboard?templateCode=ELECTRONICS_PRO&amp;withDemoData=true
      */
     @PostMapping("/store/{storeId}/onboard")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: storeId-Pfad + Owner-Check
     public ResponseEntity<?> onboardStoreWithTemplate(
             @PathVariable Long storeId,
             @RequestParam(name = "templateCode") String templateCode,

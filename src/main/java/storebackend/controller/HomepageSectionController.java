@@ -10,7 +10,9 @@ import storebackend.dto.CreateHomepageSectionRequest;
 import storebackend.dto.HomepageSectionDTO;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.repository.StoreRepository;
+import storebackend.security.RequiresApp;
 import storebackend.service.HomepageSectionService;
 import storebackend.util.StoreAccessChecker;
 
@@ -19,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/stores/{storeId}/homepage-sections")
 @Tag(name = "Homepage Sections", description = "Homepage builder section management")
+@RequiresApp(AppKey.SHOP) // Phase 3.2: alle Methoden (inkl. "/active") sind bereits authentifiziert, keine SecurityConfig-permitAll-Regel für diesen Pfad
 @RequiredArgsConstructor
 public class HomepageSectionController {
 

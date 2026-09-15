@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.*;
 import storebackend.dto.*;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.repository.StoreRepository;
+import storebackend.security.RequiresApp;
 import storebackend.service.*;
 import storebackend.service.dhl.DhlConnectionTestService;
 import storebackend.util.StoreAccessChecker;
@@ -24,6 +26,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/stores/{storeId}/delivery")
 @Tag(name = "Delivery Management", description = "Merchant APIs for delivery configuration")
+@RequiresApp(AppKey.SHOP) // Phase 3.2: alle Methoden authentifiziert + Owner-Check (inkl. dhl/test-connection - das ist DHL-als-Carrier-in-SHOP, nicht die DHL-Paketshop-App)
 @RequiredArgsConstructor
 public class DeliveryController {
 

@@ -11,8 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import storebackend.entity.Category;
 import storebackend.entity.Store;
 import storebackend.entity.User;
+import storebackend.enums.AppKey;
 import storebackend.repository.StoreRepository;
 import storebackend.repository.UserRepository;
+import storebackend.security.RequiresApp;
 import storebackend.service.CategoryService;
 import storebackend.service.StoreService;
 import storebackend.util.StoreAccessChecker;
@@ -116,6 +118,7 @@ public class CategoryController {
 
     @Operation(summary = "Create category", description = "Creates a new category that can contain products")
     @PostMapping
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Kategorie erstellen)
     public ResponseEntity<Category> createCategory(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @RequestBody Category category,
@@ -136,6 +139,7 @@ public class CategoryController {
 
     @Operation(summary = "Update category", description = "Updates an existing category")
     @PutMapping("/{categoryId}")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Kategorie aktualisieren)
     public ResponseEntity<Category> updateCategory(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @Parameter(description = "Category ID") @PathVariable Long categoryId,
@@ -155,6 +159,7 @@ public class CategoryController {
 
     @Operation(summary = "Delete category", description = "Deletes a category (products will have category_id set to null)")
     @DeleteMapping("/{categoryId}")
+    @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Kategorie löschen)
     public ResponseEntity<Void> deleteCategory(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @Parameter(description = "Category ID") @PathVariable Long categoryId,
