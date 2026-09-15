@@ -1761,6 +1761,9 @@
   "maritime": {
     "title": "Maritime / Live vessel data",
     "subtitle": "Live AIS vessel data for Moroccan ports (MVP)",
+    "nav": {
+      "overview": "Overview"
+    },
     "connected": "Connected",
     "disconnected": "Disconnected",
     "lastMessage": "Last message",

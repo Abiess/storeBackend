@@ -37,6 +37,14 @@ export interface AppRegistryEntry {
    * (noch) nicht auf das `/apps/{segment}`-Schema umgestellt.
    */
   contextSelectorSupported?: boolean;
+  /**
+   * Nur für `scope: 'GLOBAL'` relevant: optionale, bereits produktiv
+   * genutzte Legacy-URL (z.B. `/tools/maritime`), die weiterhin als
+   * gültiger Alias zu `baseRoute` gilt. Wird von
+   * `AppAccessService.classifyUrl()` generisch ausgewertet – GLOBAL-Apps
+   * benötigen dadurch KEINE eigene URL-Erkennung in `AppAccessService`.
+   */
+  legacyBasePath?: string;
 }
 
 /**
@@ -76,8 +84,9 @@ export const APP_REGISTRY: Record<AppKey, AppRegistryEntry> = {
     titleKey: 'apps.registry.maritime.title',
     descriptionKey: 'apps.registry.maritime.description',
     icon: '⚓',
-    baseRoute: '/tools/maritime',
-    scope: 'GLOBAL'
+    baseRoute: '/apps/maritime',
+    scope: 'GLOBAL',
+    legacyBasePath: '/tools/maritime'
   },
   [AppKey.ISSUE_ANALYSIS]: {
     key: AppKey.ISSUE_ANALYSIS,

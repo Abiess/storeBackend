@@ -117,6 +117,64 @@ describe('AppAccessService', () => {
     });
   });
 
+  describe('MANAGED-User mit ausschließlich MARITIME (Faktortest: 2. Consumer)', () => {
+    it('leitet direkt auf die app-zentrische MARITIME-Startseite (GLOBAL-Scope, kein storeId)', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [{ app: AppKey.MARITIME, storeId: null, enabled: true }]
+        })
+      );
+
+      expect(service.getPrimaryAppHomeUrl()).toBe('/apps/maritime');
+    });
+
+    it('erlaubt sowohl die neue app-zentrische Route als auch die Legacy-Route /tools/maritime', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [{ app: AppKey.MARITIME, storeId: null, enabled: true }]
+        })
+      );
+
+      expect(service.isUrlAllowed('/apps/maritime')).toBeTrue();
+      expect(service.isUrlAllowed('/apps/maritime/account')).toBeTrue();
+      expect(service.isUrlAllowed('/tools/maritime')).toBeTrue();
+    });
+  });
+
+  describe('MANAGED-User mit DHL + MARITIME', () => {
+    it('leitet auf den App-Launcher (2 distinct Apps), beide Apps sind verfügbar', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [
+            { app: AppKey.DHL, storeId: 121, enabled: true },
+            { app: AppKey.MARITIME, storeId: null, enabled: true }
+          ]
+        })
+      );
+
+      expect(service.getPrimaryAppHomeUrl()).toBe('/apps');
+      expect(service.getAvailableApps()).toEqual(jasmine.arrayContaining([AppKey.DHL, AppKey.MARITIME]));
+      expect(service.getAvailableApps().length).toBe(2);
+    });
+
+    it('resolveAppEntryUrl(MARITIME) führt direkt auf /apps/maritime (Klick auf die Launcher-Karte)', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [
+            { app: AppKey.DHL, storeId: 121, enabled: true },
+            { app: AppKey.MARITIME, storeId: null, enabled: true }
+          ]
+        })
+      );
+
+      expect(service.resolveAppEntryUrl(AppKey.MARITIME)).toBe('/apps/maritime');
+    });
+  });
+
   describe('MANAGED-User: 0 verfügbare Apps', () => {
     it('leitet auf die sichere No-Access-Seite', () => {
       mockAuthService.getCurrentUser.and.returnValue(

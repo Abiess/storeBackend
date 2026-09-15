@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { AuthService } from './auth.service';
 import { AppContextService } from './app-context.service';
 import { AppAccessMode, AppKey } from '../models';
-import { APP_REGISTRY } from '../config/app-registry';
+import { APP_REGISTRY, APP_REGISTRY_ORDER } from '../config/app-registry';
 
 /**
  * App-Entitlement Phase 2 (Frontend-Durchsetzung).
@@ -83,11 +83,18 @@ export class AppAccessService {
     if (path === '/dashboard' || path === '/store-wizard') {
       return { kind: 'app', app: AppKey.SHOP, storeId: null };
     }
-    if (path.startsWith('/tools/maritime')) {
-      return { kind: 'app', app: AppKey.MARITIME, storeId: null };
-    }
-    if (path.startsWith('/tools/issue-analysis')) {
-      return { kind: 'app', app: AppKey.ISSUE_ANALYSIS, storeId: null };
+
+    // Generische GLOBAL-App-Erkennung: JEDE App mit `scope: 'GLOBAL'` wird
+    // ausschließlich über ihre `AppRegistry`-Metadaten (`baseRoute` +
+    // optionaler `legacyBasePath`) erkannt. Eine neue GLOBAL-App (z.B.
+    // FLEET) benötigt dadurch KEINE Änderung an dieser Klassifizierung –
+    // ein zusätzlicher `APP_REGISTRY`-Eintrag genügt.
+    for (const key of APP_REGISTRY_ORDER) {
+      const entry = APP_REGISTRY[key];
+      if (entry.scope !== 'GLOBAL') continue;
+      if (path.startsWith(entry.baseRoute) || (entry.legacyBasePath && path.startsWith(entry.legacyBasePath))) {
+        return { kind: 'app', app: key, storeId: null };
+      }
     }
 
     return { kind: 'neutral' };
@@ -129,6 +136,18 @@ export class AppAccessService {
    * für App-Routing nutzen (keine Duplikation der Pfad-Muster pro App).
    */
   buildAppHomeUrl(app: AppKey, storeId: number | null): string {
+    const registryEntry = APP_REGISTRY[app];
+
+    // Generische GLOBAL-App-Ziel-URL: `baseRoute` aus der `AppRegistry` ist
+    // für GLOBAL-Apps bereits die vollständige Ziel-URL (kein Context).
+    // Neue GLOBAL-Apps benötigen dadurch KEINE Änderung an dieser Methode.
+    if (registryEntry?.scope === 'GLOBAL') {
+      return registryEntry.baseRoute;
+    }
+
+    // STORE-scoped Apps haben (noch) unterschiedliche, historisch gewachsene
+    // URL-Formen (app-zentrisch vs. `/stores/:id/...` vs. Sonderfälle) und
+    // werden deshalb bewusst weiterhin explizit behandelt.
     switch (app) {
       case AppKey.DHL:
         // App-zentrische URL (Ziel-Bild); die klassische
@@ -138,10 +157,10 @@ export class AppAccessService {
         return `/stores/${storeId}/loyalty`;
       case AppKey.SHOP:
         return storeId != null ? `/stores/${storeId}` : '/dashboard';
-      case AppKey.MARITIME:
-        return '/tools/maritime';
-      case AppKey.ISSUE_ANALYSIS:
-        return '/tools/issue-analysis';
+      default:
+        // Sicherer Fallback für zukünftige GLOBAL-Apps ohne eigenen Case
+        // (sollte durch die obige Abfrage bereits abgedeckt sein).
+        return registryEntry?.baseRoute ?? '/apps';
     }
   }
 

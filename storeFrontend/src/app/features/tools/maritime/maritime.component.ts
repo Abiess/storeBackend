@@ -7,11 +7,13 @@ import { LucideAngularModule } from 'lucide-angular';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { PageHeaderComponent } from '@app/shared/components/page-header.component';
 import { ResponsiveDataListComponent, ColumnConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
+import { AppNavigationComponent } from '@app/shared/components/app-navigation/app-navigation.component';
 import { MaritimeService } from '@app/core/services/maritime.service';
 import { TranslationService } from '@app/core/services/translation.service';
 import { VesselDto, MaritimeVesselsResponse, MaritimePort, MarineWeatherDto, VesselPortEventDto } from '@app/core/models';
 import { MaritimeMapComponent } from './maritime-map.component';
 import { MaritimeHelpDialogComponent } from './maritime-help-dialog.component';
+import { MARITIME_NAV_CONFIG } from './maritime-nav.config';
 
 /**
  * Maritime / Live-AIS-Schiffsdaten (MVP: Tanger Med, Nador, Casablanca).
@@ -29,11 +31,14 @@ import { MaritimeHelpDialogComponent } from './maritime-help-dialog.component';
 @Component({
   selector: 'app-maritime',
   standalone: true,
-  imports: [CommonModule, TranslatePipe, PageHeaderComponent, ResponsiveDataListComponent, LucideAngularModule, MaritimeMapComponent],
+  imports: [CommonModule, TranslatePipe, PageHeaderComponent, ResponsiveDataListComponent, LucideAngularModule, MaritimeMapComponent, AppNavigationComponent],
   templateUrl: './maritime.component.html',
   styleUrls: ['./maritime.component.scss']
 })
 export class MaritimeComponent implements OnInit, OnDestroy {
+  /** Faktortest App-Factory: gleiche generische Navigation wie DHL, nur andere Konfiguration. */
+  readonly navConfig = MARITIME_NAV_CONFIG;
+
   connected = false;
   configured = true;
   healthy = false;

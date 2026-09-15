@@ -5,6 +5,10 @@
     [showBackButton]="true"
   ></app-page-header>
 
+  <!-- Faktortest App-Factory: gleiche generische App-Navigation wie DHL (inkl.
+       "Apps wechseln"-Switcher), nur eigene MARITIME_NAV_CONFIG. -->
+  <app-navigation [config]="navConfig"></app-navigation>
+
   <!-- Dezente Hilfe: kleines "?"-Icon statt einer großen FAQ-Card vor der Vessel-Liste. -->
   <div class="maritime-help-row">
     <button

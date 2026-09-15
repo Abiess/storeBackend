@@ -1,12 +1,14 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { User, AuthResponse, RegistrationResponse, LoginRequest, RegisterRequest } from '../models';
 import { tap, catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
+import { StorageAdapter } from './storage-adapter';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private storage = inject(StorageAdapter);
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
@@ -18,7 +20,7 @@ export class AuthService {
   private cartService?: any;
 
   constructor(private http: HttpClient) {
-    // Load user from localStorage if exists
+    // Load user from Storage (via StorageAdapter) if exists
     const token = this.getToken();
     if (token) {
       // FIXED: Zuerst prüfen ob Token client-seitig noch gültig ist
@@ -26,7 +28,7 @@ export class AuthService {
         console.warn('⏰ JWT Token ist abgelaufen – bereinige Session automatisch');
         this.clearSession();
       } else {
-        const storedUser = localStorage.getItem('currentUser');
+        const storedUser = this.storage.get('currentUser');
         if (storedUser && storedUser !== 'undefined') {
           try {
             const user = JSON.parse(storedUser);
@@ -62,9 +64,9 @@ export class AuthService {
    * Bereinigt Session ohne Redirect (z.B. bei abgelaufenem Token beim App-Start)
    */
   private clearSession(): void {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('cart_session_id');
+    this.storage.remove('auth_token');
+    this.storage.remove('currentUser');
+    this.storage.remove('cart_session_id');
     this.currentUserSubject.next(null);
   }
 
@@ -82,7 +84,7 @@ export class AuthService {
       )
       .subscribe(user => {
         if (user) {
-          localStorage.setItem('currentUser', JSON.stringify(user));
+          this.storage.set('currentUser', JSON.stringify(user));
           this.currentUserSubject.next(user);
           console.log('User erfolgreich vom Backend geladen:', user.email);
         }
@@ -94,8 +96,8 @@ export class AuthService {
       .pipe(
         tap(response => {
           // Store token and user
-          localStorage.setItem('auth_token', response.token);
-          localStorage.setItem('currentUser', JSON.stringify(response.user));
+          this.storage.set('auth_token', response.token);
+          this.storage.set('currentUser', JSON.stringify(response.user));
           this.currentUserSubject.next(response.user);
 
           // FIXED: Nach Login - Trigger Warenkorb-Update (Guest-Cart wird migriert!)
@@ -130,7 +132,7 @@ export class AuthService {
           }
 
           // SECURITY: KEINEN Token speichern!
-          // KEIN localStorage.setItem('auth_token', ...)
+          // KEIN storage.set('auth_token', ...)
           // KEIN currentUserSubject.next(...)
           // KEINE Warenkorb-Migration!
           
@@ -161,11 +163,11 @@ export class AuthService {
     console.log('🚪 Logout - Bereinige Session und Warenkorb');
 
     // FIXED: Entferne alle benutzerspezifischen Daten
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('currentUser');
+    this.storage.remove('auth_token');
+    this.storage.remove('currentUser');
 
     // FIXED: Setze sessionId zurück, damit neuer User neuen Warenkorb bekommt
-    localStorage.removeItem('cart_session_id');
+    this.storage.remove('cart_session_id');
 
     this.currentUserSubject.next(null);
 
@@ -192,7 +194,7 @@ export class AuthService {
     // noch null sein, obwohl Token + User bereits in localStorage liegen.
     // Deshalb: User aus localStorage nachladen wenn currentUserSubject leer.
     if (!this.currentUserSubject.value) {
-      const storedUser = localStorage.getItem('currentUser');
+      const storedUser = this.storage.get('currentUser');
       if (storedUser && storedUser !== 'undefined') {
         try {
           const user = JSON.parse(storedUser);
@@ -215,7 +217,7 @@ export class AuthService {
     const token = this.getToken();
     if (!token || this.isTokenExpired(token)) return;
 
-    const storedUser = localStorage.getItem('currentUser');
+    const storedUser = this.storage.get('currentUser');
     if (storedUser && storedUser !== 'undefined') {
       try {
         const user = JSON.parse(storedUser);
@@ -229,7 +231,7 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem('auth_token');
+    return this.storage.get('auth_token');
   }
 
   getCurrentUser(): User | null {
@@ -251,7 +253,7 @@ export class AuthService {
     return this.http.get<User>(`${environment.apiUrl}/auth/me`)
       .pipe(
         tap(user => {
-          localStorage.setItem('currentUser', JSON.stringify(user));
+          this.storage.set('currentUser', JSON.stringify(user));
           this.currentUserSubject.next(user);
         }),
         catchError(error => {

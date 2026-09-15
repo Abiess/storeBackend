@@ -365,6 +365,715 @@ Abschnitt 7a) – der App-Switcher wurde stattdessen als kleiner,
 wiederverwendbarer Baustein in die bestehende `AppNavigationComponent`
 integriert, um das Risiko eines Big-Bang-Umbaus zu vermeiden.
 
+## 7c. Architekturtest: MARITIME als zweiter Consumer
+
+Um zu prüfen, ob die in 7a/7b geschaffene Factory-Infrastruktur wirklich
+generisch ist (und nicht implizit auf DHL zugeschnitten war), wurde `MARITIME`
+– bisher eine isolierte Single-Page-Ansicht unter `/tools/maritime` ohne Nav,
+ohne Account-Bereich, ohne App-Registry-Anbindung an die neue Struktur – auf
+dieselben Shared-Bausteine wie DHL umgestellt. Es wurde **keine** neue
+Maritime-spezifische Navigations-/Account-/Switcher-Komponente gebaut –
+es handelt sich lediglich um Umverdrahtung, keine Neuimplementierung.
+
+### Ergebnis: unverändert wiederverwendet (0 Änderungen nötig)
+
+- `AppRegistry`-Infrastruktur (nur der `baseRoute`-Wert für `MARITIME` wurde
+  aktualisiert, die Struktur selbst blieb unverändert).
+- `AppContextService` (`getAvailableApps()`, `hasMultipleApps()`,
+  `getContexts()`) – funktioniert für ein GLOBAL-Entitlement (`storeId: null`)
+  ohne jede Anpassung.
+- `AppLauncherComponent` / `AppSwitcherComponent` – zeigen MARITIME als Karte
+  bzw. im Switcher an, sobald `AppContextService` es liefert. Keine
+  MARITIME-spezifische Fallunterscheidung im Code.
+- `AppAccountComponent` – von `MaritimeAccountComponent` 1:1 wiederverwendet
+  (analog zu `DhlAccountComponent`), ohne Label-Overrides.
+- `AppNavigationComponent` – von `MaritimeComponent` per
+  `<app-navigation [config]="navConfig">` eingebunden; es existiert **keine**
+  `MaritimeNavComponent`.
+- `AppAccessService.resolveAppEntryUrl()` / `getPrimaryAppHomeUrl()` – die
+  bestehende "1 Context → direkt, >1 Apps → Launcher"-Regel griff ohne
+  Sonderfall für MARITIME.
+
+### Ergebnis: eine legitime, kleine Erweiterung der Shared-Infrastruktur
+
+MARITIME ist die erste **GLOBAL**-scoped App (kein `storeId`/Context-Segment
+in der Route), während `resolveAppBasePath()`/`AppRouteConfig`
+(`core/utils/app-route.util.ts`) bis dahin implizit von einem
+STORE-scoped, parametrisierten Pfad (`/apps/{segment}/{contextId}/...`)
+ausgingen. Ergänzt wurden zwei optionale, abwärtskompatible Felder:
+
+- `scoped?: boolean` (Default `true`) – `false` bedeutet: die App hat keinen
+  Context/`storeId`, der Basispfad ist der literale `/apps/{appSegment}`.
+- `legacyBasePath?: string` – literale Legacy-Route (`/tools/maritime`), die
+  weiterhin als gültiger Alias erkannt wird.
+
+Für DHL (weiterhin `scoped: true`/Default) ändert sich dadurch nichts. Diese
+Erweiterung ist generisch (jede künftige GLOBAL-App kann sie nutzen), keine
+MARITIME-spezifische Sonderlogik.
+
+### Was bewusst MARITIME-spezifisch bleibt
+
+- Die gesamte Fachlogik in `maritime.component.ts` (AIS-Schiffs-Polling,
+  Hafenwechsel, Wetter, Schiffsdetails) – unverändert, unabhängig von
+  Navigation/Shell.
+- `MARITIME_NAV_CONFIG` (`features/tools/maritime/maritime-nav.config.ts`) –
+  reine Daten (Keys/Routen/Icons), keine neue Komponente.
+- Die Legacy-Route `/tools/maritime` bleibt aktiv (produktiv genutzt) und
+  zeigt weiterhin die Shop-Admin-Sidebar (`adminPathPrefixes` enthält
+  `/tools`, bewusst nicht angefasst – LEGACY-Verhalten). Die neue primäre
+  Route `/apps/maritime` ist **nicht** in `adminPathPrefixes` und zeigt daher
+  konsistent keine Shop-Sidebar (gleiches Muster wie beim DHL-Fix in
+  Abschnitt 2).
+
+### Verdikt
+
+Das Factory-Muster funktioniert mit einem zweiten echten Consumer: Eine neue
+App (auch mit abweichendem Scope) benötigt nur `AppKey` +
+`AppRegistry`-Eintrag + Route + `AppNavConfig` + Fachkomponenten – keine neue
+Sidebar-, Switcher-, Launcher- oder Account-Komponente. Die einzige nötige
+Änderung an gemeinsamer Infrastruktur (`scoped`/`legacyBasePath`) war eine
+kleine, rückwärtskompatible Generalisierung, keine App-spezifische
+Sonderlogik.
+
+## 7d. Weitere Reduktion von App-Hardcodings in `AppAccessService`
+
+Nach dem MARITIME-Architekturtest (7c) verblieben zwei Stellen mit einem
+Codepfad pro `AppKey`: `AppAccessService.classifyUrl()` (URL → App) und
+`AppAccessService.buildAppHomeUrl()` (App → Ziel-URL). Für **GLOBAL**-Apps
+(kein Context/`storeId`) wurden diese Stellen jetzt generalisiert:
+
+- `AppRegistryEntry` hat ein neues optionales Feld `legacyBasePath?: string`
+  (analog zu `AppRouteConfig.legacyBasePath` aus 7c) – die einzige zusätzliche
+  Metadaten-Angabe, die eine GLOBAL-App im `APP_REGISTRY` braucht, falls sie
+  eine produktiv genutzte Legacy-URL hat (z.B. MARITIME → `/tools/maritime`).
+- `classifyUrl()`: Der bisherige hardcodierte `if`-Block je GLOBAL-App
+  (MARITIME, ISSUE_ANALYSIS) wurde durch **eine** generische Schleife über
+  `APP_REGISTRY_ORDER` ersetzt: Für jede App mit `scope === 'GLOBAL'` wird
+  geprüft, ob der Pfad mit `baseRoute` oder `legacyBasePath` beginnt.
+- `buildAppHomeUrl()`: Für `scope === 'GLOBAL'`-Apps wird jetzt direkt
+  `registryEntry.baseRoute` zurückgegeben (keine literalen
+  Doppel-Angaben mehr wie zuvor bei MARITIME). Die `switch`-Anweisung mit
+  expliziten Fällen bleibt **nur** für STORE-scoped Apps (DHL, LOYALTY,
+  SHOP) bestehen, da deren URL-Formen historisch heterogen sind
+  (`/apps/dhl/:id` vs. `/stores/:id/loyalty` vs. `/stores/:id`/`/dashboard`)
+  und nicht ohne Risiko vereinheitlicht werden können.
+
+**Ergebnis:** Eine neue **GLOBAL**-App (z.B. `FLEET`) benötigt jetzt
+nachweislich **keine** Änderung mehr an `AppAccessService`,
+`AppContextService`, `AppLauncherComponent` oder `AppSwitcherComponent` –
+nur:
+
+1. Backend: `AppKey`, Controller + `@RequiresApp`
+2. Frontend: `APP_REGISTRY`-Eintrag (inkl. optional `legacyBasePath`), Route,
+   `AppNavConfig`, Fachkomponenten, i18n
+
+## 7e. Web/iOS/Android-Strategie pro App (Architekturtest, Pilot: DHL)
+
+**Fragestellung:** Können einzelne Apps (DHL, MARITIME, ...) später eigene
+Web-/iOS-/Android-Clients bekommen, während Backend, Auth und
+App-Entitlements gemeinsam bleiben – ohne das laufende `storeFrontend`
+umzubauen? Reine Analyse-/Entscheidungsphase, **keine Code-Änderung**.
+
+### Ist-Zustand
+
+- Ein einziges Angular-CLI-Workspace `storeFrontend/` (`angular.json`:
+  1 Projekt, `root: ""`, kein Nx/Monorepo-Tooling).
+- **Kein** Capacitor/Ionic/iOS/Android existiert bisher im Repo (`package.json`
+  ohne `@capacitor/*`, keine `ios/`/`android/`-Ordner, kein
+  `capacitor.config.ts`). Es existiert lediglich ein bereits vorhandenes,
+  noch nicht umgesetztes Planungsdokument (`plan-mobileAppStrategy.prompt.md`)
+  für eine PWA-/Capacitor-Strategie der **gesamten** Plattform (Storefront),
+  nicht pro Fach-App – bestätigt dieselbe technische Grundrichtung
+  ("Capacitor wrapt bestehenden Angular-Build 1:1").
+- DHL ist bereits sauber isoliert unter `features/dhl/**`, vollständig
+  lazy-loaded (`import('./features/dhl/dhl.component')` in `app.routes.ts`),
+  nutzt ausschließlich Shared Core (`AuthService`, `AppContextService`,
+  `AppNavigationComponent`, `AppAccountComponent`, `AppRegistry`) – guter
+  Pilot-Kandidat, da bereits entkoppelt.
+- `core/models/*` (u.a. `DhlZone`, `SlotStatus`, `DeliverySettings`, ...) sind
+  **reine TS-Interfaces/Enums ohne Angular-Abhängigkeit** – bereits
+  framework-agnostisch, portierbar.
+- `AppContextService`/`AppAccessService`/`AppRegistry` sind nur dünne
+  `@Injectable`-Hüllen um reine Datentransformation (`AppEntitlement[] →
+  AppContext[]`), keine Angular-spezifische Logik im Kern.
+
+### Variante A – Capacitor im bestehenden `storeFrontend`
+
+```
+storeFrontend/
+├── src        (unverändert, alle Apps inkl. DHL/MARITIME)
+├── ios        (neu, Capacitor-generiert)
+└── android    (neu, Capacitor-generiert)
+```
+
+- ✅ Kein Strukturumbau, kein Code-Split, 1:1 derselbe Build/dieselbe Bundles.
+- ✅ Schnellster Pilot (Tage, nicht Wochen) – deckt sich mit
+  `plan-mobileAppStrategy.prompt.md`.
+- ❌ Ein native Client enthält **immer die gesamte Plattform** (Shop, DHL,
+  Loyalty, Maritime, ...) – nicht geeignet, falls DHL/Maritime als **eigene,
+  einzeln im App Store gelistete** Apps erscheinen sollen (unterschiedliches
+  Icon/Name/Bundle-ID/Startroute pro App wäre nur über mehrere
+  Capacitor-Configs mit demselben Build lösbar, nicht sauber pro App).
+- ❌ Bundle-Größe wächst mit jeder neuen App (kein Tree-Shaking pro
+  Fach-App), unabhängig davon, ob der Nutzer nur DHL braucht.
+
+### Variante B – App-spezifische Client-Verzeichnisse
+
+```
+apps/
+├── dhl/{web,ios,android}
+├── maritime/{web,ios,android}
+```
+
+- ✅ Saubere Produkt-/Store-Trennung pro App (eigenes Branding, eigene
+  Store-Listing, unabhängige Release-Zyklen).
+- ❌ Erfordert entweder (a) Code-Duplikation (verboten) oder (b) echtes
+  Monorepo-Tooling (npm/yarn-Workspaces oder Nx) + Extraktion von
+  Shared-Code in eigene Packages – **das ist der Big-Bang**, den diese Phase
+  explizit vermeiden soll.
+- ❌ `storeFrontend` müsste umgezogen/aufgeteilt werden, um Duplikation zu
+  vermeiden → widerspricht "storeFrontend nicht verschieben/brechen".
+
+### Empfehlung: Hybrid, zweistufig
+
+**Jetzt (risikoarmer Pilot, DHL):** Variante A – Capacitor **direkt** in
+`storeFrontend` integrieren (wie in `plan-mobileAppStrategy.prompt.md`
+skizziert). Der native Shell-Client lädt beim Start optional eine
+DHL-spezifische Startroute (`/apps/dhl/:storeId`) statt der
+Storefront-Landingpage – **ein** Capacitor-Projekt, **eine** Bundle, kein
+neuer Ordnerbaum, kein Verschieben bestehender Dateien.
+
+**Später (nur bei echtem Bedarf für eigenständige App-Store-Präsenz von
+DHL/MARITIME):** Innerhalb desselben Angular-Workspace ein **zweites,
+schlankes Angular-Projekt** ergänzen (`ng generate application dhl-mobile` –
+Angular-CLI unterstützt mehrere Projekte in einem Workspace, ohne das
+bestehende Default-Projekt zu verändern). Dieses Projekt bindet nur
+DHL-Routen + den bereits vorhandenen, unveränderten `core`/`shared`-Code ein
+(via TypeScript-Pfade, kein Kopieren). Erst wenn mehrere solcher
+Mini-Projekte etabliert sind, lohnt sich die Extraktion von
+`AppRegistry`/`AppContextService`/`AppNavConfig`/Models in eine echte
+Angular-Library (`ng generate library shared-app-factory`) – das ist
+bewusst **kein** Teil dieser Phase.
+
+### Shared vs. app-spezifisch vs. client-spezifisch
+
+| Ebene | Beispiel | Wiederverwendbar für Web/iOS/Android? |
+|---|---|---|
+| Backend/Auth/Entitlements | JWT, `@RequiresApp`, `AppAccessInterceptor` | JA – unverändert, REST-Vertrag ist client-agnostisch |
+| Shared Models | `core/models/*.ts` (reine Interfaces/Enums) | JA – 1:1, keine Angular-Abhängigkeit |
+| Shared Factory-Logik | `AppRegistry`, `AppContextService`-Kernlogik, `AppNavConfig` | JA – Kernlogik ist bereits reine Datentransformation, nur dünn in `@Injectable` gekapselt |
+| Shared UI (Capacitor/Web) | `AppNavigationComponent`, `AppAccountComponent`, `AppSwitcherComponent` | JA für Web + Capacitor (beide sind Angular/DOM); NICHT wiederverwendbar für "echtes" natives iOS/Android (Swift/Kotlin) |
+| Fachkomponenten | `features/dhl/**` | JA für Web + Capacitor; bei echtem Nativ-Client müsste die UI-Schicht neu gebaut werden (Businesslogik/API-Calls über REST bleiben gleich) |
+| Client-spezifisch | Secure Storage statt `localStorage`, Kamera/Push/Deep-Links, Subdomain-Erkennung (`SubdomainService` → `PlatformService`) | NEIN – pro Client-Typ eigene Implementierung nötig |
+
+**Wichtig:** Capacitor-Apps sind technisch Angular-Web-Apps in einer
+nativen WebView – UI-Komponenten sind zwischen Web und Capacitor **1:1**
+wiederverwendbar. Nur bei "echtem" nativen iOS/Android (Swift/Kotlin, kein
+Capacitor) wäre die komplette UI-Schicht ohnehin neu zu bauen; Backend,
+Auth, Entitlements, REST-Verträge und Models blieben identisch nutzbar.
+
+### Migrationsschritte ohne Funktionsverlust (nur DHL-Pilot, noch nicht ausgeführt)
+
+1. `@capacitor/core`, `@capacitor/cli` in `storeFrontend` installieren,
+   `npx cap add ios` / `npx cap add android` (rein additiv, kein bestehender
+   Code betroffen).
+2. `PlatformService` (Web vs. Native) ergänzen – bereits in
+   `plan-mobileAppStrategy.prompt.md` skizziert, deckt sich mit dieser Phase.
+3. `localStorage` → Secure-Storage-Plugin nur für den nativen Kontext
+   (Web-Verhalten unverändert).
+4. Optionale native Startroute auf `/apps/dhl/:storeId` (oder generisch: erste
+   verfügbare App via `AppAccessService.getPrimaryAppHomeUrl()` – bereits
+   vorhanden, keine neue Logik nötig).
+5. Erst danach, bei Bedarf: zweites Angular-Projekt (`dhl-mobile`) für einen
+   eigenständigen App-Store-Auftritt (Phase 2, separat zu entscheiden).
+
+Keine DB-/Backend-/JWT-/Deployment-Änderung in dieser Phase; keine Datei
+wurde verschoben oder umgebaut.
+
+## 7f. DHL Mobile-Factory-Pilot – Inventar & Vorbereitung (M0)
+
+Fortsetzung von 7e: konkrete Bestandsaufnahme für den DHL-Piloten
+(Web/PWA/iOS/Android), **keine Code-Änderung** in dieser Phase.
+
+### Mobile-Readiness heute
+
+- `PlatformService` (`core/services/platform.service.ts`) **existiert
+  bereits** (aus `plan-mobileAppStrategy.prompt.md` Schritt 2.1 umgesetzt):
+  liefert `isNative`, `isMobile`, `isIos`, `isAndroid`, `isRtl`,
+  `getPlatformName()`. Erkennt Capacitor über `window.Capacitor?.isNativePlatform()`.
+  **Unterscheidet aber noch nicht** explizit `WEB` vs. `PWA` (installierter
+  Homescreen-Modus) – nur `nativ vs. nicht-nativ`.
+- DHL-Navigation (`DHL_NAV_CONFIG` + `AppNavigationComponent`) ist bereits
+  "mobile-ready": reine Konfiguration, keine Hover-only-Interaktionen, kein
+  `window.location`/`localStorage`-Zugriff im Navigations-Code selbst.
+- `AppRegistry`/`AppContextService`/`AppAccessService` sind bereits
+  plattformunabhängig (siehe 7e) – keine Anpassung für Mobile nötig.
+- DHL-Fachkomponenten (`features/dhl/**`) verwenden **keinen** direkten
+  `window.location`/Subdomain-Zugriff – DHL läuft ausschließlich über den
+  Routen-Parameter `/apps/dhl/:storeId`, **nicht** über Subdomain-Erkennung.
+  → `SubdomainService`/`isStorefrontSubdomain()` ist für den DHL-Flow
+  **irrelevant** (nur für Storefront-Subdomains relevant).
+
+### Web-only Abhängigkeiten (Inventar, nicht angefasst)
+
+| Bereich | Fundstellen | Relevanz für DHL-Pilot |
+|---|---|---|
+| `window.location`/Subdomain | `subdomain.service.ts`, `store-context.service.ts`, `app.routes.ts`, `storefront/**` | **Nicht** DHL-relevant (nur Storefront/Shop) |
+| `localStorage` (JWT/User) | `auth.service.ts` (~10 Stellen: `auth_token`, `currentUser`, `cart_session_id`) | **DHL-relevant** – Login/Session betrifft jede App |
+| `localStorage` (sonstige) | 25 weitere Dateien (Cart, Checkout, Settings, Onboarding, DHL-Scan-Audio-Präferenz, ...) | teils DHL-relevant (`dhl-warehouse-plan.component.ts`, `dhl-scan-audio.service.ts` – lokale UI-Präferenzen, unkritisch) |
+| Kamera/Scanner (`getUserMedia`) | `barcode-input.component.ts`, `mhd-scanner-test.component.ts` – **wird von DHL genutzt** (`dhl-pickup-parcel`, `dhl-store-parcel`) | **DHL-relevant**, hohe Priorität (Paket-Scan ist Kernfunktion) |
+| File Upload (`<input type="file">`) | `image-upload.component.ts` | Nicht Kernbestandteil des DHL-Flows |
+| Push Notifications | nicht implementiert (kein Backend-Endpoint, kein SW-Push-Code) | Kein Blocker für M1-Pilot |
+| Externe Links (`window.open`, `wa.me`) | `whatsapp-widget`, diverse Storefront-Komponenten | Nicht DHL-relevant |
+| Deep Links | nicht implementiert | Für M1 nicht erforderlich (Start direkt in App, kein externer Deep-Link-Eingang nötig) |
+
+### Notwendige Adapter (nur Interfaces/Wrapper, keine Parallelarchitektur)
+
+| Adapter | Zweck | Verhält sich wie |
+|---|---|---|
+| `StorageAdapter` | `get/set/remove` für Token + User – Web: `localStorage` (unverändert), iOS/Android: Secure Storage/Keychain/Keystore | Wird **innerhalb** von `AuthService` verwendet, ersetzt dort die direkten `localStorage`-Aufrufe – **kein** `MobileAuthService` |
+| `PlatformService` (Erweiterung, später) | `WEB \| PWA \| CAPACITOR_IOS \| CAPACITOR_ANDROID` statt nur `isNative` | Bestehender Service wird erweitert, nicht ersetzt |
+| `CameraAdapter` | Barcode-Scan via `@capacitor/camera`/Barcode-Scanner-Plugin auf Native, `getUserMedia` auf Web | Wird von `barcode-input.component.ts` intern genutzt, Komponenten-API bleibt gleich |
+| `DeepLinkAdapter` | Optional für später: externe Links im nativen Kontext über `@capacitor/browser` statt In-App-Navigation öffnen | Nicht für M1 nötig |
+| `PushAdapter` | Optional, erst wenn Push-Feature existiert | Nicht für M1 nötig |
+
+**Bewusst nicht gebaut:** `MobileAuthService`, `MobileEntitlementService`,
+`DhlMobileAccessService`, `MobileAppRegistry` – `AuthService`,
+`AppContextService`, `AppRegistry`, `AppAccessService` bleiben die einzige
+Quelle, nur `StorageAdapter`/`PlatformService`/`CameraAdapter` sind
+Plattform-Adapter darunter.
+
+### Empfohlene Capacitor-Struktur (noch nicht angelegt)
+
+```
+storeFrontend/
+├── src/                 (unverändert)
+├── capacitor.config.ts  (neu, additiv)
+├── ios/                 (später via `npx cap add ios`)
+└── android/             (später via `npx cap add android`)
+```
+
+Offene Entscheidungen vor `npx cap add ...` (bewusst noch nicht getroffen):
+Capacitor-Version (7.x-Linie, kompatibel mit Node 26/Angular 20 – konkrete
+Version erst bei Umsetzung final prüfen), Bundle-IDs (`ma.markt.app` o.ä.),
+App-Name/Icon je Plattform, `capacitor.config.ts`-`server.url` bzw.
+API-Base-URL (`environment.apiUrl` bleibt Backend-Origin, keine Änderung),
+CORS/CSP-Freigabe für `capacitor://localhost`/`https://localhost`,
+Secure-Storage-Plugin-Wahl.
+
+### DHL-Pilot-Startflow (mobil)
+
+```
+App-Start (Capacitor)
+  → AuthService (bestehend, ggf. via StorageAdapter)
+  → AppContextService.getAvailableApps() (bestehend, unverändert)
+  → AppAccessService.getPrimaryAppHomeUrl() (bestehend, unverändert)
+      0 Apps      → /apps/no-access
+      genau DHL   → resolveAppEntryUrl(DHL)
+                      1 Context  → /apps/dhl/<contextId>
+                      >1 Context → /apps/dhl (Context-Auswahl, generisch)
+      >1 Apps     → /apps (Launcher)
+```
+
+Keine feste Store-ID, kein DHL-Sonderpfad – **exakt derselbe** Redirect-Code
+wie im Web (kein neuer Mobile-Flow, nur ggf. eine andere initiale Route in
+`capacitor.config.ts`/`index.html`, falls die native App ausschließlich für
+DHL vertrieben werden soll).
+
+### Shared vs. native-spezifisch (Kurzfassung, Details in 7e)
+
+Shared (unverändert nutzbar): `AuthService`, `AppContextService`,
+`AppRegistry`, `AppAccessService`, `AppNavigationComponent`,
+`AppAccountComponent`, `AppSwitcherComponent`, `DHL_NAV_CONFIG`,
+DHL-Fachkomponenten, alle `core/models/*`.
+Native-spezifisch (nur Adapter): Storage, Kamera-Zugriff im Barcode-Scan,
+`PlatformService`-Erweiterung, `capacitor.config.ts`, `ios/`/`android/`.
+
+### Minimale Phase M1 (lokaler Android/iOS-Build, Vorschlag)
+
+1. `@capacitor/core` + `@capacitor/cli` installieren, `capacitor.config.ts`
+   anlegen (additiv, kein Bestandscode betroffen).
+2. `StorageAdapter`-Interface einführen; `AuthService` intern darauf
+   umstellen (Web-Implementierung = 1:1 heutiges `localStorage`-Verhalten,
+   **kein** Verhaltensunterschied im Web).
+3. `PlatformService` um `WEB | PWA | CAPACITOR_IOS | CAPACITOR_ANDROID`
+   erweitern (rein additiv, bestehende `isNative`/`isMobile`-Getter bleiben).
+4. `npx cap add android` (zuerst nur Android, geringeres Setup-Risiko als
+   iOS/Xcode) + lokaler Testbuild, Start-Route = bestehender
+   `getPrimaryAppHomeUrl()`-Flow.
+5. Barcode-Scan in `barcode-input.component.ts` hinter `CameraAdapter`
+   kapseln (Web-Pfad unverändert `getUserMedia`).
+6. Erst danach: `npx cap add ios` (Xcode/Signing-Aufwand separat planen).
+
+### Risiken
+
+- **Auth-Storage-Umstellung** betrifft ausschließlich `auth.service.ts`
+  (StorageAdapter), **nicht** die 25 anderen `localStorage`-Stellen – diese
+  bleiben bewusst unangetastet (kein Breaking-Change-Risiko dort).
+- **Barcode-Scan** ist eine DHL-Kernfunktion – `getUserMedia` funktioniert in
+  Capacitor-WebViews grundsätzlich, aber Kamera-Berechtigungen
+  (`Info.plist`/`AndroidManifest.xml`) müssen nativ ergänzt werden, sonst
+  Blocker für den Piloten.
+- **CORS/CSP**: Backend muss `capacitor://localhost` (iOS) und
+  `https://localhost` (Android) als Origin zulassen, sonst schlägt jeder
+  API-Call fehl – reine Konfigurationsänderung, kein Architektur-Thema,
+  aber vor M1 zu klären.
+- **Secure-Storage-Plugin-Wahl** (z.B. `@capacitor-community/secure-storage`
+  vs. `@capacitor/preferences`) beeinflusst die `StorageAdapter`-Signatur –
+  vor Implementierung entscheiden, um Rework zu vermeiden.
+- **iOS-Signing/Provisioning** ist unabhängig von dieser Architektur und
+  erfordert Apple-Developer-Account-Setup – organisatorisches, kein
+  Code-Risiko.
+
+Keine DB-/Backend-/JWT-/Deployment-Änderung; kein `npx cap add`
+ausgeführt; keine vollständige Mobile-App erzeugt.
+
+## 7g. Mobile-Factory-Pilot M1 – Status (implementiert)
+
+Fortsetzung von 7f. In M1 wurden **ausschließlich Adapter-Grenzen**
+eingeführt – `AuthService`, `AppRegistry`, `AppContextService`,
+`AppAccessService` bleiben unverändert die zentrale Quelle. Es wurde
+**keine** `MobileAuthService`/`MobileEntitlementService`/
+`DhlMobileAccessService`/`MobileAppRegistry` gebaut. Kein `npx cap add
+ios/android` ausgeführt, keine DB-/Backend-/JWT-/Deployment-Änderung.
+
+### 1. Storage-Abstraktion (umgesetzt)
+
+Neu: `core/services/storage-adapter.ts` – abstrakte Klasse `StorageAdapter`
+(`get`/`set`/`remove`) + `WebLocalStorageAdapter` (Default-Implementierung,
+1:1 bisheriges `localStorage`-Verhalten). Provider-Bindung in
+`app.config.ts`: `{ provide: StorageAdapter, useClass: WebLocalStorageAdapter }`.
+
+`AuthService` injiziert jetzt `StorageAdapter` statt `localStorage` direkt
+zu verwenden. **Entfernte direkte `localStorage`-Zugriffe in
+`auth.service.ts`** (alle 9 produktiven Aufrufe, nur Kommentare/Logs
+erwähnen `localStorage` noch als Begriff):
+
+| Stelle | Vorher | Nachher |
+|---|---|---|
+| Konstruktor (User laden) | `localStorage.getItem('currentUser')` | `this.storage.get('currentUser')` |
+| `clearSession()` | `localStorage.removeItem('auth_token'/'currentUser'/'cart_session_id')` | `this.storage.remove(...)` (3x) |
+| `validateTokenWithBackend()` | `localStorage.setItem('currentUser', ...)` | `this.storage.set('currentUser', ...)` |
+| `login()` | `localStorage.setItem('auth_token'/'currentUser', ...)` | `this.storage.set(...)` (2x) |
+| `logout()` | `localStorage.removeItem('auth_token'/'currentUser'/'cart_session_id')` | `this.storage.remove(...)` (3x) |
+| `isAuthenticated()` | `localStorage.getItem('currentUser')` | `this.storage.get('currentUser')` |
+| `setAuthFromStorage()` | `localStorage.getItem('currentUser')` | `this.storage.get('currentUser')` |
+| `getToken()` | `localStorage.getItem('auth_token')` | `this.storage.get('auth_token')` |
+| `reloadCurrentUser()` | `localStorage.setItem('currentUser', ...)` | `this.storage.set('currentUser', ...)` |
+
+`AuthInterceptor` benötigte **keine** Änderung – er ruft bereits
+`authService.getToken()` auf (keine eigene `localStorage`-Nutzung).
+
+**Bewusst nicht angefasst:** Die 25 anderen Dateien mit direktem
+`localStorage`-Zugriff (Cart, Checkout, Settings, Onboarding,
+`dhl-scan-audio.service.ts` u.a.) – das sind lokale UI-Präferenzen, kein
+Teil des Auth-/Entitlement-Flows, Änderung dort war nicht Teil von M1
+(Risiko/Aufwand vs. Nutzen für den DHL-Piloten aktuell nicht gerechtfertigt).
+
+### 2. PlatformService (erweitert)
+
+`core/services/platform.service.ts`: neues `PlatformType`-Enum (`WEB`,
+`PWA`, `CAPACITOR_IOS`, `CAPACITOR_ANDROID`) + `readonly type`-Property.
+`PWA` wird über `matchMedia('(display-mode: standalone)')` /
+`navigator.standalone` (iOS) erkannt. Bestehende Getter (`isNative`,
+`isMobile`, `isIos`, `isAndroid`, `isRtl`, `getPlatformName()`) bleiben
+**unverändert** erhalten (rein additive Erweiterung, kein Breaking Change
+für bestehende Nutzer des Service).
+
+### 3. Kamera-/Barcode-Adapter (Grenze geschaffen, Web-Verhalten unverändert)
+
+Neu: `core/services/camera-adapter.ts` – abstrakte Klasse `CameraAdapter`
+mit `requestBackCameraStream()` + `WebCameraAdapter` (kapselt exakt den
+bisherigen `getUserMedia({ video: { facingMode: { ideal: 'environment' } } })`-Aufruf).
+Provider-Bindung in `app.config.ts`.
+
+`barcode-input.component.ts`: "Strategy 2" (direkte `getUserMedia`-Anfrage
+nach der Rückkamera) ruft jetzt `this.cameraAdapter.requestBackCameraStream()`
+auf statt `navigator.mediaDevices.getUserMedia(...)` direkt. Ergebnis
+(Stream + `deviceId`) und nachgelagerte Logik (Stream stoppen, `deviceId`
+merken) sind unverändert – **funktional identisch** zum bisherigen Web-Code.
+
+**Bewusst nicht angefasst / weiterhin web-spezifisch:**
+- Die ZXing-Dekodierung (`BrowserMultiFormatReader.decodeFromVideoDevice(...)`)
+  bleibt vollständig Web-spezifisch – das ist die eigentliche
+  Barcode-Erkennung, kein reiner Kamera-Zugriff, und wird bewusst NICHT in
+  M1 abstrahiert (zu groß für "nur Adapter-Grenze schaffen").
+- `codeReader.listVideoInputDevices()` (Strategy 1/3/4, Geräte-Enumeration)
+  bleibt direkter Web-API-Aufruf.
+- `mhd-scanner-test.component.ts` verwendet weiterhin direktes
+  `getUserMedia` (nicht Teil des DHL-Piloten, nicht angefasst).
+
+### 4. Mobile Entry Flow (verifiziert, keine Änderung nötig)
+
+`AppAccessService.getPrimaryAppHomeUrl()` (unverändert seit 7b/7d) deckt den
+geforderten Flow bereits vollständig generisch ab:
+
+```
+App-Start → AuthService (jetzt via StorageAdapter)
+          → AppContextService.getAvailableApps()
+          → AppAccessService.getPrimaryAppHomeUrl()
+              0 Apps  → /apps/no-access
+              1 App   → resolveAppEntryUrl(app)  (z.B. DHL → /apps/dhl/<contextId>,
+                                                    Maritime → /apps/maritime)
+              >1 Apps → /apps (Launcher)
+```
+
+Keine feste Store-ID, kein DHL-Sonderpfad – identisch zu Web. Für eine
+später eigenständig vertriebene DHL-App genügt eine andere Startroute in
+`index.html`/`capacitor.config.ts`, **keine** Code-Änderung an
+`AppAccessService`/`AppContextService`.
+
+### 5. Capacitor-Plattformordner
+
+**Nicht erzeugt** (wie gefordert) – kein `npx cap add android`/`ios`, kein
+`capacitor.config.ts` in dieser Phase.
+
+### Validierung
+
+- Production-Build: **erfolgreich** (`npm run build -- --configuration
+  production`, Exit 0), keine neuen Fehler.
+- Web-Login/-Logout/Token-Speicherung: Verhalten unverändert, da
+  `WebLocalStorageAdapter` 1:1 `localStorage` nutzt (nur Umweg über eine
+  zusätzliche Indirektionsebene, keine Logikänderung).
+- App-Launcher/Entitlements: unverändert, da `AppContextService`/
+  `AppAccessService`/`AppRegistry` nicht angefasst wurden.
+- DHL-Barcode-Scan im Web: funktional unverändert (siehe oben, identische
+  `getUserMedia`-Parameter/-Reihenfolge, nur hinter `CameraAdapter` gekapselt).
+
+### Was für M2 noch fehlt, bevor `npx cap add android` sicher ist
+
+1. Entscheidung + Implementierung einer echten Secure-Storage-Implementierung
+   (`CapacitorSecureStorageAdapter`, z.B. `@capacitor/preferences` oder
+   `@capacitor-community/secure-storage`) als zweiter `StorageAdapter`.
+2. `@capacitor/core`/`@capacitor/cli` installieren, `capacitor.config.ts`
+   anlegen (Bundle-ID, App-Name, `server.url`/API-Base-URL klären).
+3. CORS/CSP-Freigabe für `capacitor://localhost` (iOS) /
+   `https://localhost` (Android) auf Backend-Seite prüfen (keine
+   Architektur-, nur Konfigurationsänderung).
+4. Kamera-Berechtigungen (`Info.plist`/`AndroidManifest.xml`) für den
+   nativen Container ergänzen, sonst schlägt `CameraAdapter`s künftige
+   native Implementierung fehl.
+5. Entscheidung, ob/wann `codeReader`/ZXing-Dekodierung ebenfalls hinter
+   einen `ScannerAdapter` wandert (für einen echten nativen
+   Scanner-Plugin-Pfad) – bewusst nicht Teil von M1.
+6. Erst danach `npx cap add android` (zuerst Android, dann iOS).
+
+## 7h. Mobile-Factory-Pilot M2 – Android Capacitor (Status: umgesetzt, Build lokal blockiert)
+
+Ziel dieser Phase: `storeFrontend` erstmals als Android-App startbar machen,
+**ohne** zweite DHL-Codebasis und ohne neue Auth-/Entitlement-/Factory-
+Strukturen. Ergebnis: Capacitor ist minimal integriert, das Android-Projekt
+wurde erzeugt und synchronisiert; ein echter Gradle-Build ist in dieser
+Sandbox mangels Android SDK und Internetzugriff (Gradle-Distribution) nicht
+möglich – siehe „Verbleibende Blocker" unten.
+
+### 0. Versionscheck (vor Installation)
+
+| Tool | Version | Bewertung |
+|---|---|---|
+| Node | 26.7.0 | von Angular CLI als "Unsupported" markiert (erfüllt aber `engines.node: ^20.19 \|\| ^22.12 \|\| >=24.0.0`); bereits vor M2 produktiv im Einsatz, kein neues Risiko |
+| Angular CLI | 20.3.34 | unverändert |
+| TypeScript | ~5.8.0 | unverändert |
+| Capacitor | **8.5.2** (`@capacitor/core`, `@capacitor/android`, `@capacitor/cli`, exakt gepinnt, kein `^`) | `engines.node: >=22.0.0` ✅ erfüllt; keine Angular-Versionsbindung (Capacitor ist Framework-agnostisch); Peer-Dep `@capacitor/android` → `@capacitor/core@^8.5.0` ✅ |
+| Java (Gradle-Build) | OpenJDK 21 (Zulu) | vorhanden, kompatibel mit Android Gradle Plugin 8.x |
+
+Entscheidung: **8.5.2 exakt gepinnt** statt `latest`-Tag, um reproduzierbare
+Builds sicherzustellen (Capacitor 8 war zum Zeitpunkt der Prüfung die aktuell
+unterstützte Major-Linie; ein automatisches `latest` hätte bei künftigen
+`npm install` unbemerkt eine neue Major-Version ziehen können).
+
+### 1. Neue Dateien/Ordner
+
+```
+storeFrontend/
+├── capacitor.config.ts        (neu)
+└── android/                   (neu, von `npx cap add android` generiert)
+    ├── app/
+    │   ├── src/main/AndroidManifest.xml   (CAMERA-Permission ergänzt, siehe unten)
+    │   └── src/main/assets/public/…       (kopierte Web-Assets, git-ignored)
+    ├── build.gradle, settings.gradle, gradlew(.bat), gradle/…
+    └── .gitignore  (von Capacitor generiert; build/, local.properties,
+                     app/src/main/assets/public etc. bereits ausgeschlossen)
+```
+
+`package.json` erhielt zwei neue Hilfs-Skripte (kein Verhalten geändert):
+`cap:sync:android` (Build + `cap sync android`), `cap:open:android`.
+
+`src/**` wurde **nicht** verändert außer den bereits in M1 gemachten
+Adapter-Anpassungen; kein zweites Angular-Projekt, kein Ordner-Split.
+
+### 2. App-Identität (bewusste Entscheidung, dokumentiert)
+
+```ts
+appId: 'ma.markt.app'
+appName: 'markt.ma'
+```
+
+**Neutral gewählt, NICHT DHL-spezifisch.** Begründung: Ob langfristig eine
+einzige markt.ma-Container-App (ein Client, viele Apps per Entitlement) oder
+separate Store-Einträge pro Fach-App (DHL, MARITIME, …) veröffentlicht
+werden, ist eine Produkt-/Store-Entscheidung, die noch nicht getroffen wurde.
+Eine DHL-Bundle-ID jetzt hart zu verdrahten hätte genau die Parallel-
+architektur erzeugt, die die Factory vermeiden soll. Der App-Factory-Flow
+(Login → Entitlements → 1 App? direkt / mehrere Apps? `/apps`) entscheidet
+zur Laufzeit, welche App angezeigt wird – unabhängig von der nativen
+App-Identität. Sollte später „eine App pro Store-Veröffentlichung" gewünscht
+sein, ändert sich nur `appId`/`appName` in `capacitor.config.ts` – keine
+Code-Änderung in Auth/Registry/Navigation nötig.
+
+### 3. API-Verbindung / CORS
+
+- `environment.prod.ts.apiUrl` zeigt bereits unverändert auf
+  `https://api.markt.ma/api` (kein `localhost` in Prod-Config) – der
+  Android-Build nutzt automatisch dieselbe Prod-API wie Web.
+- `capacitor.config.ts` setzt **kein** `server.url`; die App lädt ihre
+  Assets aus dem gebundelten `webDir`, alle HTTP-Aufrufe laufen über
+  `HttpClient` gegen `environment.apiUrl`, nicht gegen den Capacitor-Origin.
+- **Heutige CORS-Regel** (`WebConfig.corsConfigurationSource()`):
+  `http(s)://localhost:*`, `http(s)://*.localhost:*`, `https://markt.ma`,
+  `https://*.markt.ma`, `https://claude.ai`.
+- **Vom Android-WebView benötigter Origin:** Mit `server.androidScheme:
+  'https'` (Default, so gesetzt) sendet Capacitor auf Android den Origin
+  **`https://localhost`** (ohne Port). Die bestehende Regel
+  `https://localhost:*` verlangt einen Port-Bestandteil nach dem Doppelpunkt
+  und matcht `https://localhost` (ohne Port) **nicht** zuverlässig.
+- **Minimale, sichere Änderung (empfohlen, noch NICHT vorgenommen):**
+  genau einen zusätzlichen Origin-Pattern-Eintrag `"https://localhost"`
+  (ohne Wildcard-Port) in `WebConfig.java` ergänzen. Das ist eine
+  Ein-Zeilen-Erweiterung einer bereits sehr permissiven Whitelist (localhost
+  ist schon heute für alle Ports erlaubt); sie erweitert keine neue Domain,
+  sondern schließt nur die exakte Capacitor-Android-Origin-Form ein. Diese
+  Backend-Änderung wurde **bewusst nicht automatisch vorgenommen** (Vorgabe:
+  „Backend-Änderung nur nach klarer Begründung, nicht blind"), sondern hier
+  nur konkret benannt – Umsetzung nach Freigabe in `WebConfig.java`.
+
+### 4. Secure Storage – Analyse statt Hack
+
+`StorageAdapter` (M1) ist bewusst **synchron** (`get/set/remove` geben
+`string | null` bzw. `void` direkt zurück), weil `AuthService` heute an
+mehreren Stellen synchron darauf zugreift (Konstruktor, `isAuthenticated()`,
+`getToken()` in Guards/Interceptor-Hot-Path).
+
+Recherchierte, aktiv gepflegte Kandidaten für native Secure Storage:
+
+| Plugin | Aktualität | Capacitor-8-kompatibel | API |
+|---|---|---|---|
+| `@aparajita/capacitor-secure-storage` | v8.0.0, zuletzt 2026-02 aktualisiert | ✅ (Versionslinie folgt Capacitor-Major) | **nur Promise-basiert** (Keychain/Keystore-Zugriff ist zwingend asynchron) |
+| `capacitor-secure-storage-plugin` | zuletzt 2026-01 aktualisiert | ✅ (`peerDependencies: "@capacitor/core": ">=8.0.0"`) | ebenfalls Promise-basiert |
+
+**Ergebnis: beide brauchbaren Optionen sind zwingend asynchron** – native
+Keychain/Keystore-Zugriffe können nicht synchron über die Capacitor-Bridge
+laufen. Ein `CapacitorSecureStorageAdapter` hinter dem heutigen synchronen
+`StorageAdapter`-Interface zu verstecken, würde entweder (a) einen
+synchronen Cache mit asynchronem Nachladen erfordern (Race-Conditions beim
+App-Start, bevor der Cache gefüllt ist) oder (b) `get()` mit einem
+Dummy-Wert zurückgeben – beides Hacks mit Sicherheits-/Korrektheitsrisiko.
+
+**Getroffene Entscheidung für M2:** Secure Storage **nicht** implementiert.
+Android nutzt in M2 weiterhin `WebLocalStorageAdapter` (WebView-internes
+`localStorage`, App-privat isoliert vom System-Browser, aber nicht
+Keystore-verschlüsselt).
+
+**Vorgeschlagene, saubere Migration für M3** (nicht jetzt umgesetzt):
+1. `StorageAdapter`-Interface auf `Promise<string | null>` /
+   `Promise<void>` umstellen (Breaking Change, aber lokal begrenzt).
+2. Alle `AuthService`-Aufrufstellen (9 Stellen, siehe §7g) sowie
+   `AuthInterceptor`/Guards, die synchron `getToken()` erwarten, auf
+   `await`/RxJS anpassen (App-Start bereits async via `APP_INITIALIZER`
+   möglich – prüfen).
+3. Erst danach `CapacitorSecureStorageAdapter` mit
+   `@aparajita/capacitor-secure-storage@8.x` (Keychain/Keystore) als
+   zusätzlichen Provider registrieren, ausgewählt per `PlatformService.type`.
+4. Migrations-Fallback: beim ersten Start unter Capacitor vorhandene
+   `localStorage`-Werte einmalig in Secure Storage übernehmen, dann löschen.
+
+### 5. Kamera / Barcode (M2a)
+
+- `WebCameraAdapter` (M1) läuft unverändert im Android-WebView – Capacitor
+  nutzt ein System-WebView (Chromium-basiert), das `getUserMedia` unterstützt.
+- `AndroidManifest.xml` wurde ergänzt um `android.permission.CAMERA` sowie
+  optionale `android.hardware.camera`/`camera.autofocus`-Features
+  (`required="false"`, damit die App auch auf Geräten ohne Kamera installierbar
+  bleibt). Ohne diese Permission verweigert die WebView jede
+  Kamera-Anfrage unabhängig von einer Laufzeit-Dialogabfrage.
+- Capacitors Bridge (`WebViewClient`/`onPermissionRequest`) übernimmt das
+  Weiterreichen der Laufzeit-Berechtigungsabfrage an das Android-System,
+  sofern die Manifest-Permission gesetzt ist – keine Zusatzimplementierung
+  nötig.
+- ZXing-Dekodierung/Geräte-Enumeration bleiben unverändert web-spezifisch
+  (wie in M1 dokumentiert). Ob ein echter `NativeScannerAdapter` (M2b)
+  nötig ist, kann erst nach einem echten Geräte-/Emulator-Test entschieden
+  werden (WebView-Kamera-Performance ist nicht in dieser Sandbox testbar).
+
+### 6. PlatformService
+
+Keine Code-Änderung nötig: `PlatformService.detectType()` (aus M1) erkennt
+`CAPACITOR_ANDROID` bereits generisch über `window.Capacitor?.isNativePlatform()`
++ User-Agent-Regex, ohne dass Fachkomponenten (DHL o. ä.) selbst Plattform-
+Erkennung duplizieren müssten.
+
+### 7. Factory-Prinzip – keine Parallelstruktur
+
+Es wurden **keine** app- oder plattformspezifischen Sonderservices
+angelegt. Android nutzt exakt dieselben Bausteine wie Web:
+
+| Baustein | Web | Android (Capacitor) |
+|---|---|---|
+| `AuthService` | ✅ | ✅ unverändert |
+| `AppRegistry` / `AppContextService` / `AppAccessService` | ✅ | ✅ unverändert |
+| `AppNavigationComponent` / `AppAccountComponent` | ✅ | ✅ unverändert |
+| `StorageAdapter` | `WebLocalStorageAdapter` | `WebLocalStorageAdapter` (M2; Secure-Storage-Adapter erst M3, siehe oben) |
+| `CameraAdapter` | `WebCameraAdapter` | `WebCameraAdapter` (identischer Code, läuft im WebView) |
+| `PlatformService` | `type = WEB/PWA` | `type = CAPACITOR_ANDROID` |
+
+### 8. Build-/Sync-Ergebnis
+
+| Schritt | Ergebnis |
+|---|---|
+| `npm install @capacitor/core@8.5.2 @capacitor/android@8.5.2 @capacitor/cli@8.5.2` | ✅ erfolgreich |
+| `ng build --configuration production` | ✅ erfolgreich (Exit 0, nur bereits bekannte Budget-/Unused-Warnings) |
+| `npx cap add android` | ✅ erfolgreich – `android/` erzeugt, Web-Assets kopiert |
+| `npx cap sync android` | ✅ erfolgreich |
+| `gradlew tasks` (lokaler Gradle-Build-Test) | ❌ blockiert – siehe unten |
+
+### 9. Verbleibende Blocker (nicht umgangen, sondern dokumentiert)
+
+1. **Kein Android SDK lokal vorhanden** – `ANDROID_HOME`/`ANDROID_SDK_ROOT`
+   sind nicht gesetzt, keine SDK-Installation gefunden. Ohne SDK kann das
+   Android-Projekt nicht kompiliert werden (Android Gradle Plugin benötigt
+   `platforms`, `build-tools`, `platform-tools`).
+2. **Kein Internetzugriff aus der Sandbox zu `services.gradle.org`** –
+   `gradlew.bat` versucht beim ersten Lauf die Gradle-Distribution
+   (`gradle-8.14.3-all.zip`) herunterzuladen; Verbindung läuft in einen
+   Timeout. Auch mit `--offline` scheitert der Wrapper-Bootstrap, da noch
+   keine lokale Gradle-Distribution im Wrapper-Cache liegt.
+3. Java 21 (Zulu, OpenJDK) ist vorhanden und mit Android Gradle Plugin 8.x
+   kompatibel – **kein Blocker**, sobald SDK + Netzwerk verfügbar sind.
+
+**Notwendiger externer Schritt (außerhalb dieser Sandbox), danach folgender
+Befehl:**
+- Android Studio oder Command-Line-Tools + SDK Platform (mind. API 34/35)
+  und Build-Tools installieren, `ANDROID_HOME` setzen.
+- Danach: `cd storeFrontend/android && .\gradlew.bat assembleDebug`
+  (bzw. `npx cap run android` für Emulator/Gerät, sofern `adb`/Emulator
+  vorhanden sind).
+- Vor einem echten Geräte-/Emulator-Test: CORS-Ergänzung aus Abschnitt 3
+  vornehmen, sonst schlagen alle API-Aufrufe aus der App mit einem
+  CORS-Fehler fehl (Login-Screen lädt, aber Login-Request wird geblockt).
+
+### 10. Verdikt
+
+Die Factory hält auch für M2 stand: **keine** zweite DHL-Codebasis,
+**keine** neue Auth-/Entitlement-Logik. Android ist ein reiner
+zusätzlicher Host/Client um denselben `storeFrontend`-Build, gesteuert
+ausschließlich über Adapter (`StorageAdapter`, `CameraAdapter`,
+`PlatformService`) und eine Config-Datei (`capacitor.config.ts`). Der
+einzige noch offene Punkt mit echtem Sicherheitsbezug (Secure Storage) wurde
+bewusst nicht gehackt, sondern auf M3 mit einer sauberen
+Async-Migrationsstrategie verschoben. Der Android-Build selbst ist lokal
+nicht abschließbar, weil SDK/Netzwerk in dieser Umgebung fehlen – kein
+Architekturproblem, sondern ein reines Umgebungs-Setup-Thema.
+
 ## 8. Übergangslösung storeId
 
 Aktuell ist `storeId` der **einzige** Tenant-/Scope-Schlüssel im gesamten

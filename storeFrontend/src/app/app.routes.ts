@@ -485,6 +485,22 @@ export const routes: Routes = [
   },
 
   // ==================== Maritime (AIS Live-Schiffsdaten, MVP: Tanger Med) ====================
+  // Faktortest App Factory: MARITIME nutzt dieselben Shared-Bausteine wie DHL
+  // (AppNavigationComponent/AppAccountComponent/AppRegistry), nur eigene
+  // Konfiguration (MARITIME_NAV_CONFIG). GLOBAL-Scope (kein storeId) → keine
+  // Context-Auswahl-Route nötig. `/apps/maritime` ist die neue, primäre
+  // app-zentrische Route; `tools/maritime` bleibt als bereits produktiv
+  // genutzter Legacy-Alias unverändert bestehen (kein Breaking-Change).
+  {
+    path: 'apps/maritime',
+    loadComponent: () => import('./features/tools/maritime/maritime.component').then(m => m.MaritimeComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/maritime/account',
+    loadComponent: () => import('./features/tools/maritime/maritime-account.component').then(m => m.MaritimeAccountComponent),
+    canActivate: [authGuard]
+  },
   {
     path: 'tools/maritime',
     loadComponent: () => import('./features/tools/maritime/maritime.component').then(m => m.MaritimeComponent),

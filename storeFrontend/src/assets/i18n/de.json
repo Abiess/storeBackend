@@ -3364,6 +3364,9 @@
   "maritime": {
     "title": "Maritime / Live-Schiffsdaten",
     "subtitle": "Live-AIS-Schiffsdaten für marokkanische Häfen (MVP)",
+    "nav": {
+      "overview": "Übersicht"
+    },
     "connected": "Verbunden",
     "disconnected": "Getrennt",
     "lastMessage": "Letzte Nachricht",

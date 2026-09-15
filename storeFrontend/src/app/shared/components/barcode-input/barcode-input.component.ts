@@ -1,8 +1,9 @@
-import { Component, ViewChild, ElementRef, OnDestroy, forwardRef, Input } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnDestroy, forwardRef, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { BrowserMultiFormatReader, NotFoundException, Result } from '@zxing/library';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { CameraAdapter } from '@app/core/services/camera-adapter';
 
 @Component({
     selector: 'app-barcode-input',
@@ -161,6 +162,8 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
   `]
 })
 export class BarcodeInputComponent implements ControlValueAccessor, OnDestroy {
+  private cameraAdapter = inject(CameraAdapter);
+
   @ViewChild('videoElement') videoElement?: ElementRef<HTMLVideoElement>;
   @ViewChild('barcodeInput') barcodeInputElement?: ElementRef<HTMLInputElement>;
 
@@ -308,36 +311,29 @@ export class BarcodeInputComponent implements ControlValueAccessor, OnDestroy {
         }
       }
 
-      // Strategie 2: facingMode: environment direkt nutzen
+      // Strategie 2: facingMode: environment direkt nutzen (über CameraAdapter,
+      // damit Native/Capacitor später denselben Aufrufer-Code nutzen kann)
       if (!selectedDeviceId) {
         console.log('🔍 [Strategy 2] Versuche facingMode: environment...');
-        
-        try {
-          // Erst mit getUserMedia die Rückkamera anfordern
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: { 
-              facingMode: { ideal: 'environment' }
-            }
-          });
 
-          // deviceId aus dem Stream extrahieren
-          const track = stream.getVideoTracks()[0];
-          const settings = track.getSettings();
-          
-          console.log('📷 getUserMedia erfolgreich:');
-          console.log('   Device ID:', settings.deviceId);
-          console.log('   Label:', track.label);
-          console.log('   Facing Mode:', settings.facingMode);
-          
-          if (settings.deviceId) {
-            selectedDeviceId = settings.deviceId;
-            this.preferredBackCameraId = settings.deviceId; // Für nächste Scans speichern
-            console.log('✅ Rückkamera via facingMode gefunden und gespeichert');
+        try {
+          const probe = await this.cameraAdapter.requestBackCameraStream();
+
+          if (probe) {
+            console.log('📷 CameraAdapter erfolgreich:');
+            console.log('   Device ID:', probe.deviceId);
+
+            if (probe.deviceId) {
+              selectedDeviceId = probe.deviceId;
+              this.preferredBackCameraId = probe.deviceId; // Für nächste Scans speichern
+              console.log('✅ Rückkamera via facingMode gefunden und gespeichert');
+            }
+
+            // Stream sofort stoppen, da ZXing eigenen Stream öffnet
+            probe.stream.getTracks().forEach(track => track.stop());
+          } else {
+            console.warn('⚠️ facingMode: environment nicht verfügbar');
           }
-          
-          // Stream sofort stoppen, da ZXing eigenen Stream öffnet
-          stream.getTracks().forEach(track => track.stop());
-          
         } catch (envError) {
           console.warn('⚠️ facingMode: environment nicht verfügbar:', envError);
         }
