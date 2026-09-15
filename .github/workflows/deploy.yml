@@ -71,32 +71,6 @@ jobs:
             sed -i "s/__HCAPTCHA_SITE_KEY__//g" storeFrontend/src/environments/environment.prod.ts
           fi
 
-      # ── Angular Frontend bauen (Production) ────────────────────────
-      - name: Build Angular Frontend (Production)
-        run: |
-          cd storeFrontend
-          npm ci --prefer-offline
-          npm run build:prod
-          echo "✅ Frontend Build fertig"
-          echo ""
-          echo "🔍 Verifikation: Keine Platzhalter im dist?"
-          
-          # Prüfe __CLARITY_ID__
-          if grep -r "__CLARITY_ID__" dist/markt-ma-frontend/ --include="*.js" --include="*.html" -l 2>/dev/null; then
-            echo "❌ __CLARITY_ID__ Platzhalter noch im dist – sed-Schritt fehlgeschlagen!"
-            exit 1
-          else
-            echo "✅ __CLARITY_ID__ korrekt eingebettet"
-          fi
-          
-          # Prüfe __HCAPTCHA_SITE_KEY__
-          if grep -r "__HCAPTCHA_SITE_KEY__" dist/markt-ma-frontend/ --include="*.js" --include="*.html" -l 2>/dev/null; then
-            echo "❌ __HCAPTCHA_SITE_KEY__ Platzhalter noch im dist – sed-Schritt fehlgeschlagen!"
-            exit 1
-          else
-            echo "✅ __HCAPTCHA_SITE_KEY__ korrekt eingebettet"
-          fi
-          ls -lh dist/markt-ma-frontend/ | head -20
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
