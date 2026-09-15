@@ -5,6 +5,7 @@ import { filter } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { resolveAppBasePath, AppRouteConfig } from '@app/core/utils/app-route.util';
+import { AppSwitcherComponent } from '@app/shared/components/app-switcher/app-switcher.component';
 
 /**
  * Ein Eintrag der App-Navigation. Bewusst minimal & framework-neutral
@@ -46,7 +47,7 @@ export interface AppNavConfig extends AppRouteConfig {
 @Component({
   selector: 'app-navigation',
   standalone: true,
-  imports: [CommonModule, RouterModule, TranslatePipe],
+  imports: [CommonModule, RouterModule, TranslatePipe, AppSwitcherComponent],
   templateUrl: './app-navigation.component.html',
   styleUrls: ['./app-navigation.component.scss']
 })

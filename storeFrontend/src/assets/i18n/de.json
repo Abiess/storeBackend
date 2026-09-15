@@ -496,6 +496,46 @@
       "logout": "Abmelden"
     }
   },
+  "apps": {
+    "launcher": {
+      "title": "Meine Apps",
+      "subtitle": "Wähle eine App aus, um fortzufahren."
+    },
+    "switcher": {
+      "label": "Apps wechseln"
+    },
+    "contextSelector": {
+      "subtitle": "Wähle einen Standort aus, um fortzufahren.",
+      "contextLabel": "Standort"
+    },
+    "noAccess": {
+      "title": "Kein App-Zugriff",
+      "text": "Für dein Konto ist aktuell keine App freigeschaltet. Bitte wende dich an deinen Administrator.",
+      "logout": "Abmelden"
+    },
+    "registry": {
+      "dhl": {
+        "title": "DHL Paketservice",
+        "description": "Pakete einlagern, abholen und Lagerplan verwalten"
+      },
+      "loyalty": {
+        "title": "Loyalty",
+        "description": "Bonuspunkte und Treueprogramm"
+      },
+      "shop": {
+        "title": "Shop",
+        "description": "Produkte, Bestellungen und Store-Verwaltung"
+      },
+      "maritime": {
+        "title": "Maritime",
+        "description": "Maritime-Werkzeuge"
+      },
+      "issueAnalysis": {
+        "title": "Issue-Analyse",
+        "description": "Vorgangs- und Fehleranalyse"
+      }
+    }
+  },
   "common": {
     "loading": "Lädt...",
     "previous": "Zurück",

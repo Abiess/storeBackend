@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { dashboardStoresRedirectGuard } from './core/guards/dashboard-stores-redirect.guard';
+import { AppKey } from './core/models';
 
 export const routes: Routes = [
   // ==================== Legal Pages (Public) ====================
@@ -234,6 +235,31 @@ export const routes: Routes = [
       console.log('✅ Route matched: stores/:storeId/loyalty');
       return import('./features/loyalty/loyalty.component').then(m => m.LoyaltyComponent);
     },
+    canActivate: [authGuard]
+  },
+
+  // ==================== App Factory: Launcher / Switcher / Context-Auswahl ====================
+  // Generische App-Factory-Infrastruktur (siehe ARCHITECTURE_APP_FACTORY.md
+  // Abschnitt 7b): App-Auswahl (/apps) und Context-/Standort-Auswahl
+  // (/apps/{segment}) sind bewusst app-übergreifend generisch und laden KEINE
+  // neue App-spezifische Komponente – nur Konfiguration (data.app) je App.
+  {
+    path: 'apps',
+    loadComponent: () => import('./features/apps/app-launcher.component').then(m => m.AppLauncherComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/no-access',
+    loadComponent: () => import('./features/apps/app-no-access.component').then(m => m.AppNoAccessComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/dhl',
+    loadComponent: () =>
+      import('./shared/components/app-context-selector/app-context-selector.component').then(
+        m => m.AppContextSelectorComponent
+      ),
+    data: { app: AppKey.DHL },
     canActivate: [authGuard]
   },
 

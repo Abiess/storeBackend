@@ -8,4 +8,9 @@
     <span class="app-nav__icon">{{ item.icon }}</span>
     <span class="app-nav__label">{{ item.labelKey | translate }}</span>
   </a>
+
+  <!-- Dezenter "Apps wechseln"-Einstieg (nur sichtbar bei >1 verfügbaren
+       Apps, siehe AppSwitcherComponent). Kein eigener AppShellComponent
+       nötig, um dies plattformweit für jede App-Navigation zu bekommen. -->
+  <app-switcher></app-switcher>
 </nav>

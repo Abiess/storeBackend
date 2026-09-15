@@ -99,8 +99,8 @@ describe('AppAccessService', () => {
     });
   });
 
-  describe('MANAGED-User mit mehreren Entitlements', () => {
-    it('wählt deterministisch DHL vor SHOP (Priorität), bei mehreren DHL-Stores die niedrigere storeId', () => {
+  describe('MANAGED-User mit mehreren Entitlements verschiedener Apps', () => {
+    it('leitet bei >1 verfügbaren Apps auf den generischen App-Launcher (/apps)', () => {
       mockAuthService.getCurrentUser.and.returnValue(
         buildUser({
           appAccessMode: AppAccessMode.MANAGED,
@@ -112,7 +112,55 @@ describe('AppAccessService', () => {
         })
       );
 
-      expect(service.getPrimaryAppHomeUrl()).toBe('/apps/dhl/121');
+      // 2 distinct Apps (SHOP, DHL) → App-Launcher, nicht direkt in eine App.
+      expect(service.getPrimaryAppHomeUrl()).toBe('/apps');
+    });
+  });
+
+  describe('MANAGED-User: 0 verfügbare Apps', () => {
+    it('leitet auf die sichere No-Access-Seite', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({ appAccessMode: AppAccessMode.MANAGED, apps: [] })
+      );
+
+      expect(service.getPrimaryAppHomeUrl()).toBe('/apps/no-access');
+    });
+
+    it('leitet auch bei ausschließlich deaktivierten Entitlements auf die No-Access-Seite', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [{ app: AppKey.DHL, storeId: 121, enabled: false }]
+        })
+      );
+
+      expect(service.getPrimaryAppHomeUrl()).toBe('/apps/no-access');
+      expect(service.isUrlAllowed('/apps/dhl/121')).toBeFalse();
+    });
+  });
+
+  describe('MANAGED-User: genau 1 App mit mehreren Contexts (Stores)', () => {
+    beforeEach(() => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [
+            { app: AppKey.DHL, storeId: 121, enabled: true },
+            { app: AppKey.DHL, storeId: 135, enabled: true }
+          ]
+        })
+      );
+    });
+
+    it('springt NICHT direkt in einen zufälligen Context, sondern öffnet die App-Context-Auswahl', () => {
+      expect(service.getPrimaryAppHomeUrl()).toBe('/apps/dhl');
+    });
+
+    it('erlaubt die bare App-Route (Context-Auswahl) und beide konkreten Contexts', () => {
+      expect(service.isUrlAllowed('/apps/dhl')).toBeTrue();
+      expect(service.isUrlAllowed('/apps/dhl/121')).toBeTrue();
+      expect(service.isUrlAllowed('/apps/dhl/135')).toBeTrue();
     });
   });
 });
+

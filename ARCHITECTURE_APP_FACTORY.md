@@ -287,6 +287,84 @@ Das ist der nächste, risikoreichere Ausbauschritt und wurde bewusst
 zurückgestellt, um keinen Big-Bang-Umbau der bestehenden, funktionierenden
 DHL-Routen auszulösen.
 
+## 7b. App Factory: App-Launcher, App-Switcher & Context-Auswahl
+
+Aufbauend auf Abschnitt 7a wurde die Plattform um eine generische
+**App-Launcher/-Switcher/-Context**-Infrastruktur erweitert. Ziel: `markt.ma`
+verhält sich wie eine echte App-Factory – neue Apps (`MARITIME`, `LOYALTY`,
+`ISSUE_ANALYSIS`, künftige Apps) werden ausschließlich über
+**Konfiguration + Routing + Fachkomponenten** eingebunden, nicht über neue
+parallele Launcher-/Switcher-/Navigations-Lösungen.
+
+### Neue Shared-Bausteine
+
+| Baustein | Ort | Zweck |
+|---|---|---|
+| `AppRegistry` (`APP_REGISTRY`, `APP_REGISTRY_ORDER`) | `core/config/app-registry.ts` | Rein deklaratives Verzeichnis aller Apps: `{ key, titleKey, descriptionKey?, icon, baseRoute, scope: 'STORE'\|'GLOBAL', contextSelectorSupported? }`. **Enthält KEINE Berechtigungslogik** – nur Darstellungs-/Routing-Metadaten. |
+| `AppContextService` | `core/services/app-context.service.ts` | Generische Aufbereitung der bereits vorhandenen `AppEntitlement`s aus `AuthService`: `getAvailableApps()` (distinct Apps mit ≥1 aktivem Entitlement), `getContexts(app)` (alle Contexts/Stores dieser App als `AppContext { app, contextId, enabled }`), `hasMultipleApps()`. Einzige Quelle für "welche Apps/Contexts sieht der User" – wird von `AppAccessService`, `AppLauncherComponent`, `AppSwitcherComponent` und `AppContextSelectorComponent` gemeinsam genutzt (keine doppelte Auswertung der `apps`-Liste). |
+| `AppLauncherComponent` (`app-launcher`) | `features/apps/app-launcher.component.ts` | Generischer "Meine Apps"-Bildschirm (`/apps`). Zeigt **eine Karte pro App** (nicht pro Context!), Design als einheitliche markt.ma-App-Karten (Design-Tokens/Icons/i18n wiederverwendet). Klick navigiert über `AppAccessService.resolveAppEntryUrl(app)`. |
+| `AppContextSelectorComponent` (`app-context-selector`) | `shared/components/app-context-selector/` | Generische Context-/Standort-Auswahl für STORE-scoped Apps mit >1 Context. Liest die App NICHT aus einer fest verdrahteten Store-Auswahl, sondern aus Routen-`data.app` (z.B. `apps/dhl` → `{ data: { app: AppKey.DHL } }`). `contextId` ist generisch (heute technisch = `storeId`), erweiterbar auf `tenantId`/`locationId`/`workspaceId`. |
+| `AppSwitcherComponent` (`app-switcher`) | `shared/components/app-switcher/` | Dezenter "Apps wechseln"-Dropdown, **nur sichtbar bei >1 verfügbaren Apps** (`AppContextService.hasMultipleApps()`). In `AppNavigationComponent` eingehängt (siehe unten) – dadurch bekommt **jede** App automatisch den Switcher, ohne eigene Integration pro App. |
+| `AppNoAccessComponent` | `features/apps/app-no-access.component.ts` | Sichere, neutrale Fehlerseite (`/apps/no-access`) für MANAGED-User ohne (mehr) aktive Entitlements. Keine eigene Auth-Logik, nur `AuthService.logout()`. |
+| `AppAccessService.resolveAppEntryUrl(app)` | `core/services/app-access.service.ts` | Zentrale, einzige Regel "1 Context → direkt öffnen, >1 Contexts (bei `contextSelectorSupported`) → Context-Auswahl, sonst deterministischer Fallback". Wird von Login-Redirect, App-Launcher und App-Switcher gleichermaßen genutzt (keine Duplikation der Navigationsregel). |
+
+`AppNavigationComponent` (Abschnitt 7a) wurde **nicht dupliziert**, sondern
+minimal erweitert: Sie bindet nun `<app-switcher>` als letztes Element ein.
+Jede App, die bereits `<app-navigation [config]="...">` nutzt (aktuell nur
+DHL), bekommt den App-Switcher damit automatisch – ohne Codeänderung in den
+DHL-Fachkomponenten.
+
+### Login-Redirect-Regel (`AppAccessService.getPrimaryAppHomeUrl()`)
+
+Ersetzt die bisherige starre Priorität `DHL > LOYALTY > SHOP > MARITIME >
+ISSUE_ANALYSIS` durch:
+
+| Situation | Ziel |
+|---|---|
+| `LEGACY` | Unverändert (bestehender "Meine Stores"-Flow). |
+| `MANAGED`, 0 verfügbare Apps | `/apps/no-access` (sichere Fehlerseite). |
+| `MANAGED`, genau 1 verfügbare App, 1 Context | Direkt in die App+Context (z.B. `/apps/dhl/121`). |
+| `MANAGED`, genau 1 verfügbare App, >1 Contexts | App-Context-Auswahl (`/apps/dhl` → Liste der Contexts). **Kein** Sprung in einen zufälligen Context. |
+| `MANAGED`, >1 verfügbare Apps | `/apps` (App-Launcher). Mehrere Entitlements DERSELBEN App zählen dabei als **eine** App. |
+
+App-Auswahl (Launcher) und Context-/Standort-Auswahl bleiben bewusst zwei
+getrennte Schritte/Komponenten.
+
+### Sicherheit
+
+App-Launcher/-Switcher/-Context-Auswahl sind **ausschließlich UX** (welche
+Karte/welcher Menüpunkt angezeigt wird). Die tatsächliche Autorisierung
+bleibt unverändert:
+
+- Backend: `@RequiresApp`, `AppAccessInterceptor`, `StoreAccessChecker`/Rollen/Permissions.
+- Frontend: `AppAccessService.isUrlAllowed()` (unverändertes Prinzip aus Phase 2,
+  nur um die "bare App-Route ohne Context" (`/apps/dhl`) als gültigen,
+  contextlosen Zugriffsfall ergänzt – erlaubt, sobald irgendein aktiver
+  Context für diese App existiert).
+
+Es wurde **keine neue Sicherheitsentscheidung ausschließlich im Frontend**
+eingeführt.
+
+### Architekturregel (Ergänzung zu Abschnitt 7a)
+
+- Neue Apps benötigen **keine eigene** `XyzAppSwitcher`-/`XyzLauncher`-Komponente –
+  ein zusätzlicher `APP_REGISTRY`-Eintrag (+ ggf. eine `apps/{segment}`-Route
+  für die Context-Auswahl) genügt.
+- `AppRegistry` liefert nur Darstellung/Routing – die Quelle der erlaubten
+  Apps/Contexts bleibt ausschließlich `AuthService`/`AppEntitlement`
+  (über `AppContextService`).
+- Web, PWA und künftige Capacitor-Clients (iOS/Android) können denselben
+  `APP_REGISTRY` + dieselben `AppContext`-Daten nutzen: Desktop rendert
+  Karten/Dropdown, Mobile könnte dieselbe Datenbasis später als
+  Bottom-Sheet/Bottom-Navigation/Drawer darstellen (kein Hover-only-Verhalten
+  in den neuen Komponenten; alle Interaktionen sind klick-/tap-basiert).
+
+**Bewusst (noch) nicht umgesetzt:** Weiterhin kein vollständiger
+`AppShellComponent` mit verschachteltem Parent-/Child-Routing (siehe
+Abschnitt 7a) – der App-Switcher wurde stattdessen als kleiner,
+wiederverwendbarer Baustein in die bestehende `AppNavigationComponent`
+integriert, um das Risiko eines Big-Bang-Umbaus zu vermeiden.
+
 ## 8. Übergangslösung storeId
 
 Aktuell ist `storeId` der **einzige** Tenant-/Scope-Schlüssel im gesamten

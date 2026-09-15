@@ -379,6 +379,46 @@
       "logout": "Log out"
     }
   },
+  "apps": {
+    "launcher": {
+      "title": "My Apps",
+      "subtitle": "Choose an app to continue."
+    },
+    "switcher": {
+      "label": "Switch apps"
+    },
+    "contextSelector": {
+      "subtitle": "Choose a location to continue.",
+      "contextLabel": "Location"
+    },
+    "noAccess": {
+      "title": "No app access",
+      "text": "No app is currently enabled for your account. Please contact your administrator.",
+      "logout": "Log out"
+    },
+    "registry": {
+      "dhl": {
+        "title": "DHL Parcel Service",
+        "description": "Store, pick up and manage parcels"
+      },
+      "loyalty": {
+        "title": "Loyalty",
+        "description": "Loyalty points and rewards program"
+      },
+      "shop": {
+        "title": "Shop",
+        "description": "Products, orders and store management"
+      },
+      "maritime": {
+        "title": "Maritime",
+        "description": "Maritime tools"
+      },
+      "issueAnalysis": {
+        "title": "Issue Analysis",
+        "description": "Case and issue analysis"
+      }
+    }
+  },
   "common": {
     "loading": "Loading...",
     "previous": "Previous",

@@ -1,0 +1,20 @@
+<div class="app-context-selector">
+  <h1 class="app-context-selector__title">
+    <span class="app-context-selector__icon">{{ registryEntry.icon }}</span>
+    {{ registryEntry.titleKey | translate }}
+  </h1>
+  <p class="app-context-selector__subtitle">{{ 'apps.contextSelector.subtitle' | translate }}</p>
+
+  <div class="app-context-selector__grid">
+    <button
+      type="button"
+      class="app-context-card"
+      *ngFor="let context of contexts"
+      (click)="select(context)"
+    >
+      <span class="app-context-card__label">
+        {{ 'apps.contextSelector.contextLabel' | translate }} {{ context.contextId }}
+      </span>
+    </button>
+  </div>
+</div>

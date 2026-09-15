@@ -1,14 +1,19 @@
 import { Injectable, inject } from '@angular/core';
 import { AuthService } from './auth.service';
-import { AppAccessMode, AppEntitlement, AppKey } from '../models';
+import { AppContextService } from './app-context.service';
+import { AppAccessMode, AppKey } from '../models';
+import { APP_REGISTRY } from '../config/app-registry';
 
 /**
  * App-Entitlement Phase 2 (Frontend-Durchsetzung).
  *
- * Liest ausschließlich `appAccessMode` / `apps` aus dem bereits vorhandenen
- * `AuthService.getCurrentUser()` (Backend Phase 1). Es wird KEINE neue
- * Auth-/Permission-Infrastruktur aufgebaut – dieser Service ist nur die
- * Klassifizierung "welche App gehört zu dieser URL" + "darf der User dahin".
+ * Liest ausschließlich `appAccessMode` aus dem bereits vorhandenen
+ * `AuthService.getCurrentUser()` (Backend Phase 1) sowie die aufbereiteten
+ * Entitlements aus `AppContextService` (keine doppelte Auswertung der
+ * `apps`-Liste). Es wird KEINE neue Auth-/Permission-Infrastruktur
+ * aufgebaut – dieser Service ist nur die Klassifizierung "welche App gehört
+ * zu dieser URL" + "darf der User dahin" + "wohin soll er primär geleitet
+ * werden" (Login-Redirect, App-Launcher, App-Switcher).
  *
  * Verhalten:
  * - Kein User / `appAccessMode` fehlt / `LEGACY` → alles wie bisher erlaubt.
@@ -24,22 +29,10 @@ type UrlClassification =
 @Injectable({ providedIn: 'root' })
 export class AppAccessService {
   private authService = inject(AuthService);
-
-  /** Deterministische Priorität für die Wahl der "primären" App-Startseite. */
-  private readonly appPriority: AppKey[] = [
-    AppKey.DHL,
-    AppKey.LOYALTY,
-    AppKey.SHOP,
-    AppKey.MARITIME,
-    AppKey.ISSUE_ANALYSIS
-  ];
+  private appContextService = inject(AppContextService);
 
   isManaged(): boolean {
     return this.authService.getCurrentUser()?.appAccessMode === AppAccessMode.MANAGED;
-  }
-
-  private getEntitlements(): AppEntitlement[] {
-    return this.authService.getCurrentUser()?.apps ?? [];
   }
 
   /**
@@ -101,9 +94,14 @@ export class AppAccessService {
   }
 
   private hasEntitlement(app: AppKey, storeId: number | null): boolean {
-    return this.getEntitlements().some(e =>
-      e.enabled && e.app === app && (storeId == null ? e.storeId == null : e.storeId === storeId)
-    );
+    const contexts = this.appContextService.getContexts(app);
+    if (storeId == null) {
+      // Globale Apps (Context immer `null`) ODER die "bare" App-Route ohne
+      // konkreten Context (z.B. `/apps/dhl` → Context-Auswahl): es reicht,
+      // dass IRGENDEIN aktiver Context existiert.
+      return contexts.length > 0;
+    }
+    return contexts.some(c => c.contextId === String(storeId));
   }
 
   /** Prüft, ob die aktuell eingeloggte Person (im Frontend) auf diese URL darf. */
@@ -125,7 +123,12 @@ export class AppAccessService {
     return this.isUrlAllowed(route);
   }
 
-  private buildAppHomeUrl(app: AppKey, storeId: number | null): string {
+  /**
+   * Konkrete Ziel-URL einer App für einen bestimmten Context (z.B. Store).
+   * Öffentlich, damit App-Launcher/Context-Auswahl dieselbe, einzige Quelle
+   * für App-Routing nutzen (keine Duplikation der Pfad-Muster pro App).
+   */
+  buildAppHomeUrl(app: AppKey, storeId: number | null): string {
     switch (app) {
       case AppKey.DHL:
         // App-zentrische URL (Ziel-Bild); die klassische
@@ -142,30 +145,62 @@ export class AppAccessService {
     }
   }
 
+  /** Alle Apps, für die der aktuelle User mind. einen aktiven Context hat. */
+  getAvailableApps(): AppKey[] {
+    return this.appContextService.getAvailableApps();
+  }
+
   /**
-   * Ziel-URL für MANAGED-User direkt nach dem Login bzw. für Redirects von
-   * gesperrten Routen. Bei mehreren erlaubten Apps/Stores wird deterministisch
-   * (Priorität DHL > LOYALTY > SHOP > MARITIME > ISSUE_ANALYSIS, dann
-   * aufsteigende storeId) der erste passende Eintrag gewählt – ein
-   * vollwertiger App-Umschalter ist bewusst nicht Teil dieser minimalen
-   * Phase-2-Umsetzung.
+   * Ziel-URL für genau EINE App (Login-Redirect bei genau 1 verfügbarer App,
+   * App-Launcher-Karten-Klick, App-Switcher-Auswahl). Zentrale, einzige
+   * Stelle für die Regel "1 Context → direkt öffnen, >1 Contexts → generische
+   * Context-Auswahl (falls die App das unterstützt), sonst deterministischer
+   * Fallback auf den ersten Context (aufsteigende contextId)".
    */
-  getPrimaryAppHomeUrl(): string {
-    const enabled = this.getEntitlements().filter(e => e.enabled);
-    if (enabled.length === 0) {
-      // MANAGED ohne (mehr) aktive Entitlements: nichts App-Spezifisches
-      // ist erlaubt – auf die neutrale Profilseite ausweichen.
-      return '/settings';
+  resolveAppEntryUrl(app: AppKey): string {
+    const contexts = this.appContextService.getContexts(app);
+    if (contexts.length === 0) {
+      return '/apps/no-access';
+    }
+    if (contexts.length === 1) {
+      const only = contexts[0];
+      return this.buildAppHomeUrl(app, only.contextId != null ? Number(only.contextId) : null);
     }
 
-    const sorted = [...enabled].sort((a, b) => {
-      const ai = this.appPriority.indexOf(a.app);
-      const bi = this.appPriority.indexOf(b.app);
-      if (ai !== bi) return ai - bi;
-      return (a.storeId ?? 0) - (b.storeId ?? 0);
-    });
+    const registryEntry = APP_REGISTRY[app];
+    if (registryEntry?.contextSelectorSupported) {
+      // Bare App-Route → generische Context-Auswahl (AppContextSelectorComponent).
+      return registryEntry.baseRoute;
+    }
 
+    // Apps ohne dedizierte Context-Auswahl (noch nicht auf /apps/{segment}
+    // umgestellt): deterministischer Fallback wie in der bisherigen
+    // Phase-2-Logik (kleinste contextId zuerst) – kein Verhaltensbruch.
+    const sorted = [...contexts].sort(
+      (a, b) => Number(a.contextId ?? 0) - Number(b.contextId ?? 0)
+    );
     const first = sorted[0];
-    return this.buildAppHomeUrl(first.app, first.storeId);
+    return this.buildAppHomeUrl(app, first.contextId != null ? Number(first.contextId) : null);
+  }
+
+  /**
+   * Ziel-URL für MANAGED-User direkt nach dem Login bzw. für Redirects von
+   * gesperrten Routen:
+   * - 0 verfügbare Apps  → sichere No-Access-Seite (`/apps/no-access`).
+   * - genau 1 verfügbare App → direkt in diese App (bzw. deren
+   *   Context-Auswahl, falls sie mehrere Contexts hat, siehe
+   *   `resolveAppEntryUrl`).
+   * - >1 verfügbare Apps → generischer App-Launcher (`/apps`). Mehrere
+   *   Entitlements DERSELBEN App zählen dabei als eine App.
+   */
+  getPrimaryAppHomeUrl(): string {
+    const apps = this.getAvailableApps();
+    if (apps.length === 0) {
+      return '/apps/no-access';
+    }
+    if (apps.length > 1) {
+      return '/apps';
+    }
+    return this.resolveAppEntryUrl(apps[0]);
   }
 }

@@ -1,0 +1,71 @@
+.app-switcher {
+  position: relative;
+  margin-left: auto;
+}
+
+.app-switcher__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.75rem;
+  border: none;
+  border-radius: 10px;
+  background: #f3f0ff;
+  color: #667eea;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.app-switcher__toggle:hover {
+  background: #ece5ff;
+}
+
+.app-switcher__caret {
+  font-size: 0.7rem;
+}
+
+.app-switcher__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  min-width: 160px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  padding: 0.4rem;
+  z-index: 20;
+}
+
+.app-switcher__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2d3748;
+  cursor: pointer;
+  text-align: left;
+}
+
+.app-switcher__item:hover {
+  background: #f3f0ff;
+  color: #667eea;
+}
+
+/* Mobile: gleiche Daten/Auswahl-Logik, hier weiterhin als Dropdown.
+   Für Capacitor/native könnte dieselbe Liste (APP_REGISTRY-Einträge)
+   stattdessen in einem Bottom-Sheet/Drawer gerendert werden – kein
+   Hover-only-Verhalten, ausschließlich Klick/Tap-Interaktion. */
+@media (max-width: 600px) {
+  .app-switcher__menu {
+    right: -0.5rem;
+    left: auto;
+  }
+}
