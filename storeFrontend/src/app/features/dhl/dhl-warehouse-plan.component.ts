@@ -8,6 +8,9 @@ import { DhlSlotDetailDialogComponent } from './dhl-slot-detail-dialog.component
 import { DhlVisualPlanComponent } from './dhl-visual-plan.component';
 import { DhlErrorService } from '@app/core/services/dhl-error.service';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { AppNavigationComponent } from '@app/shared/components/app-navigation/app-navigation.component';
+import { DHL_NAV_CONFIG } from './dhl-nav.config';
+import { resolveDhlBasePath } from '@app/core/utils/dhl-route.util';
 
 type LayoutMode = 'standard' | 'custom';
 
@@ -21,9 +24,11 @@ type LayoutMode = 'standard' | 'custom';
 @Component({
   selector: 'app-dhl-warehouse-plan',
   standalone: true,
-  imports: [CommonModule, FormsModule, DhlSlotGridComponent, DhlVisualPlanComponent, DhlSlotDetailDialogComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, DhlSlotGridComponent, DhlVisualPlanComponent, DhlSlotDetailDialogComponent, TranslatePipe, AppNavigationComponent],
   template: `
     <div class="warehouse-plan-container">
+      <app-navigation [config]="navConfig"></app-navigation>
+
       <div class="plan-header">
         <h1>📋 {{ 'dhl.plan.title' | translate }}</h1>
         <button class="btn-back" (click)="navigateBack()">
@@ -525,7 +530,9 @@ export class DhlWarehousePlanComponent implements OnInit {
   private router = inject(Router);
   private dhlService = inject(DhlService);
   private dhlErrorService = inject(DhlErrorService);
-  
+
+  readonly navConfig = DHL_NAV_CONFIG;
+
   storeId!: number;
   selectedMode = signal<LayoutMode>('standard');
   slots = signal<DhlSlot[]>([]);
@@ -725,6 +732,6 @@ export class DhlWarehousePlanComponent implements OnInit {
   }
 
   navigateBack(): void {
-    this.router.navigate(['/stores', this.storeId, 'dhl']);
+    this.router.navigateByUrl(resolveDhlBasePath(this.router.url));
   }
 }

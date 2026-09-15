@@ -372,6 +372,13 @@
     "newArrivalsSub": "Discover our latest products",
     "loading": "Loading products..."
   },
+  "app": {
+    "account": {
+      "title": "Account",
+      "email": "Email",
+      "logout": "Log out"
+    }
+  },
   "common": {
     "loading": "Loading...",
     "previous": "Previous",
@@ -3673,6 +3680,18 @@
       "title": "DHL Parcel Service",
       "subtitle": "Manage parcel receipt and pickup",
       "hint": "Use a barcode scanner or camera for quick scanning"
+    },
+    "nav": {
+      "overview": "Overview",
+      "store": "Store Parcel",
+      "pickup": "Pickup Parcel",
+      "plan": "Warehouse Plan",
+      "account": "Account"
+    },
+    "account": {
+      "title": "Account",
+      "email": "Email",
+      "logout": "Log out"
     },
     "pickupParcel": {
       "notes": "Notes",

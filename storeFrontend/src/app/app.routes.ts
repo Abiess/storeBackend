@@ -270,6 +270,14 @@ export const routes: Routes = [
     },
     canActivate: [authGuard]
   },
+  {
+    path: 'stores/:storeId/dhl/account',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:storeId/dhl/account');
+      return import('./features/dhl/dhl-account.component').then(m => m.DhlAccountComponent);
+    },
+    canActivate: [authGuard]
+  },
 
   // ==================== DHL App (app-zentrische Alias-Routen) ====================
   // DHL ist langfristig eine eigenständige App und kein Shop-Untermodul.
@@ -299,6 +307,11 @@ export const routes: Routes = [
   {
     path: 'apps/dhl/:storeId/plan',
     loadComponent: () => import('./features/dhl/dhl-warehouse-plan.component').then(m => m.DhlWarehousePlanComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/dhl/:storeId/account',
+    loadComponent: () => import('./features/dhl/dhl-account.component').then(m => m.DhlAccountComponent),
     canActivate: [authGuard]
   },
 

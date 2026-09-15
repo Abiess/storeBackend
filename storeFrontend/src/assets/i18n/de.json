@@ -489,6 +489,13 @@
     "newArrivalsSub": "Entdecken Sie unsere neuesten Produkte",
     "loading": "Produkte werden geladen..."
   },
+  "app": {
+    "account": {
+      "title": "Account",
+      "email": "E-Mail",
+      "logout": "Abmelden"
+    }
+  },
   "common": {
     "loading": "Lädt...",
     "previous": "Zurück",
@@ -3742,6 +3749,18 @@
       "title": "DHL Paketservice",
       "subtitle": "Paketannahme und Abholung verwalten",
       "hint": "Verwenden Sie einen Barcode-Scanner oder die Kamera für schnelles Scannen"
+    },
+    "nav": {
+      "overview": "Übersicht",
+      "store": "Paket einlagern",
+      "pickup": "Paket abholen",
+      "plan": "Lagerplan",
+      "account": "Account"
+    },
+    "account": {
+      "title": "Account",
+      "email": "E-Mail",
+      "logout": "Abmelden"
     },
     "errors": {
       "parcelAlreadyPickedUp": "Bereits abgeholt",

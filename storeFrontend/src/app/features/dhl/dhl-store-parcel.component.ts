@@ -11,6 +11,9 @@ import { DhlScanAudioService } from '@app/core/services/dhl-scan-audio.service';
 import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barcode-input.component';
 import { DhlSlotGridComponent } from './dhl-slot-grid.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { AppNavigationComponent } from '@app/shared/components/app-navigation/app-navigation.component';
+import { DHL_NAV_CONFIG } from './dhl-nav.config';
+import { resolveDhlBasePath } from '@app/core/utils/dhl-route.util';
 
 /**
  * Fachlicher Validierungszustand des Tracking-Codes gegen die DHL Tracking API.
@@ -45,9 +48,11 @@ export type TrackingInvalidReason = 'NOT_FOUND' | 'VALIDATION_ERROR';
 @Component({
   selector: 'app-dhl-store-parcel',
   standalone: true,
-  imports: [CommonModule, FormsModule, BarcodeInputComponent, DhlSlotGridComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, BarcodeInputComponent, DhlSlotGridComponent, TranslatePipe, AppNavigationComponent],
   template: `
     <div class="dhl-store-container">
+      <app-navigation [config]="navConfig"></app-navigation>
+
       <div class="dhl-header">
         <button class="back-btn" (click)="goBack()">
           ← {{ 'common.back' | translate }}
@@ -524,6 +529,8 @@ export class DhlStoreParcelComponent implements OnInit {
   private dhlScanAudioService = inject(DhlScanAudioService);
   private destroyRef = inject(DestroyRef);
 
+  readonly navConfig = DHL_NAV_CONFIG;
+
   @ViewChild('barcodeInput') barcodeInputRef?: BarcodeInputComponent;
   @ViewChild('manualInput') manualInputRef?: ElementRef<HTMLInputElement>;
 
@@ -861,6 +868,6 @@ export class DhlStoreParcelComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/stores', this.storeId, 'dhl']);
+    this.router.navigateByUrl(resolveDhlBasePath(this.router.url));
   }
 }

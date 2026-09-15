@@ -11,6 +11,9 @@ import { DhlScanAudioService } from '@app/core/services/dhl-scan-audio.service';
 import { TranslationService } from '@app/core/services/translation.service';
 import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barcode-input.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { AppNavigationComponent } from '@app/shared/components/app-navigation/app-navigation.component';
+import { DHL_NAV_CONFIG } from './dhl-nav.config';
+import { resolveDhlBasePath } from '@app/core/utils/dhl-route.util';
 
 /**
  * Fachlicher Validierungszustand des Tracking-Codes gegen die DHL Tracking API.
@@ -47,9 +50,11 @@ export type TrackingInvalidReason = 'NOT_FOUND' | 'VALIDATION_ERROR';
 @Component({
   selector: 'app-dhl-pickup-parcel',
   standalone: true,
-  imports: [CommonModule, FormsModule, BarcodeInputComponent, TranslatePipe],
+  imports: [CommonModule, FormsModule, BarcodeInputComponent, TranslatePipe, AppNavigationComponent],
   template: `
     <div class="dhl-pickup-container">
+      <app-navigation [config]="navConfig"></app-navigation>
+
       <div class="dhl-header">
         <button class="back-btn" (click)="goBack()">
           ← {{ 'common.back' | translate }}
@@ -581,6 +586,8 @@ export class DhlPickupParcelComponent implements OnInit {
   private translationService = inject(TranslationService);
   private destroyRef = inject(DestroyRef);
 
+  readonly navConfig = DHL_NAV_CONFIG;
+
   @ViewChild('barcodeInput') barcodeInputRef?: BarcodeInputComponent;
   @ViewChild('manualInput') manualInputRef?: ElementRef<HTMLInputElement>;
 
@@ -1051,7 +1058,7 @@ export class DhlPickupParcelComponent implements OnInit {
    */
   goToStoreParcel(): void {
     const code = this.trackingCode.trim();
-    this.router.navigate(['/stores', this.storeId, 'dhl', 'store'], {
+    this.router.navigate([`${resolveDhlBasePath(this.router.url)}/store`], {
       queryParams: code ? { trackingCode: code } : undefined
     });
   }
@@ -1134,6 +1141,6 @@ export class DhlPickupParcelComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/stores', this.storeId, 'dhl']);
+    this.router.navigateByUrl(resolveDhlBasePath(this.router.url));
   }
 }

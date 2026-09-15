@@ -1,0 +1,16 @@
+<div class="app-account-container">
+  <div class="app-account-header">
+    <h1>👤 {{ titleKey | translate }}</h1>
+  </div>
+
+  <div class="app-account-card">
+    <div class="app-account-row">
+      <span class="app-account-label">{{ emailLabelKey | translate }}</span>
+      <span class="app-account-value">{{ userEmail() || '–' }}</span>
+    </div>
+
+    <button class="app-account-logout" type="button" (click)="logout()">
+      {{ logoutLabelKey | translate }}
+    </button>
+  </div>
+</div>

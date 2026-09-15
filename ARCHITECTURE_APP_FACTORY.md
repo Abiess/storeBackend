@@ -230,6 +230,63 @@ Strategie (Detailplan: `plan-mobileAppStrategy.prompt.md`):
   `AuthService`/`AuthInterceptor`/`AuthGuard` aus dem Platform-Core-Frontend
   (ggf. als eigenständiges, schlankeres Paket extrahiert, siehe Backlog).
 
+## 7a. Shared Frontend App UI (Web, `storeFrontend`)
+
+Seit dem DHL-App-Navigations-Fix existiert ein erster, bewusst kleiner
+Baustein einer generischen "App-Shell" im Angular-Frontend. Ziel: Jede
+künftige App (`MARITIME`, `LOYALTY`, `ISSUE_ANALYSIS`, ...) bekommt
+Navigation, Account-Bereich und Routen-Konsistenz **ohne eigene UI-Library
+und ohne Kopie der Nav-/Auth-Logik** – nur über Konfiguration.
+
+### Shared (app-übergreifend, `src/app/shared/components/...` bzw. `core/utils/...`)
+
+| Baustein | Ort | Zweck |
+|---|---|---|
+| `AppNavigationComponent` | `shared/components/app-navigation/` | Rein präsentationale, config-getriebene App-Navigation (Tabs/Icons/Labels). Kennt weder `storeId` noch DHL/MARITIME-Fachlogik – nur `AppNavConfig`. |
+| `AppNavConfig` / `AppNavItem` | `shared/components/app-navigation/app-navigation.component.ts` | Konfigurationsformat: `{ appSegment, legacySegment?, items: [{ key, labelKey, icon, route }] }`. `route` ist relativ zum App-Basis-Pfad (`''` = Übersicht). |
+| `resolveAppBasePath(url, config)` | `core/utils/app-route.util.ts` | Generischer Resolver: ermittelt aus der aktuellen URL den App-Basis-Pfad, sowohl für die app-zentrische Route `/apps/{appSegment}/:contextId` als auch (optional) für einen Legacy-Alias `/stores/:contextId/{legacySegment}`. Sorgt dafür, dass Navigation **innerhalb derselben Routen-Familie** bleibt (kein versehentlicher Wechsel zur Shop-Admin-Shell). |
+| `AppAccountComponent` | `shared/components/app-account/` | Generischer Account-/Profil-Bereich (E-Mail-Anzeige, Logout). Liest ausschließlich den bestehenden, plattformweiten `AuthService` – keine App-spezifische Auth-/State-Logik. Label-Keys (`titleKey`/`emailLabelKey`/`logoutLabelKey`) sind per Input überschreibbar, damit jede App ihre eigenen i18n-Texte weiterverwenden kann. |
+
+### DHL-spezifisch (`src/app/features/dhl/...`)
+
+| Baustein | Ort | Zweck |
+|---|---|---|
+| `DHL_NAV_CONFIG` | `features/dhl/dhl-nav.config.ts` | Reine Daten (`AppNavConfig`-Instanz) für die DHL-Navigation: `appSegment: 'dhl'`, `legacySegment: 'dhl'`, Items Übersicht/Einlagern/Abholen/Lagerplan/Account. |
+| DHL-Fachkomponenten | `dhl.component.ts`, `dhl-store-parcel.component.ts`, `dhl-pickup-parcel.component.ts`, `dhl-warehouse-plan.component.ts`, `dhl-account.component.ts` | Enthalten die eigentliche DHL-Fachlogik (Scan-Flows, Tracking-Validierung, Slot-Grid, Lagerplan). Binden nur noch `<app-navigation [config]="navConfig">` bzw. `<app-account>` ein – keine eigene Nav-/Account-Implementierung mehr. |
+| `resolveDhlBasePath(url)` | `core/utils/dhl-route.util.ts` | **Nur noch Kompatibilitäts-Wrapper** (`resolveAppBasePath(url, { appSegment: 'dhl', legacySegment: 'dhl' })`), damit die bestehenden `router.navigate(...)`-Aufrufe in den DHL-Komponenten unverändert bleiben. Neue Apps sollen `resolveAppBasePath()` direkt mit eigener `AppRouteConfig` verwenden statt einen weiteren App-spezifischen Wrapper zu schreiben. |
+
+### Architekturregel
+
+- **Keine neue Sidebar/Nav-Komponente pro App.** Reicht `AppNavigationComponent`
+  aus (Tabs/Icons/Labels/Routen), MUSS sie wiederverwendet werden. Eine neue,
+  eigene Nav-Komponente ist nur zulässig, wenn die UI strukturell etwas
+  fundamental anderes braucht als eine Tab-/Item-Liste.
+- **App-spezifische Unterschiede gehören in Konfiguration**, nicht in Code:
+  Labels (i18n-Keys), Icons, Routen-Segmente (`appSegment`/`legacySegment`),
+  Reihenfolge der Items. Siehe `DHL_NAV_CONFIG` als Referenzmuster.
+- **`contextId`/App-Kontext ist generisch zu denken.** `AppNavConfig` und
+  `resolveAppBasePath()` kennen kein `storeId` – nur einen austauschbaren
+  Pfad-Parameter. Dass DHL aktuell `storeId` als Kontext nutzt, ist reine
+  Übergangslösung (siehe Abschnitt 8) und darf sich nicht in generischem
+  Code verankern.
+- **Auth/Profile/Account werden nicht pro App dupliziert.** Jede App nutzt
+  `AppAccountComponent` (+ eigene Label-Overrides), nicht eine eigene
+  Kopie der Logout-/User-Anzeige-Logik. Die zugrunde liegende Auth-Logik
+  bleibt zentral in `AuthService`.
+- **Mobile/Capacitor-Kompatibilität ist mitzudenken:** Dieselbe
+  `AppNavConfig` (Icons/Labels/Routen) soll später unverändert an eine
+  Bottom-Navigation- oder Drawer-Variante für Capacitor übergeben werden
+  können – deshalb bleibt das Konfigurationsformat bewusst UI-neutral
+  (kein Angular-Router-Detail außer dem reinen Routen-Segment).
+
+**Bewusst (noch) nicht umgesetzt:** Ein vollständiger `AppShellComponent`
+mit verschachtelten Parent-/Child-Routen (Header/Content-Wrapper analog zum
+Zielbild `AppShell → AppHeader/AppNavigation/AppContent`). Aktuell binden
+die Feature-Komponenten `<app-navigation>`/`<app-account>` noch selbst ein.
+Das ist der nächste, risikoreichere Ausbauschritt und wurde bewusst
+zurückgestellt, um keinen Big-Bang-Umbau der bestehenden, funktionierenden
+DHL-Routen auszulösen.
+
 ## 8. Übergangslösung storeId
 
 Aktuell ist `storeId` der **einzige** Tenant-/Scope-Schlüssel im gesamten

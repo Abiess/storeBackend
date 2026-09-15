@@ -1,0 +1,55 @@
+.app-nav {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1.5rem;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.app-nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  min-width: 84px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  color: #4a5568;
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.app-nav__item:hover {
+  background: #f3f0ff;
+  color: #667eea;
+}
+
+.app-nav__item--active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+}
+
+.app-nav__icon {
+  font-size: 1.15rem;
+}
+
+/* Mobile: gleiche Konfiguration (AppNavItem[]), nur kompakteres Layout.
+   Für eine native Capacitor-App würde dieselbe [config] stattdessen an
+   eine Bottom-Navigation/Drawer-Variante übergeben werden. */
+@media (max-width: 600px) {
+  .app-nav {
+    justify-content: space-between;
+    padding: 0.4rem 0.5rem;
+  }
+  .app-nav__item {
+    min-width: 0;
+    flex: 1;
+    padding: 0.4rem 0.25rem;
+  }
+}

@@ -6,13 +6,18 @@ import { DhlSlotGridComponent } from './dhl-slot-grid.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { DhlActivityLogComponent } from '@app/shared/components/dhl-activity-log/dhl-activity-log.component';
 import { DhlSlotManagementComponent } from '@app/shared/components/dhl-slot-management/dhl-slot-management.component';
+import { AppNavigationComponent } from '@app/shared/components/app-navigation/app-navigation.component';
+import { DHL_NAV_CONFIG } from './dhl-nav.config';
+import { resolveDhlBasePath } from '@app/core/utils/dhl-route.util';
 
 @Component({
   selector: 'app-dhl',
   standalone: true,
-  imports: [CommonModule, RouterModule, DhlSlotGridComponent, TranslatePipe, DhlActivityLogComponent, DhlSlotManagementComponent],
+  imports: [CommonModule, RouterModule, DhlSlotGridComponent, TranslatePipe, DhlActivityLogComponent, DhlSlotManagementComponent, AppNavigationComponent],
   template: `
     <div class="dhl-container">
+      <app-navigation [config]="navConfig"></app-navigation>
+
       <div class="dhl-header">
         <h1>📦 {{ 'dhl.main.title' | translate }}</h1>
         <p class="subtitle">{{ 'dhl.main.subtitle' | translate }}</p>
@@ -391,7 +396,9 @@ export class DhlComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private dhlService = inject(DhlService);
-  
+
+  readonly navConfig = DHL_NAV_CONFIG;
+
   storeId!: number;
   stats = signal<DhlSlotStats | null>(null);
   slots = signal<DhlSlot[]>([]);
@@ -455,14 +462,14 @@ export class DhlComponent implements OnInit {
   }
 
   navigateToStore(): void {
-    this.router.navigate(['/stores', this.storeId, 'dhl', 'store']);
+    this.router.navigateByUrl(`${resolveDhlBasePath(this.router.url)}/store`);
   }
 
   navigateToPickup(): void {
-    this.router.navigate(['/stores', this.storeId, 'dhl', 'pickup']);
+    this.router.navigateByUrl(`${resolveDhlBasePath(this.router.url)}/pickup`);
   }
 
   navigateToPlan(): void {
-    this.router.navigate(['/stores', this.storeId, 'dhl', 'plan']);
+    this.router.navigateByUrl(`${resolveDhlBasePath(this.router.url)}/plan`);
   }
 }

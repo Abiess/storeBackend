@@ -1,0 +1,11 @@
+<nav class="app-nav" role="navigation" aria-label="App Navigation">
+  <a
+    *ngFor="let item of config().items"
+    class="app-nav__item"
+    [class.app-nav__item--active]="isActive(item)"
+    [routerLink]="targetFor(item)"
+  >
+    <span class="app-nav__icon">{{ item.icon }}</span>
+    <span class="app-nav__label">{{ item.labelKey | translate }}</span>
+  </a>
+</nav>
