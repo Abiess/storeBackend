@@ -30,18 +30,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Node-Version identisch zu deploy.yml / deploy-frontend.yml (20),
-      # damit der npm-Lockfile (lockfileVersion 3) überall gleich validiert wird.
+      # ── Node-Version: bewusst NICHT identisch zu deploy.yml/deploy-frontend.yml (20) ──
+      # Dieser Workflow ist der einzige, der @capacitor/cli tatsächlich AUSFÜHRT
+      # (Schritt "Capacitor sync android"). @capacitor/cli deklariert
+      # "engines.node": ">=22.0.0" – auf Node 20 nur eine npm-Warnung bei der
+      # Installation, aber ein reales Risiko beim tatsächlichen Ausführen des
+      # CLI-Tools. deploy.yml/deploy-frontend.yml rufen niemals `npx cap ...`
+      # auf und bleiben deshalb unverändert bei Node 20 – kein globaler Umbau.
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: storeFrontend/package-lock.json
 
+      # WICHTIG: --legacy-peer-deps ist KEIN Stilfehler, sondern zwingend nötig
+      # mit dem bestehenden package-lock.json (identisch zu deploy-frontend.yml,
+      # das damit seit Langem produktiv funktioniert). Ohne dieses Flag validiert
+      # `npm ci` den Peer-Dependency-Baum im strikten Modus und meldet
+      # "Missing: chokidar@4.0.3/readdirp@4.1.2 from lock file" – siehe Analyse
+      # in ARCHITECTURE_APP_FACTORY.md. Kein Lockfile-Neuaufbau, kein
+      # npm-install-statt-ci-Ersatz.
       - name: Install frontend dependencies
         working-directory: storeFrontend
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Build Angular app (production)
         working-directory: storeFrontend
