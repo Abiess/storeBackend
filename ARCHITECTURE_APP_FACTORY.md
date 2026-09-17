@@ -1510,6 +1510,328 @@ für den ersten echten Gerätetest: (1) CORS-Origin-Diskrepanz
 `capacitor://localhost` vs. erwartetem `https://localhost` (§5), (2)
 tatsächlicher Xcode-Build/Signing, der zwingend einen Mac erfordert (§7).
 
+## 7k. Mobile-Factory-Pilot M4 – iOS TestFlight-Pipeline (Status: Workflow vorbereitet, noch nicht mit echten Secrets gelaufen)
+
+Ziel: analog zu `build-android-apk.yml` (M2.2) ein GitHub-Actions-Workflow,
+der aber statt eines unsignierten Debug-APKs einen **signierten** iOS-Build
+erzeugt und automatisch zu **TestFlight** hochlädt (nur interne Verteilung,
+kein App-Store-Release). Datei: `.github/workflows/build-ios-testflight.yml`.
+
+### 1. Analyse vor der Umsetzung
+
+| Geprüft | Ergebnis |
+|---|---|
+| Existiert `ios/` bereits? | Ja (aus M4-Grundsetup) – **kein** erneutes `cap add ios` nötig |
+| Bundle-ID | `ma.markt.app` (aus `capacitor.config.ts`, siehe §7j) – wird 1:1 im `ExportOptions.plist` (`provisioningProfiles`-Mapping) referenziert |
+| `@aparajita/capacitor-secure-storage` iOS/Keychain | Sauber unterstützt, keine Änderung nötig (siehe §7j, Punkt 4) – dieser Workflow ändert nichts an Storage/Auth, baut nur die native Hülle |
+| Info.plist Kamera-Eintrag | `NSCameraUsageDescription` bereits vorhanden (§7j, Punkt 6) – nichts zu tun |
+| Xcode-Version / Deployment-Target | `ios/App/CapApp-SPM/Package.swift`: `swift-tools-version: 5.9`, `platforms: [.iOS(.v15)]`; `project.pbxproj`: `IPHONEOS_DEPLOYMENT_TARGET = 15.0` → **Xcode 15 oder neuer** erforderlich. Workflow nutzt `maxim-lobanov/setup-xcode@v1` mit `xcode-version: latest-stable`, um automatisch die neueste auf dem `macos-14`-Runner vorinstallierte stabile Version zu wählen (kann später auf eine konkrete Version gepinnt werden, falls Apple ein Mindest-SDK für Submissions vorschreibt) |
+| **Neuer Befund:** Shared Xcode-Scheme | `cap add ios` legt den Scheme "App" standardmäßig **nicht** als "Shared" an (keine Datei unter `xcshareddata/xcschemes/` im Repo). Ohne einen einmalig auf einem Mac freigegebenen und committeten Scheme kann `xcodebuild -scheme App` in CI den Scheme nicht finden. Dies ist ein zusätzlicher, bisher nicht dokumentierter Mac-Vorbehalt (siehe Abschnitt 5 unten) – der Workflow prüft das per Preflight-Step und bricht kontrolliert mit Anleitung ab, statt einen kryptischen `xcodebuild`-Fehler zu zeigen |
+
+### 2. Pipeline (Trigger: nur `workflow_dispatch`)
+
+```
+Checkout
+→ npm ci (Node 22, --legacy-peer-deps, identisch zu Android-Workflow)
+→ Angular Production Build (npm run build:prod)
+→ npx cap sync ios
+→ Xcode-Version wählen (latest-stable, Xcode 15+)
+→ Preflight: Secrets vorhanden? Shared Scheme committet?
+→ Distribution-Zertifikat in temporäre CI-Keychain importieren
+→ Provisioning Profile installieren (UUID automatisch ermittelt)
+→ xcodebuild archive (Release, CODE_SIGN_STYLE=Manual)
+→ ExportOptions.plist schreiben (method: app-store-connect)
+→ xcodebuild -exportArchive → .ipa
+→ .ipa als GitHub-Actions-Artifact hochladen (zusätzlich zu TestFlight, 14 Tage)
+→ xcrun altool --upload-app → App Store Connect / TestFlight
+→ temporäre Keychain löschen (immer, auch bei Fehler)
+```
+
+Bewusst **kein** automatischer Trigger (`push`/`paths`) wie bei
+`build-android-apk.yml` – iOS-Builds verbrauchen deutlich teurere
+macOS-Runner-Minuten und lösen einen echten TestFlight-Upload aus; das soll
+nicht versehentlich bei jedem Push passieren. Nur `workflow_dispatch`
+("Run workflow" manuell in der Actions-UI).
+
+### 3. Signing-/Provisioning-Strategie (empfohlene, "sauberste" CI-Variante)
+
+Bewusst **manuelles Signing** (`CODE_SIGN_STYLE=Manual`), nicht "Automatic":
+Automatic Signing ist für den interaktiven Xcode-Workflow mit eingeloggter
+Apple-ID gedacht und in einem headless CI-Runner weder praktikabel noch
+deterministisch reproduzierbar.
+
+Gewählter Ansatz: **Zertifikat + Profil als base64-Secrets, Import in eine
+temporäre, isolierte CI-Keychain** (Standardmuster aus Apples eigener
+CI-Dokumentation und dem offiziellen `apple-actions/import-codesign-certs`-
+Pattern, hier aber ohne zusätzliche Third-Party-Action nachgebaut, um keine
+weitere externe Abhängigkeit einzuführen):
+
+- **Nicht gewählt:** Fastlane `match` (eigenes privates Git-Repo für
+  Zertifikate/Profile) – für einen einzelnen Piloten zusätzliche
+  Infrastruktur (weiteres privates Repo, Fastlane-Toolchain, `Matchfile`)
+  ohne klaren Mehrwert gegenüber direktem `xcodebuild`.
+- **Nicht gewählt:** Automatic Signing mit App-Store-Connect-API-Key
+  (`xcodebuild -allowProvisioningUpdates` OHNE manuelles Zertifikat) – zwar
+  von Apple/Xcode 13+ unterstützt, aber deutlich fragiler in CI (Xcode
+  versucht dabei selbst, Profile über die API anzulegen/zu ändern, was bei
+  bereits bestehenden Profilen zu Seiteneffekten führen kann) und schwerer
+  nachzuvollziehen als ein explizit vorab erzeugtes Profil.
+- **Gewählt:** Manuelles Signing mit vorab in Xcode/Developer-Portal erzeugtem
+  Distribution-Zertifikat + App-Store-Provisioning-Profil, beide als
+  base64-Secrets hinterlegt, Import/Cleanup vollständig innerhalb des
+  Workflow-Laufs (temporäre Keychain, wird am Ende immer gelöscht).
+
+Der Upload selbst läuft über den **App Store Connect API Key**
+(`xcrun altool --upload-app --apiKey ... --apiIssuer ...`), NICHT über ein
+persönliches Apple-Passwort/App-Specific-Password – kein 2FA-Prompt in CI
+möglich/nötig, Key ist jederzeit in App Store Connect widerrufbar.
+
+### 4. Benötigte GitHub Secrets (noch nicht angelegt)
+
+| Secret | Zweck | Herkunft |
+|---|---|---|
+| `APP_STORE_CONNECT_KEY_ID` | App Store Connect API Key – Key-ID | App Store Connect → Users and Access → Integrations → App Store Connect API |
+| `APP_STORE_CONNECT_ISSUER_ID` | App Store Connect API Key – Issuer-ID | dieselbe Seite |
+| `APP_STORE_CONNECT_PRIVATE_KEY` | Inhalt der `AuthKey_<KEY_ID>.p8`-Datei (roher Text) | Download beim Erzeugen des API-Keys (nur einmal möglich!) |
+| `APPLE_TEAM_ID` | 10-stellige Apple Developer Team-ID | developer.apple.com → Membership |
+| `IOS_DIST_CERTIFICATE_P12_BASE64` | base64-kodiertes `.p12`-Export des "Apple Distribution"-Zertifikats (inkl. privatem Schlüssel) | Keychain Access (Mac) → Zertifikat exportieren |
+| `IOS_DIST_CERTIFICATE_PASSWORD` | Passwort des `.p12`-Exports | selbst vergeben beim Export |
+| `IOS_PROVISIONING_PROFILE_BASE64` | base64-kodiertes App-Store-`.mobileprovision`-Profil für `ma.markt.app` | developer.apple.com → Profiles, oder Xcode-Export |
+| `IOS_CI_KEYCHAIN_PASSWORD` | beliebiges Zufallspasswort NUR für die temporäre CI-Keychain | z. B. `openssl rand -hex 32`, kein Apple-Bezug |
+
+Keines dieser Secrets wurde in diesem Schritt angelegt oder hartcodiert –
+der Workflow prüft ihre Anwesenheit per Preflight-Step und bricht ohne sie
+kontrolliert mit einer Liste der fehlenden Namen ab.
+
+### 5. Was zusätzlich einen Mac benötigt (über §7j hinaus)
+
+Zusätzlich zu den bereits in §7j dokumentierten Punkten (SPM-Package-
+Auflösung, erster Xcode-Build, Code-Signing-Infrastruktur) ist für diese
+Pipeline **einmalig** auf einem Mac nötig:
+
+1. Distribution-Zertifikat im Apple Developer Portal erzeugen (oder
+   bestehendes verwenden) und als `.p12` mit Passwort exportieren.
+2. App-Store-Provisioning-Profil für `ma.markt.app` erzeugen und
+   herunterladen.
+3. App Store Connect API Key erzeugen und `.p8`-Datei sichern (nur beim
+   Erzeugen einmal herunterladbar).
+4. **Xcode-Scheme "App" auf "Shared" setzen** (`Product → Scheme → Manage
+   Schemes → Shared`-Haken) und die dadurch entstehende Datei
+   `ios/App/App.xcodeproj/xcshareddata/xcschemes/App.xcscheme` ins Repo
+   committen – ohne diesen Schritt bricht der Workflow im Preflight ab.
+5. Einmaliger Eintrag der App (Bundle-ID `ma.markt.app`) in App Store
+   Connect ("Neue App" anlegen), da `xcrun altool --upload-app` einen
+   bereits in App Store Connect existierenden App-Datensatz für diese
+   Bundle-ID voraussetzt.
+
+Erst nach diesen fünf einmaligen, manuellen Mac-/Portal-Schritten kann der
+Workflow per `workflow_dispatch` einen vollständigen, echten Testlauf
+durchführen.
+
+### 6. Was unverändert bleibt
+
+- `build-android-apk.yml` wurde **nicht** angefasst – Android-Pipeline läuft
+  exakt wie zuvor (M2.2/M3a).
+- Backend, JWT, DB, Entitlements, `AppRegistry` – unverändert.
+- Angular-Code, `AuthService`, `StorageAdapter`, `CameraAdapter`,
+  `PlatformService` – unverändert; die Pipeline baut ausschließlich die
+  bereits in M4 (§7j) erzeugte native `ios/`-Hülle.
+- **Kein** App-Store-Release, **keine** externe TestFlight-Freigabe – nur
+  interner Upload/interne Tester-Gruppe (Freigabe für externe Tester
+  erfordert zusätzlich einen manuellen Beta-App-Review-Schritt in App Store
+  Connect, der hier bewusst nicht automatisiert wird).
+
+### 7. Verdikt
+
+Pipeline ist vollständig vorbereitet und dokumentiert, aber **noch nicht mit
+echten Secrets gelaufen** (kein Apple Developer Account/Zertifikat/Profil in
+dieser Sandbox verfügbar, wie erwartet). Sobald die fünf Schritte aus
+Abschnitt 5 einmalig auf einem Mac durchgeführt und die acht Secrets aus
+Abschnitt 4 im Repository hinterlegt sind, kann der Workflow über
+"Actions → Build iOS TestFlight → Run workflow" gestartet werden und sollte
+ohne weitere Codeänderung einen Build direkt in TestFlight liefern.
+
+## 7l. Mobile-Factory-Pilot M4 – TestFlight-Pipeline ausführbar machen (Setup-Checkliste)
+
+Ziel dieses Schritts: **keine neue iOS-Architektur**, sondern die bereits
+vorbereitete Pipeline (§7k) so weit bringen, dass sie nach Eintragen der
+Secrets tatsächlich `Run workflow → Archive → IPA → Upload → TestFlight`
+durchläuft. Alle hier gemachten Repo-Änderungen sind minimal und rein
+CI-technisch (Xcode-Scheme-Datei, Upload-Kommando) – kein Angular-/Auth-/
+Storage-/Entitlement-Code wurde angefasst.
+
+### 1. Welches Xcode-Projekt wird verwendet?
+
+`storeFrontend/ios/App/App.xcodeproj` – **kein** `.xcworkspace` vorhanden
+(geprüft: `find ios -name "*.xcworkspace"` findet nur das interne, von
+Xcode automatisch verwaltete `App.xcodeproj/project.xcworkspace`, kein
+eigenständiges CocoaPods-Workspace). Grund: Capacitor 8 verdrahtet Plugins
+per **Swift Package Manager** (`ios/App/CapApp-SPM/Package.swift`, siehe
+§7j) direkt in das `.xcodeproj` – es gibt kein `Podfile`, keinen `pod
+install`-Schritt. Der Workflow baut deshalb korrekt mit
+`xcodebuild -project App.xcodeproj -scheme App ...` (nicht `-workspace`).
+
+### 2. War der App-Scheme wirklich nicht shared/committed?
+
+Ja, bestätigt: vor diesem Schritt existierte kein
+`ios/App/App.xcodeproj/xcshareddata/xcschemes/*.xcscheme` im Repo (nur das
+projekt-interne `project.xcworkspace/xcshareddata`, das nichts mit
+Build-Schemes zu tun hat). `cap add ios` legt für den generierten
+Einzel-Target "App" standardmäßig nur eine **user-lokale** (nicht
+committete) Scheme-Einstellung an.
+
+### 3. Konnte der Scheme ohne Xcode-Neustart erzeugt werden?
+
+**Ja – minimal umgesetzt, kein Mac/Xcode nötig.** Geprüft in
+`project.pbxproj`: Capacitors iOS-Template verwendet feste, seit Jahren
+unveränderte Platzhalter-UUIDs (`504EC3031FED79650016851F` für den
+`PBXNativeTarget "App"`, `504EC2FC1FED79650016851F` für `PBXProject`),
+keine bei jedem `cap add ios`-Lauf neu zufällig generierten IDs. Damit ließ
+sich die Datei
+
+```
+ios/App/App.xcodeproj/xcshareddata/xcschemes/App.xcscheme
+```
+
+von Hand nach dem Standard-Xcode-Scheme-XML-Format anlegen (Build-, Test-,
+Launch-, Profile-, Analyze- und Archive-Action, jeweils mit
+`BuildableReference` auf `BlueprintIdentifier = 504EC3031FED79650016851F`,
+`BuildableName = App.app`, `ReferencedContainer =
+container:App.xcodeproj`) – **committet, kein Xcode-Start nötig.**
+
+Absicherung falls sich das Template künftig ändert (neue
+Capacitor-Major-Version mit anderen UUIDs): Der Preflight-Step des
+Workflows prüft nur, dass die Datei existiert, nicht ihren Inhalt gegen das
+aktuelle `project.pbxproj`. Falls `xcodebuild` trotz vorhandener Datei einen
+Fehler wie `"scheme App is not currently configured"` meldet, bedeutet das:
+die UUIDs stimmen nicht mehr überein → dann tatsächlich einmalig auf einem
+Mac nötig: `App.xcodeproj` in Xcode öffnen → *Product → Scheme → Manage
+Schemes* → Haken bei **Shared** für "App" setzen → Xcode schreibt die Datei
+automatisch neu → committen.
+
+### 4. Bundle-ID-Konsistenz (`ma.markt.app`)
+
+Geprüft, überall identisch:
+
+| Ort | Wert |
+|---|---|
+| `capacitor.config.ts` (`appId`) | `ma.markt.app` |
+| `ios/App/App.xcodeproj/project.pbxproj` (`PRODUCT_BUNDLE_IDENTIFIER`, beide Build-Configs Debug+Release) | `ma.markt.app` |
+| `ios/App/App/Info.plist` (`CFBundleIdentifier`) | `$(PRODUCT_BUNDLE_IDENTIFIER)` → löst zur Build-Zeit zu `ma.markt.app` auf |
+| `android/app/build.gradle` (`applicationId`, zum Vergleich) | `ma.markt.app` (unverändert, M2) |
+| `.github/workflows/build-ios-testflight.yml` (`ExportOptions*.plist` → `provisioningProfiles`-Mapping) | Schlüssel `ma.markt.app` |
+
+Keine Abweichung, keine Änderung nötig.
+
+### 5. Einmalig anzulegende Apple-Objekte
+
+Alle fünf Schritte sind einmalige, manuelle Aktionen im Apple Developer
+Portal bzw. App Store Connect (kein CI/Repo-Vorgang):
+
+1. **App ID** (developer.apple.com → Certificates, IDs & Profiles →
+   Identifiers → "+") – Bundle-ID **explizit** (nicht Wildcard) `ma.markt.app`
+   registrieren. Capabilities: für den aktuellen Funktionsumfang (Auth via
+   Secure Storage/Keychain, Kamera) sind **keine** zusätzlichen Capabilities
+   nötig (siehe §7j Punkt 4 – Keychain-Zugriff innerhalb derselben App
+   braucht kein Capability-Flag).
+2. **App Store Connect App** (appstoreconnect.apple.com → Apps → "+" → New
+   App) – Plattform iOS, Bundle-ID `ma.markt.app` aus Schritt 1 auswählen,
+   Name z. B. "markt.ma". Ohne diesen Eintrag lehnt der Upload (Schritt
+   unten) die Bundle-ID ab, da noch keine App dafür existiert.
+3. **Distribution Certificate** (developer.apple.com → Certificates → "+" →
+   "Apple Distribution") – lokal (auf einem Mac oder über Keychain
+   Access + CSR) erzeugen, herunterladen, in Keychain Access importieren,
+   dann **als `.p12` mit Passwort exportieren** (Rechtsklick auf das
+   Zertifikat in Keychain Access → "Exportieren").
+4. **App Store Provisioning Profile** (developer.apple.com → Profiles →
+   "+" → "App Store Connect" (Distribution)) – App ID aus Schritt 1 und
+   Zertifikat aus Schritt 3 auswählen, herunterladen (`.mobileprovision`).
+5. **App Store Connect API Key** (appstoreconnect.apple.com → Users and
+   Access → Integrations → App Store Connect API → "+") – Rolle mind.
+   "App Manager" oder "Developer", herunterladen liefert eine
+   `AuthKey_<KEY_ID>.p8`-Datei (**nur einmal herunterladbar**, sofort
+   sichern).
+
+### 6. GitHub Secrets – exakte Anleitung pro Secret
+
+| Secret | Wo bei Apple finden/erzeugen | Format | base64 nötig? | PowerShell-Beispiel (Windows) |
+|---|---|---|---|---|
+| `APP_STORE_CONNECT_KEY_ID` | App Store Connect → Users and Access → Integrations → App Store Connect API → Spalte "Key ID" (z. B. `2X9R4HXF34`) | reiner String, 10 Zeichen | Nein | – (Wert direkt aus der Tabelle kopieren) |
+| `APP_STORE_CONNECT_ISSUER_ID` | dieselbe Seite, oben als "Issuer ID" angezeigt (UUID-Format, z. B. `69a6de70-...`) | UUID-String | Nein | – (Wert direkt kopieren) |
+| `APP_STORE_CONNECT_PRIVATE_KEY` | Inhalt der beim Erzeugen des Keys heruntergeladenen `AuthKey_<KEY_ID>.p8` | **roher Text** der Datei inkl. `-----BEGIN PRIVATE KEY-----`/`-----END PRIVATE KEY-----`-Zeilen | **Nein** – Workflow schreibt den Secret-Wert 1:1 in eine `.p8`-Datei | `Get-Content .\AuthKey_XXXX.p8 -Raw \| Set-Clipboard` (Inhalt danach direkt als Secret-Wert einfügen) |
+| `APPLE_TEAM_ID` | developer.apple.com → Account → Membership Details → "Team ID" (10-stelliger alphanumerischer Code, z. B. `AB12CD34EF`) | reiner String | Nein | – (Wert direkt kopieren) |
+| `IOS_DIST_CERTIFICATE_P12_BASE64` | Export aus Schritt 5.3 (`Distribution.p12`) | base64-kodierter Binärinhalt der `.p12`-Datei | **Ja** | `[Convert]::ToBase64String([IO.File]::ReadAllBytes("Distribution.p12")) \| Set-Clipboard` |
+| `IOS_DIST_CERTIFICATE_P12_PASSWORD` | selbst vergebenes Passwort beim `.p12`-Export in Keychain Access (Dialog fragt danach) | reiner String | Nein | – (selbst gewähltes Passwort, sicher merken/in Passwortmanager ablegen) |
+| `IOS_PROVISIONING_PROFILE_BASE64` | Download aus Schritt 5.4 (`.mobileprovision`) | base64-kodierter Binärinhalt der Profildatei | **Ja** | `[Convert]::ToBase64String([IO.File]::ReadAllBytes("AppStore.mobileprovision")) \| Set-Clipboard` |
+| `IOS_CI_KEYCHAIN_PASSWORD` | **kein** Apple-Bezug – frei wählbares Einmal-Passwort NUR für die temporäre CI-Keychain dieses Workflow-Laufs | reiner String | Nein | `[System.Web.Security.Membership]::GeneratePassword(32,8)` (oder beliebiger Passwortgenerator) |
+
+**Hinweis zur Umbenennung:** In §7k hieß das Zertifikat-Passwort-Secret noch
+`IOS_DIST_CERTIFICATE_PASSWORD` – konsequent zum Namensschema der übrigen
+`IOS_*`-Secrets in `build-ios-testflight.yml` auf `IOS_DIST_CERTIFICATE_P12_PASSWORD`
+umbenannt (Workflow-Datei entsprechend angepasst, keine zwei Namen mehr im
+Umlauf).
+
+Secrets anlegen unter: GitHub-Repo → Settings → Secrets and variables →
+Actions → "New repository secret". Kein Secret wurde in diesem Schritt im
+Repo angelegt oder hartcodiert.
+
+### 7. Upload-Weg korrigiert: `xcrun altool` → `xcodebuild -exportArchive` (destination: upload)
+
+Geprüft, ob `xcrun altool` mit der gewählten Xcode-Version
+(`latest-stable`, aktuell Xcode 15/16-Generation) noch der richtige Weg
+ist: **Nein, korrigiert.** Apple hat `altool` bereits mit den Xcode-13-
+Release-Notes als deprecated markiert ("Use Xcode or Transporter to upload
+builds to App Store Connect") und das Tool ist in neueren Xcode-Versionen
+nicht mehr durchgängig verlässlich vorhanden. Der Workflow wurde
+entsprechend umgestellt:
+
+- **Vorher (§7k, jetzt ersetzt):** `xcrun altool --upload-app --apiKey ... --apiIssuer ...`
+- **Jetzt:** `xcodebuild -exportArchive -exportOptionsPlist <plist mit
+  `destination: upload`> -authenticationKeyPath ... -authenticationKeyID ...
+  -authenticationKeyIssuerID ...` – das ist derselbe, von Xcode Organizer
+  und dem Transporter-Tool intern verwendete Signing-/Upload-Mechanismus,
+  offiziell von Apple für nicht-interaktive CI-Uploads vorgesehen, **kein**
+  Drittanbieter-Tool (kein fastlane) nötig.
+
+Der Workflow exportiert dafür zweimal aus demselben Archiv: einmal mit
+`destination: export` (liefert das lokale `.ipa` für den GitHub-Actions-
+Artifact-Download) und einmal mit `destination: upload` (lädt direkt zu
+App Store Connect/TestFlight hoch, authentifiziert über die
+`-authenticationKey*`-Flags mit dem App Store Connect API Key – kein
+persönliches Apple-Passwort, kein interaktives 2FA).
+
+### 8. Ablauf nach Eintragen aller Secrets
+
+```
+GitHub → Actions → "Build iOS TestFlight" → Run workflow
+  → Preflight (Secrets + Scheme-Datei) ✅
+  → Angular Build + cap sync ios
+  → Zertifikat/Profil in temporäre Keychain
+  → xcodebuild archive (Release, manuelles Signing)
+  → Export .ipa (lokal, als Artifact herunterladbar)
+  → Export mit destination "upload" → direkter Upload zu App Store Connect
+  → Build erscheint in App Store Connect → TestFlight (interner Kreis)
+  → auf iPhone via TestFlight-App installierbar (sobald interner Tester
+    hinzugefügt wurde – App Store Connect → TestFlight → Internal Testing)
+```
+
+### 9. Was unverändert bleibt
+
+- `build-android-apk.yml`, Android-Struktur, Backend/JWT/DB/Entitlements/
+  `AppRegistry` – **nicht angefasst**.
+- Keine neue Mobile-Architektur, kein `IosAuthService`, kein zusätzlicher
+  Adapter – ausschließlich CI-technische Ergänzungen (eine Xcode-Scheme-XML-
+  Datei, Anpassung des Upload-Kommandos im Workflow).
+
+### 10. Verdikt
+
+Die Pipeline ist jetzt so weit vorbereitet, dass **ausschließlich noch die
+acht Secrets (Abschnitt 6) sowie die fünf einmaligen Apple-Portal-Objekte
+(Abschnitt 5) fehlen** – keine weiteren Code- oder Workflow-Änderungen sind
+für einen ersten echten Testlauf erforderlich. Sobald beides vorhanden ist,
+sollte "Run workflow" ohne weitere Anpassung einen Build direkt in
+TestFlight liefern.
+
 ## 8. Übergangslösung storeId
 
 Aktuell ist `storeId` der **einzige** Tenant-/Scope-Schlüssel im gesamten
