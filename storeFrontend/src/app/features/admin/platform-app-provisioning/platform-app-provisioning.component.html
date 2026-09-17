@@ -1,0 +1,147 @@
+<div class="platform-provisioning">
+  <header class="page-header">
+    <h1>Platform Administration – App Provisioning</h1>
+    <p class="subtitle">Apps &amp; Store-Kontexte für Benutzer freischalten/deaktivieren (App Factory Entitlements).</p>
+  </header>
+
+  <section class="user-search">
+    <div class="search-row">
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Benutzer suchen (E-Mail oder Name)..."
+        [(ngModel)]="searchQuery"
+        (keyup.enter)="search()"
+        aria-label="Benutzer suchen"
+      />
+      <button type="button" class="btn btn-primary" (click)="search()" [disabled]="searching()">
+        {{ searching() ? 'Suche…' : 'Suchen' }}
+      </button>
+    </div>
+    @if (searchError()) {
+      <p class="error-text">{{ searchError() }}</p>
+    }
+
+    @if (users().length > 0) {
+      <ul class="user-results" role="listbox" aria-label="Suchergebnisse">
+        @for (u of users(); track u.id) {
+          <li>
+            <button
+              type="button"
+              class="user-result-item"
+              [class.selected]="selectedUser()?.id === u.id"
+              (click)="selectUser(u)"
+            >
+              <span class="user-email">{{ u.email }}</span>
+              @if (u.name) { <span class="user-name">({{ u.name }})</span> }
+              <span class="mode-badge" [class.mode-managed]="u.appAccessMode === AppAccessMode.MANAGED">
+                {{ u.appAccessMode }}
+              </span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  @if (selectedUser()) {
+    <section class="user-detail">
+      <h2>{{ selectedUser()?.email }}</h2>
+
+      @if (loadingEntitlements()) {
+        <p>Lade Entitlements…</p>
+      } @else if (entitlementsData()) {
+        <div class="mode-summary">
+          Aktueller Modus:
+          <span class="mode-badge" [class.mode-managed]="entitlementsData()?.appAccessMode === AppAccessMode.MANAGED">
+            {{ entitlementsData()?.appAccessMode }}
+          </span>
+          @if (entitlementsData()?.appAccessMode === AppAccessMode.LEGACY) {
+            <span class="mode-hint">– hat aktuell Zugriff auf ALLE Apps (Legacy-Verhalten).</span>
+          } @else {
+            <span class="mode-hint">– hat NUR Zugriff auf die unten explizit aktivierten Apps/Contexts.</span>
+          }
+        </div>
+
+        @if (showLegacyWarning) {
+          <div class="legacy-warning" role="alertdialog" aria-label="LEGACY zu MANAGED Warnung">
+            <strong>⚠️ Achtung:</strong> Dieser Benutzer ist aktuell <em>LEGACY</em> und hat dadurch Zugriff auf
+            <strong>alle</strong> Apps. Mit dem ersten Entitlement wechselt der Account sofort und dauerhaft auf
+            <strong>MANAGED</strong>: Ab diesem Zeitpunkt hat der Benutzer nur noch Zugriff auf explizit
+            freigeschaltete Apps.
+            <div class="legacy-warning-actions">
+              <button type="button" class="btn btn-secondary" (click)="cancelLegacyTransition()">Abbrechen</button>
+              <button type="button" class="btn btn-danger" (click)="confirmLegacyTransition()">
+                Verstanden, fortfahren
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (errorMessage()) {
+          <p class="error-text">{{ errorMessage() }}</p>
+        }
+
+        <div class="app-grid">
+          @for (entry of apps; track trackByAppKey($index, entry)) {
+            <div class="app-card">
+              <div class="app-card-title">
+                <span class="app-icon">{{ entry.icon }}</span>
+                <span>{{ entry.titleKey | translate }}</span>
+                <span class="scope-badge">{{ entry.scope }}</span>
+              </div>
+
+              @if (entry.scope === 'GLOBAL') {
+                <div class="global-app-row">
+                  @if (entitlementsForApp(entry.key).length > 0) {
+                    @for (e of entitlementsForApp(entry.key); track trackByEntitlementId($index, e)) {
+                      <label class="checkbox-row">
+                        <input
+                          type="checkbox"
+                          [checked]="e.enabled"
+                          [disabled]="saving()"
+                          (change)="toggleEntitlement(e)"
+                        />
+                        GLOBAL
+                      </label>
+                    }
+                  } @else {
+                    <button type="button" class="btn btn-secondary btn-sm" [disabled]="saving()" (click)="activateGlobalApp(entry.key)">
+                      Aktivieren
+                    </button>
+                  }
+                </div>
+              } @else {
+                <div class="store-app-list">
+                  @for (e of entitlementsForApp(entry.key); track trackByEntitlementId($index, e)) {
+                    <label class="checkbox-row">
+                      <input
+                        type="checkbox"
+                        [checked]="e.enabled"
+                        [disabled]="saving()"
+                        (change)="toggleEntitlement(e)"
+                      />
+                      Store {{ e.storeId }} @if (e.storeName) { – {{ e.storeName }} }
+                    </label>
+                  }
+
+                  <div class="add-store-row">
+                    <select class="form-control" [(ngModel)]="newStoreSelection[entry.key]" [ngModelOptions]="{standalone: true}">
+                      <option [ngValue]="null">– Store wählen –</option>
+                      @for (s of stores(); track s.id) {
+                        <option [ngValue]="s.id">{{ s.name }} ({{ s.id }})</option>
+                      }
+                    </select>
+                    <button type="button" class="btn btn-secondary btn-sm" [disabled]="saving()" (click)="addStoreEntitlement(entry.key)">
+                      + Store freischalten
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+</div>

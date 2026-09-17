@@ -32,4 +32,11 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
      */
     @Query("SELECT s FROM Store s WHERE s.whatsappNumber IS NOT NULL AND s.whatsappNumber != ''")
     List<Store> findAllWithWhatsAppNumber();
+
+    /**
+     * App Provisioning Phase 1 (Platform Administration) - einfache
+     * Freitext-Suche für die Context-Auswahl (STORE-scoped Entitlements),
+     * bewusst ohne Pagination (Phase 1, kleine, begrenzte Ergebnisliste).
+     */
+    List<Store> findTop50ByNameContainingIgnoreCaseOrSlugContainingIgnoreCase(String name, String slug);
 }

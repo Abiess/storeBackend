@@ -2709,3 +2709,363 @@ SHOP-spezifisch erweitert werden – nur Konfiguration (`baseRoute`,
 - POS bleibt Teil von SHOP (kein eigener `AppKey.POS`), wie in 12.9
   empfohlen.
 
+## 14. App Provisioning / Platform Administration (Audit – keine Implementierung)
+
+App Factory v1 gilt mit SHOP, DHL, LOYALTY (STORE) und MARITIME (GLOBAL) als
+bewiesen (Abschnitt 13.5). **Es finden ab jetzt keine weiteren
+Factory-Core-/Routing-Refactorings statt.** Dieser Abschnitt ist eine reine
+Bestandsaufnahme für den nächsten, separaten Auftrag: eine
+Platform-Admin-Funktion, mit der ein `ROLE_PLATFORM_ADMIN` Entitlements
+(`UserAppEntitlement`) für Benutzer setzt, statt dies wie bisher per Hand-SQL
+zu tun. **Keine Zeile Code wurde für diesen Abschnitt geändert.**
+
+### 14.1 Ist-Zustand Backend
+
+**Datenmodell – bereits vollständig vorhanden, aktuell aber „dormant“ (nur
+per SQL befüllt):**
+
+- `UserAppEntitlement` (`src/main/java/storebackend/entity/UserAppEntitlement.java`):
+  `id`, `user` (ManyToOne), `store` (ManyToOne, nullable – `null` bei GLOBAL),
+  `app` (`AppKey`, als String), `enabled` (boolean – **Soft-Delete-Pattern**,
+  kein Hard-Delete), `createdAt`/`updatedAt`.
+- DB-Constraints (Migration `V025__create_user_app_entitlements.sql`): zwei
+  partielle Unique-Indizes –
+  `uq_user_app_entitlement_global (user_id, app) WHERE store_id IS NULL` und
+  `uq_user_app_entitlement_store (user_id, store_id, app) WHERE store_id IS NOT NULL`
+  (Postgres-NULL-Semantik erzwingt zwei getrennte Indizes statt eines).
+- `UserAppEntitlementRepository`: `existsByUserId`, `findByUserId`,
+  `findByUserIdAndAppAndStoreId`, `findByUserIdAndAppAndStoreIdIsNull`. Kein
+  `save()`-Aufruf irgendwo im Code gefunden – Repository wird bisher nur
+  **lesend** verwendet.
+- `AppEntitlementDTO` (`app`, `storeId`, `enabled`) – bereits die
+  „App→Store→enabled“-Form, die auch eine Provisioning-UI braucht.
+- **Kein `UserAppEntitlementService`** – Zugriff bislang direkt über das
+  Repository (in `AuthService.login()` und `AppAccessChecker`).
+
+**Enums – vollständig, zentral, keine Duplikation nötig:**
+
+- `AppKey` (`SHOP`, `DHL`, `LOYALTY`, `MARITIME`, `ISSUE_ANALYSIS`), jeweils
+  mit `AppScope` (`STORE`/`GLOBAL`) im Konstruktor verdrahtet
+  (`src/main/java/storebackend/enums/AppKey.java`).
+- `AppAccessMode` (`LEGACY`/`MANAGED`) – **User-weit**, nicht pro App:
+  `AppAccessChecker.getAccessMode()` liefert `MANAGED`, sobald **irgendein**
+  `UserAppEntitlement`-Datensatz für den User existiert, sonst `LEGACY`
+  (Alt-Verhalten, voller Zugriff). Für Provisioning wichtig: **das Anlegen
+  des ersten Entitlements für einen bisherigen LEGACY-User schaltet ihn
+  implizit auf MANAGED um** – ab dann zählt ausschließlich die
+  Whitelist. Dieser Seiteneffekt muss der Platform-Admin-UI unmissverständlich
+  kommuniziert werden (z.B. Warnhinweis „Dieser User ist aktuell LEGACY (voller
+  Zugriff) – das erste Entitlement schränkt ihn auf die konfigurierten Apps ein“).
+- Kein Backend-Äquivalent zur Frontend-`AppRegistry` (Titel/Icon) – bewusst
+  UI-only, siehe 14.6.
+
+**Durchsetzung – vollständig, unverändert lassen:**
+
+- `@RequiresApp(AppKey, scope: AppScopeSource)` + `AppAccessInterceptor`
+  (`WebConfig` registriert auf `/api/**`) – prüft `AppAccessChecker.hasAppAccess()`.
+- `StoreAccessChecker` – unabhängige zweite Schicht („darf User diesen
+  STORE sehen“, unabhängig von App-Entitlements).
+- `Role` (`USER`, `ROLE_PLATFORM_ADMIN`, `ROLE_RESELLER`, `ROLE_SUPPLIER`) –
+  **bereits vorhanden und produktiv genutzt** (`@PreAuthorize(hasRole('ROLE_PLATFORM_ADMIN'))`
+  z.B. in `DhlAdminController`, `CommissionController`). **Keine neue Rolle
+  nötig.**
+
+**Fehlende Bausteine (Gaps):**
+
+- Kein Controller für Entitlement-Verwaltung (`save`/`update`/`enabled=false`).
+- Kein Controller, der alle Stores plattformweit listet (nur
+  `GET /api/me/stores` – eigene Stores des eingeloggten Users). Für die
+  „Context wählen“-Ansicht eines Platform-Admins fehlt ein
+  `GET /api/admin/stores`-Äquivalent.
+- Kein Controller, der Benutzer sucht/listet (`GET /api/admin/users`) –
+  es existiert aktuell **kein** allgemeiner User-Admin-Endpunkt.
+- Kein zentrales `/api/admin/**`-Muster – bestehende Admin-Controller
+  (`AdminDeliveryController`, `DiagnosticsController`,
+  `MediaMigrationController`, `WooCommerceAdminController`,
+  `DhlAdminController`) sind Einzelfälle, aber alle unter `/api/admin/...`
+  + `@PreAuthorize(hasRole('ROLE_PLATFORM_ADMIN'))` – **das ist bereits ein
+  wiederholbares, existierendes Muster**, dem ein neuer
+  `AdminUserAppEntitlementController` einfach folgen kann.
+
+### 14.2 Ist-Zustand Frontend
+
+- Kein Platform-Admin-UI vorhanden (`grep` nach `platform-admin`/`PlatformAdmin`
+  → keine Treffer).
+- `AppRegistry` (`core/config/app-registry.ts`) liefert bereits Titel/Icon/
+  Scope/`contextSelectorSupported` für alle 5 Apps – geeignete, einzige
+  Quelle für App-Metadaten in einer künftigen Provisioning-UI (keine erneute
+  Hartcodierung von App-Namen nötig).
+- `AppKey`/`AppEntitlement`-Modelle existieren bereits in `core/models`
+  (vom Login-Response befüllt) – wiederverwendbar für DTOs der neuen UI.
+- `AuthResponse.UserDTO.apps` liefert nur die Entitlements des
+  **eingeloggten** Users – für Platform-Admin-Provisioning eines **anderen**
+  Users wird zwingend ein neuer, admin-only Read-Endpoint benötigt (nicht
+  der Login-Response).
+
+### 14.3 Minimal nötige APIs (Vorschlag, noch NICHT implementiert)
+
+Alle unter `/api/admin/...` (bestehendes Muster), gesichert mit
+`@PreAuthorize("hasRole('ROLE_PLATFORM_ADMIN')")` (bestehende Rolle, keine
+neue Security-Struktur):
+
+| Methode | Pfad | Zweck |
+|---|---|---|
+| `GET` | `/api/admin/users?search=` | User suchen/listen (Name/E-Mail) – **neu**, existiert nicht |
+| `GET` | `/api/admin/users/{userId}/app-entitlements` | Alle Entitlements (inkl. `enabled=false`) + `appAccessMode` eines Users – **neu**, nutzt bestehendes `UserAppEntitlementRepository.findByUserId` + `AppAccessChecker.getAccessMode` |
+| `PUT` | `/api/admin/users/{userId}/app-entitlements` | Upsert eines Entitlements (`app`, `storeId` nullable, `enabled`) – **neu**, Scope-Validierung (`AppScope` STORE↔storeId!=null) analog `AppAccessChecker.validateScope()` wiederverwenden |
+| `PATCH` | `/api/admin/users/{userId}/app-entitlements/{id}` | Nur `enabled` togglen (Soft-Deaktivieren) – **empfohlen statt DELETE**, konsistent mit bestehendem Soft-Delete-Pattern der Entity |
+| `DELETE` | `/api/admin/users/{userId}/app-entitlements/{id}` | Optional, nur falls ein Datensatz wirklich entfernt (nicht nur deaktiviert) werden soll – nicht zwingend für Phase 1 |
+| `GET` | `/api/admin/apps` | Statische Liste `{app, scope}` direkt aus dem `AppKey`-Enum (`Arrays.stream(AppKey.values())`) – **optional**, verhindert, dass die Provisioning-UI eine eigene App-Liste hartcodiert; Titel/Icon bleiben trotzdem im Frontend-`AppRegistry` (rein visuell, kein Sicherheitsbelang) |
+| `GET` | `/api/admin/stores?search=` | Alle Stores (id, name, slug, ownerEmail) für die Context-Auswahl – **neu**, nutzt bestehendes `StoreRepository` (nur `findAll`/Suche exponieren, kein neues Datenmodell) |
+
+Alle Endpunkte sind rein additiv (neuer Controller/neue Methoden), erfordern
+**keine** Änderung an `SecurityConfig.java` (Route-Pattern `/api/admin/**` ist
+bereits implizit durch `@PreAuthorize` pro Methode geschützt, kein
+`permitAll()` in der Nähe) und **keine** DB-Migration (bestehende Tabelle
+`user_app_entitlements` reicht für Phase 1 vollständig aus).
+
+### 14.4 Frontend-Zielbild (Vorschlag, noch nicht gebaut)
+
+```
+Platform Admin (neue, eigenständige Ansicht, kein Bestandteil der App
+Factory-Routen selbst – reine Verwaltungsfunktion für ROLE_PLATFORM_ADMIN)
+├── Benutzer-Suche (GET /api/admin/users)
+│    └── Benutzer auswählen
+│         ├── AppAccessMode-Hinweis (LEGACY ⚠️ / MANAGED) – aus 14.1
+│         └── Pro App (Liste aus AppRegistry, gefiltert/validiert gegen
+│             GET /api/admin/apps):
+│              ├── STORE-Scope → Store-Auswahl (GET /api/admin/stores)
+│              │    └── Toggle enabled (PUT/PATCH je Store)
+│              └── GLOBAL-Scope → ein Toggle (kein Store nötig)
+```
+
+- App-Metadaten (Titel/Icon) kommen **ausschließlich** aus der bestehenden
+  `AppRegistry` (`app-registry.ts`) – keine zweite Hartcodierung.
+- Store-Auswahl nutzt denselben `AppContext`-Gedanken wie
+  `AppContextService` (Store-Liste generisch, App-agnostisch) – aber als
+  **separate, admin-only** Datenquelle (`/api/admin/stores`), nicht die
+  bestehende `getContexts()`, die nur die Entitlements des eingeloggten
+  Users kennt.
+- Bewusst **keine** Wiederverwendung von `AppContextSelectorComponent`
+  (die ist für „App auswählen, in die man selbst wechselt“ gebaut, nicht
+  für „Entitlements eines fremden Users bearbeiten“) – eigene, neue
+  Fachkomponente(n) für Platform-Admin, aber **AppRegistry** als
+  gemeinsame Metadatenquelle.
+
+### 14.5 Empfohlene Phase 1 (Vorschlag für nächsten Auftrag)
+
+1. Backend: `UserAppEntitlementService` (dünn, kapselt
+   Scope-Validierung + Upsert-Logik, die aktuell in `AppAccessChecker`
+   nur lesend existiert).
+2. Backend: `AdminUserAppEntitlementController`
+   (`GET`/`PUT`/`PATCH` wie 14.3), `AdminUserController` (`GET` Suche),
+   `AdminStoreController` (`GET` alle Stores) – alle mit
+   `@PreAuthorize(hasRole('ROLE_PLATFORM_ADMIN'))`, nach existierendem
+   `/api/admin/...`-Muster.
+3. Backend optional: `GET /api/admin/apps` (Enum-Spiegel, keine Duplikation).
+4. Frontend: neue, eigenständige Platform-Admin-Ansicht (Route z.B.
+   `/platform-admin/users/:id/apps`, **außerhalb** des `/apps/...`-Factory-
+   Namensraums, da es kein Consumer, sondern eine Verwaltungsfunktion ist),
+   App-Metadaten aus `AppRegistry`, Store-Liste aus neuem Admin-Endpoint.
+5. Tests: Backend – Scope-Validierung (STORE ohne storeId ablehnen, GLOBAL
+   mit storeId ablehnen), Soft-Toggle idempotent, `ROLE_PLATFORM_ADMIN`-Gate.
+   Frontend – Rendering pro Scope, LEGACY→MANAGED-Warnhinweis.
+6. **Explizit NICHT** in Phase 1: Bulk-Import, Audit-Log für Entitlement-
+   Änderungen, Self-Service durch Store-Owner, automatisches Entitlement-
+   Anlegen bei Store-Erstellung (separates Thema).
+
+### 14.6 Bewusst nicht anfassen
+
+- Keine neue Rolle/Auth-Struktur – `ROLE_PLATFORM_ADMIN` bleibt einzige
+  Prüfung, wie in allen bestehenden `/api/admin/**`-Controllern.
+- Keine Änderung an `AppAccessChecker`/`AppAccessInterceptor`/`@RequiresApp`
+  – diese lesen die Tabelle bereits korrekt; Provisioning befüllt sie nur.
+- Keine Tenant-/Location-Modell-Änderung (Abschnitt 9).
+- Keine DB-Migration – `user_app_entitlements` (V025) reicht aus.
+- Keine weiteren Factory-Core-/Routing-Refactorings (siehe Auftrag) – SHOP/
+  DHL/LOYALTY/MARITIME-Routing aus Abschnitt 13 bleibt exakt wie umgesetzt.
+
+### 14.7 Offene Fragen vor Umsetzung
+
+- Soll das erstmalige Anlegen eines Entitlements für einen LEGACY-User
+  eine explizite Bestätigung im UI erfordern (wegen des impliziten
+  LEGACY→MANAGED-Wechsels, 14.1)?
+- Soll `GET /api/admin/stores` paginiert/gesucht werden (Store-Anzahl
+  könnte langfristig groß werden) – für Phase 1 vermutlich unkritisch,
+  aber zu klären.
+- Soll `DELETE` (Hard-Delete) überhaupt angeboten werden, oder ausschließlich
+  `enabled=false` (empfohlen, konsistent mit bestehendem Soft-Delete-Pattern)?
+
+## 15. App Provisioning Phase 1 – Umsetzung (additiv, implementiert)
+
+Umsetzung des in Abschnitt 14 vorgeschlagenen Phase-1-Plans. Wie beauftragt:
+**keine** neue Rolle, **keine** DB-Migration, **keine** Änderung an
+`AppAccessChecker`/`AppAccessInterceptor`/JWT/Tenant/Factory-Routing/Public
+Storefront. Alle Antworten auf die in 14.7 offenen Fragen: Soft-Disable
+(`enabled=false`, kein Hard-`DELETE`), LEGACY→MANAGED-Übergang erfordert im
+Frontend eine explizite Bestätigung, Store-Suche ist einfach (Top-50,
+`name`/`slug`-Substring) statt paginiert – für Phase 1 ausreichend.
+
+### 15.1 Backend
+
+**Neue, dünne Bausteine – bestehende Repositories/Enums/Entities
+wiederverwendet, nichts dupliziert außer der unvermeidlichen
+Scope-Validierung (s.u.):**
+
+- `storebackend.dto.admin.*` (6 DTOs): `AdminUserSummaryDTO` (`id`, `email`,
+  `name`, `appAccessMode` – bewusst keine sensiblen Felder),
+  `AdminUserEntitlementsDTO` (`userId`, `userEmail`, `appAccessMode`,
+  `entitlements[]` – trägt den aktuellen Modus mit, damit das Frontend den
+  LEGACY-Warnhinweis VOR dem Speichern zeigen kann), `AdminEntitlementDTO`
+  (inkl. `id` fürs PATCH-Targeting und `scope` – abgeleitet aus
+  `AppKey.getScope()`, nicht hartkodiert), `UpsertEntitlementRequest`
+  (`app`, `storeId`, `enabled` – PUT-Body), `PatchEntitlementRequest`
+  (`enabled` – PATCH-Body, togglet ausschließlich das Soft-Delete-Flag),
+  `AdminStoreSummaryDTO` (`id`, `name`, `slug`, `ownerEmail`,
+  `businessType` – für die Context-Auswahl).
+- `storebackend.service.admin.AppProvisioningService` – kapselt die
+  gesamte Logik:
+  - `searchUsers(query)` – Top-25, E-Mail/Name-Substring
+    (`UserRepository.findTop25ByEmailContainingIgnoreCaseOrNameContainingIgnoreCase`,
+    neu ergänzt).
+  - `getUserEntitlements(userId)` – **alle** Entitlements inkl.
+    `enabled=false` (Soft-Disabled müssen für den Admin sichtbar bleiben),
+    plus aktueller `AppAccessMode` via `AppAccessChecker.getAccessMode()`
+    (unverändert, nur gelesen).
+  - `upsertEntitlement(userId, request)` – validiert Scope
+    (STORE braucht `storeId`, GLOBAL darf keine haben), sucht per
+    `findByUserIdAndAppAndStoreId(IsNull)` ein bestehendes Entitlement,
+    legt sonst ein neues an, speichert über
+    `UserAppEntitlementRepository.save()` (**erster echter Schreibzugriff**
+    auf diese Tabelle im gesamten Code).
+  - `patchEnabled(userId, entitlementId, enabled)` – Soft-Toggle mit
+    Ownership-Check (Entitlement muss zum übergebenen User gehören).
+  - `searchStores(query)` – Top-50, Name/Slug-Substring
+    (`StoreRepository.findTop50ByNameContainingIgnoreCaseOrSlugContainingIgnoreCase`,
+    neu ergänzt).
+  - **Bewusste Duplikation:** `AppAccessChecker.validateScope()` ist
+    `private` und die Klasse durfte laut Auftrag nicht angefasst werden –
+    daher wurde dieselbe, sehr kurze Scope-Regel als private Methode in
+    `AppProvisioningService` dupliziert (mit Kommentar begründet), statt
+    dort eine Methode public zu machen.
+- `storebackend.controller.AppProvisioningController` –
+  `/api/admin/app-provisioning/**`, **jede** Methode einzeln mit
+  `@PreAuthorize("hasRole('ROLE_PLATFORM_ADMIN')")` abgesichert (kein
+  Pfad-Level-Schutz in `SecurityConfig` vorhanden – wie bei
+  `DhlAdminController`/`CommissionController`):
+  - `GET  /api/admin/app-provisioning/users?query=`
+  - `GET  /api/admin/app-provisioning/users/{userId}/entitlements`
+  - `PUT  /api/admin/app-provisioning/users/{userId}/entitlements`
+  - `PATCH /api/admin/app-provisioning/users/{userId}/entitlements/{entitlementId}`
+  - `GET  /api/admin/app-provisioning/stores?query=` (Context-Picker)
+  - Fehlerbehandlung lokal im Controller (`NoSuchElementException` → 404,
+    `IllegalArgumentException` → 400 mit `{ "error": "..." }`-Body) –
+    kein neuer globaler `@ExceptionHandler` nötig, da
+    `GlobalExceptionHandler` diese beiden generischen Typen bislang nicht
+    behandelt und eine lokale Behandlung hier ausreicht/konsistent bleibt.
+- Kein `GET /api/admin/apps`-Endpoint umgesetzt (war in 14.5 nur als
+  „optional“ vorgeschlagen) – Frontend bezieht App-Metadaten weiterhin
+  ausschließlich aus der bestehenden, rein deklarativen `AppRegistry`; die
+  gültigen `AppKey`/`AppScope`-Werte sind über die DTOs (Jackson-Enum-
+  Serialisierung) ohnehin implizit vorhanden.
+
+### 15.2 Frontend
+
+- `core/services/app-provisioning.service.ts` – `HttpClient`-Wrapper für
+  alle 5 Endpunkte, Typen (`AdminUserSummary`, `AdminEntitlement`,
+  `AdminUserEntitlements`, `AdminStoreSummary`) gespiegelt aus den
+  Backend-DTOs, nutzt bestehende `AppKey`/`AppAccessMode` aus
+  `core/models.ts`.
+- `core/guards/platform-admin.guard.ts` – `platformAdminGuard`, prüft
+  `authService.getCurrentUser()?.roles` auf den rohen String
+  `'ROLE_PLATFORM_ADMIN'` (Backend liefert Rollen bereits heute als
+  `List<String>` in `AuthResponse.UserDTO.roles`; das ältere,
+  store-zentrierte Frontend-`Role`-Enum in `core/models.ts` deckt
+  `ROLE_PLATFORM_ADMIN` nicht ab und wurde bewusst NICHT erweitert/verändert,
+  um dieses Enum nicht zweckzuentfremden – stattdessen direkter
+  String-Vergleich). Keine Berechtigung → Redirect `/dashboard`; nicht
+  eingeloggt → Redirect `/login`.
+- `features/admin/platform-app-provisioning/` (neue, eigenständige
+  Seite, **außerhalb** von `/apps/...`) – Route
+  `/admin/platform/app-provisioning`, `canActivate: [authGuard,
+  platformAdminGuard]` (additiv in `app.routes.ts` ergänzt, unmittelbar
+  nach dem bestehenden App-Factory-Routenblock DHL/LOYALTY/SHOP).
+  - Benutzer-Suche → Auswahl → pro App (aus `APP_REGISTRY_ORDER`/
+    `APP_REGISTRY` – **keine** erneute Hartkodierung von App-Namen/Icons)
+    entweder ein GLOBAL-Toggle oder eine STORE-Liste mit
+    Checkbox-pro-Store + „Store hinzufügen“-Picker (gespeist aus
+    `searchStores('')`, einmalig beim Öffnen geladen).
+  - **LEGACY→MANAGED-Sicherheitsnetz:** Ist der ausgewählte User aktuell
+    `LEGACY` UND hat noch **keine** Entitlements, wird die erste
+    Aktivierung (egal ob GLOBAL-Toggle oder Store-Freischaltung) nicht
+    sofort ausgeführt, sondern zunächst ein Warnbanner gezeigt
+    („Ab diesem Zeitpunkt hat der Benutzer nur noch Zugriff auf explizit
+    freigeschaltete Apps“) – erst nach Klick auf „Verstanden, fortfahren“
+    wird der eigentliche `PUT`-Aufruf ausgelöst. Danach ist der User
+    MANAGED; alle weiteren Toggles laufen ohne erneute Warnung.
+  - Bewusst **keine** Wiederverwendung von `AppContextSelectorComponent`/
+    `AdminLayoutComponent` (letztere ist store-zentriert – erwartet eine
+    `storeId` aus der Route – und passt nicht zu einer store-losen
+    Platform-Seite) – eigenständige, schlanke Seite mit markt.ma-Optik
+    (Lila-Gradient-Header, `--theme-*`-Tokens wo vorhanden, `border-radius`,
+    Logical Properties `margin-inline-start`/`border-block-end` statt
+    LTR-fixer Properties).
+
+### 15.3 Tests
+
+- Backend (`AppProvisioningServiceTest`, Mockito-Unit-Test, 9 Fälle):
+  LEGACY-User ohne Entitlements → `AppAccessMode.LEGACY` und leere Liste;
+  erstes Entitlement (STORE, SHOP+Store 121) wird persistiert und liefert
+  korrektes DTO; STORE-App ohne `storeId` → `IllegalArgumentException`;
+  GLOBAL-App mit `storeId` → `IllegalArgumentException`; GLOBAL-App ohne
+  `storeId` → akzeptiert; unbekannter User → `NoSuchElementException`;
+  Soft-Disable eines Entitlements → `enabled=false` persistiert;
+  Entitlement eines fremden Users patchen → abgelehnt. Alle 9 Tests grün
+  (`mvn test -Dtest=AppProvisioningServiceTest`).
+  - **Nicht** per Test abgedeckt: Nicht-Platform-Admin → 403. Dies läuft
+    ausschließlich über das bereits produktiv bewährte
+    `@PreAuthorize("hasRole('ROLE_PLATFORM_ADMIN')")`-Mechanismus
+    (identisch zu `DhlAdminController`), für das im Projekt bislang keine
+    MockMvc-/`@WithMockUser`-Testinfrastruktur existiert – analog zum
+    bestehenden Testmuster im Projekt (reine Mockito-Unit-Tests ohne
+    Spring-Security-Kontext) wurde hier kein neuer Testansatz eingeführt.
+- Frontend (`app-provisioning.service.spec.ts` – 5 Fälle,
+  `platform-admin.guard.spec.ts` – 3 Fälle): HTTP-Vertrag aller 5
+  Endpunkte (Methode/URL/Body), Guard-Verhalten (nicht eingeloggt →
+  `/login`, eingeloggt ohne Rolle → `/dashboard`, eingeloggt mit
+  `ROLE_PLATFORM_ADMIN` → Zugriff). Alle 8 Tests grün
+  (`ng test --include=... app-provisioning.service.spec.ts --include=...
+  platform-admin.guard.spec.ts`).
+- Production Build (`ng build --configuration production`): **erfolgreich**,
+  keine neuen Fehler/Warnungen durch diese Änderung (nur bereits bekannte,
+  vorbestehende Bundle-Budget-Warnungen für Alt-Dateien).
+
+### 15.4 Bewusst nicht angefasst
+
+- `AppAccessChecker`, `AppAccessInterceptor`, `@RequiresApp` – nur
+  gelesen, nicht verändert.
+- JWT/Login-Flow, DB-Schema (`user_app_entitlements` aus V025 reicht),
+  Tenant-/Location-Modell, Factory-Routing (Abschnitt 13), Public
+  Storefront/Checkout.
+- Keine neue Rolle – ausschließlich das bestehende
+  `Role.ROLE_PLATFORM_ADMIN`.
+- Kein Hard-`DELETE` von Entitlements – ausschließlich `enabled`-Toggle.
+- Kein `GET /api/admin/apps`-Endpoint (optional, nicht benötigt – siehe
+  15.1).
+
+### 15.5 Verbleibende Hardcodings / bekannte Lücken (dokumentiert, bewusst nicht behoben)
+
+- Store-Suche in `AppProvisioningService.searchStores()` ist eine simple
+  `LIKE`-Substring-Suche ohne Paginierung (Top-50) – bei sehr vielen
+  Stores langfristig zu erweitern (siehe offene Frage 14.7, bewusst nicht
+  in Phase 1 gelöst).
+- Das Frontend-`Role`-Enum (`core/models.ts`) kennt `ROLE_PLATFORM_ADMIN`
+  weiterhin nicht (bewusst nicht erweitert, um dieses store-zentrierte
+  Legacy-Enum nicht zu vermischen) – `platformAdminGuard` vergleicht
+  daher direkt den rohen Rollen-String statt eines typisierten Enum-Werts.
+  Sollte bei einer künftigen Bereinigung der Rollen-Modelle konsolidiert
+  werden.
+- Die Platform-Admin-Seite ist aktuell nirgends in einer Navigation
+  verlinkt (nur direkt über die URL erreichbar) – wie beauftragt lag der
+  Fokus auf der Funktion selbst, nicht auf einem neuen Navigationspunkt.
+

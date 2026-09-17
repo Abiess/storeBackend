@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { platformAdminGuard } from './core/guards/platform-admin.guard';
 import { dashboardStoresRedirectGuard } from './core/guards/dashboard-stores-redirect.guard';
 import { AppKey } from './core/models';
 
@@ -279,6 +280,19 @@ export const routes: Routes = [
       ),
     data: { app: AppKey.SHOP },
     canActivate: [authGuard]
+  },
+
+  // ==================== Platform Administration (App Provisioning Phase 1) ====================
+  // Bewusst AUSSERHALB von /apps/... - dies ist ein Platform-Verwaltungswerkzeug
+  // für ROLE_PLATFORM_ADMIN, kein App-Factory-Consumer (siehe
+  // ARCHITECTURE_APP_FACTORY.md Abschnitt 14/15).
+  {
+    path: 'admin/platform/app-provisioning',
+    loadComponent: () =>
+      import('./features/admin/platform-app-provisioning/platform-app-provisioning.component').then(
+        m => m.PlatformAppProvisioningComponent
+      ),
+    canActivate: [authGuard, platformAdminGuard]
   },
 
   // ==================== DHL Parcel Management ====================
