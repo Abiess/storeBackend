@@ -8,6 +8,7 @@ import { StoreService } from '@app/core/services/store.service';
 import { PwaInstallService } from '@app/core/services/pwa-install.service';
 import { StoreContextService } from '@app/core/services/store-context.service';
 import { AppAccessService } from '@app/core/services/app-access.service';
+import { AppSwitcherComponent } from '@app/shared/components/app-switcher/app-switcher.component';
 import { BusinessType } from '@app/core/models';
 import { LucideAngularModule } from 'lucide-angular';
 // Icons global registriert via LUCIDE_ICONS in app.config.ts
@@ -39,7 +40,7 @@ export interface NavGroup {
 
 @Component({
     selector: 'app-admin-sidebar',
-    imports: [CommonModule, RouterModule, TranslatePipe, LucideAngularModule],
+    imports: [CommonModule, RouterModule, TranslatePipe, LucideAngularModule, AppSwitcherComponent],
     templateUrl: './admin-sidebar.component.html',
     styleUrls: ['./admin-sidebar.component.scss']
 })

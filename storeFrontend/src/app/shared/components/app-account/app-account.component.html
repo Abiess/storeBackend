@@ -1,9 +1,9 @@
 <div class="app-account-container">
   <div class="app-account-header">
-    <h1>👤 {{ titleKey | translate }}</h1>
+    <h1 id="app-account-title">👤 {{ titleKey | translate }}</h1>
   </div>
 
-  <div class="app-account-card">
+  <div class="app-account-card" role="group" aria-labelledby="app-account-title">
     <div class="app-account-row">
       <span class="app-account-label">{{ emailLabelKey | translate }}</span>
       <span class="app-account-value">{{ userEmail() || '–' }}</span>

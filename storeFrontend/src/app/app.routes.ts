@@ -271,6 +271,15 @@ export const routes: Routes = [
     data: { app: AppKey.LOYALTY },
     canActivate: [authGuard]
   },
+  {
+    path: 'apps/shop',
+    loadComponent: () =>
+      import('./shared/components/app-context-selector/app-context-selector.component').then(
+        m => m.AppContextSelectorComponent
+      ),
+    data: { app: AppKey.SHOP },
+    canActivate: [authGuard]
+  },
 
   // ==================== DHL Parcel Management ====================
   {
@@ -370,6 +379,24 @@ export const routes: Routes = [
   {
     path: 'apps/loyalty/:storeId/account',
     loadComponent: () => import('./features/loyalty/loyalty-account.component').then(m => m.LoyaltyAccountComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== SHOP App (app-zentrische Alias-Route) ====================
+  // SHOP Factory Phase 1: dritter Factory-Consumer, additiv. Kein neuer
+  // Shop-Admin – diese Route lädt bewusst DENSELBEN StoreDetailComponent wie
+  // die bestehende 'stores/:id'-Catch-All-Route weiter unten (die dort
+  // vollständig unverändert bestehen bleibt). StoreDetailComponent liest
+  // sowohl params['id'] als auch params['storeId'] (siehe ngOnInit), daher
+  // funktioniert der Alias ohne Komponentenänderung. '/apps/shop/:storeId'
+  // ist lediglich der neue, app-zentrische Ziel-Pfad, den die Factory
+  // (buildAppHomeUrl/AppContextSelector/AppLauncher/AppSwitcher) für SHOP
+  // berechnet – die komplette bestehende '/stores/:id/...'-Admin-Oberfläche
+  // (Produkte, Bestellungen, POS, Einstellungen, ...) bleibt 1:1 erhalten
+  // und ist über die Legacy-URL weiterhin identisch erreichbar.
+  {
+    path: 'apps/shop/:storeId',
+    loadComponent: () => import('./features/stores/store-detail.component').then(m => m.StoreDetailComponent),
     canActivate: [authGuard]
   },
 

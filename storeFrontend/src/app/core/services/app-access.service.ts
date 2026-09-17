@@ -73,6 +73,16 @@ export class AppAccessService {
       return { kind: 'app', app: AppKey.LOYALTY, storeId };
     }
 
+    // App-zentrische SHOP-Route: /apps/shop/:storeId(/...) – dritter
+    // STORE-scoped Factory-Consumer. Zeigt (per Alias-Route) auf denselben
+    // bestehenden Store-Admin-Container wie /stores/:storeId – bewusst KEIN
+    // neuer Shop-Admin, nur ein zusätzlicher app-zentrischer Einstiegspfad.
+    const appsShopMatch = path.match(/^\/apps\/shop(?:\/(\d+))?(\/.*)?$/);
+    if (appsShopMatch) {
+      const storeId = appsShopMatch[1] != null ? Number(appsShopMatch[1]) : null;
+      return { kind: 'app', app: AppKey.SHOP, storeId };
+    }
+
     const storeMatch = path.match(/^\/stores\/(\d+)(\/.*)?$/);
     if (storeMatch) {
       const storeId = Number(storeMatch[1]);
@@ -167,7 +177,11 @@ export class AppAccessService {
         // erreichbar (siehe app.routes.ts).
         return `/apps/loyalty/${storeId}`;
       case AppKey.SHOP:
-        return storeId != null ? `/stores/${storeId}` : '/dashboard';
+        // App-zentrische URL (Ziel-Bild, analog DHL/LOYALTY); die klassische
+        // `/stores/:id`-Route (samt aller Unterseiten) bleibt vollständig als
+        // Legacy-Route erreichbar (siehe app.routes.ts) – hier ändert sich
+        // nur die von der Factory berechnete Ziel-URL, keine bestehende Route.
+        return storeId != null ? `/apps/shop/${storeId}` : '/dashboard';
       default:
         // Sicherer Fallback für zukünftige GLOBAL-Apps ohne eigenen Case
         // (sollte durch die obige Abfrage bereits abgedeckt sein).

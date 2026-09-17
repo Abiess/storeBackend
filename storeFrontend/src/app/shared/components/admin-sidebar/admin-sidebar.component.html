@@ -30,6 +30,21 @@
             </button>
         </div>
 
+        <!-- App-Switcher: nur sichtbar, wenn der User Zugriff auf mehr als eine
+             App hat (generische Factory-Komponente, keine parallele Navigation).
+             Ausgeblendet im collapsed-Zustand, um die schmale Sidebar nicht zu
+             sprengen. @defer verhindert, dass CDK Menu/MatBottomSheet (nur vom
+             AppSwitcher benötigt) in den eagerly geladenen Sidebar-Bundle
+             wandern – die Sidebar wird auf JEDER Seite geladen (app.component.ts),
+             ein eager Import würde daher den initialen Bundle für ALLE User
+             unnötig vergrößern, obwohl der Switcher bei genau einer App
+             ohnehin unsichtbar bleibt. -->
+        <div class="sidebar-app-switcher" *ngIf="!isCollapsed">
+            @defer (on idle) {
+                <app-switcher></app-switcher>
+            }
+        </div>
+
         <!-- Kein Store Banner -->
         <div class="no-store-banner" *ngIf="!hasStore && !isCollapsed" (click)="onNoStoreClick()">
             <lucide-angular name="store" [size]="18" class="no-store-banner__icon" strokeWidth="1.75"></lucide-angular>

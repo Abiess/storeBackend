@@ -38,11 +38,16 @@
   cursor: pointer;
   font-weight: 600;
   color: #2d3748;
-  text-align: left;
+  text-align: start;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .app-context-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(102, 126, 234, 0.18);
+}
+
+.app-context-card:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus, 0 0 0 3px rgba(102, 126, 234, 0.35));
 }

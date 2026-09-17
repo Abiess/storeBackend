@@ -317,5 +317,133 @@ describe('AppAccessService', () => {
       expect(service.getAvailableApps().length).toBe(2);
     });
   });
+
+  describe('MANAGED-User mit ausschließlich SHOP/Store 121 (SHOP Factory Phase 1: 3. STORE-scoped Consumer)', () => {
+    it('leitet direkt auf die app-zentrische SHOP-Startseite (/apps/shop/121)', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [{ app: AppKey.SHOP, storeId: 121, enabled: true }]
+        })
+      );
+
+      expect(service.getPrimaryAppHomeUrl()).toBe('/apps/shop/121');
+    });
+
+    it('erlaubt die neue app-zentrische SHOP-Route sowie den bestehenden Legacy-Store-Admin (/stores/121/...)', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [{ app: AppKey.SHOP, storeId: 121, enabled: true }]
+        })
+      );
+
+      expect(service.isUrlAllowed('/apps/shop/121')).toBeTrue();
+      expect(service.isUrlAllowed('/stores/121')).toBeTrue();
+      expect(service.isUrlAllowed('/stores/121/products')).toBeTrue();
+    });
+
+    it('blockiert SHOP für einen anderen Store (weder app-zentrisch noch Legacy)', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [{ app: AppKey.SHOP, storeId: 121, enabled: true }]
+        })
+      );
+
+      expect(service.isUrlAllowed('/apps/shop/999')).toBeFalse();
+      expect(service.isUrlAllowed('/stores/999')).toBeFalse();
+    });
+  });
+
+  describe('MANAGED-User: SHOP mit mehreren Contexts (Stores 121 + 122)', () => {
+    beforeEach(() => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [
+            { app: AppKey.SHOP, storeId: 121, enabled: true },
+            { app: AppKey.SHOP, storeId: 122, enabled: true }
+          ]
+        })
+      );
+    });
+
+    it('springt NICHT direkt in einen zufälligen Context, sondern öffnet die generische Context-Auswahl (/apps/shop)', () => {
+      expect(service.getPrimaryAppHomeUrl()).toBe('/apps/shop');
+    });
+
+    it('erlaubt die bare App-Route (Context-Auswahl) und beide konkreten Contexts', () => {
+      expect(service.isUrlAllowed('/apps/shop')).toBeTrue();
+      expect(service.isUrlAllowed('/apps/shop/121')).toBeTrue();
+      expect(service.isUrlAllowed('/apps/shop/122')).toBeTrue();
+    });
+  });
+
+  describe('MANAGED-User mit SHOP + DHL (zwei STORE-scoped Apps gleichzeitig)', () => {
+    it('leitet auf den App-Launcher (/apps) – beide Apps sind sichtbar', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [
+            { app: AppKey.SHOP, storeId: 121, enabled: true },
+            { app: AppKey.DHL, storeId: 121, enabled: true }
+          ]
+        })
+      );
+
+      expect(service.getPrimaryAppHomeUrl()).toBe('/apps');
+      expect(service.getAvailableApps()).toEqual(jasmine.arrayContaining([AppKey.SHOP, AppKey.DHL]));
+      expect(service.getAvailableApps().length).toBe(2);
+    });
+  });
+
+  describe('MANAGED-User mit SHOP + LOYALTY (zwei STORE-scoped Apps gleichzeitig)', () => {
+    it('leitet auf den App-Launcher (/apps) – beide Apps sind sichtbar', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [
+            { app: AppKey.SHOP, storeId: 121, enabled: true },
+            { app: AppKey.LOYALTY, storeId: 121, enabled: true }
+          ]
+        })
+      );
+
+      expect(service.getPrimaryAppHomeUrl()).toBe('/apps');
+      expect(service.getAvailableApps()).toEqual(jasmine.arrayContaining([AppKey.SHOP, AppKey.LOYALTY]));
+      expect(service.getAvailableApps().length).toBe(2);
+    });
+  });
+
+  describe('MANAGED-User mit SHOP + MARITIME (STORE + GLOBAL gleichzeitig)', () => {
+    it('leitet auf den App-Launcher (/apps) – beide Apps sind sichtbar', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [
+            { app: AppKey.SHOP, storeId: 121, enabled: true },
+            { app: AppKey.MARITIME, storeId: null, enabled: true }
+          ]
+        })
+      );
+
+      expect(service.getPrimaryAppHomeUrl()).toBe('/apps');
+      expect(service.getAvailableApps()).toEqual(jasmine.arrayContaining([AppKey.SHOP, AppKey.MARITIME]));
+      expect(service.getAvailableApps().length).toBe(2);
+    });
+  });
+
+  describe('LEGACY-User mit SHOP-Daten (unverändertes Verhalten)', () => {
+    it('LEGACY-User bleibt von der SHOP-App-Klassifizierung unbeeinflusst (voller Zugriff, keine Entitlement-Prüfung)', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({ appAccessMode: AppAccessMode.LEGACY })
+      );
+
+      expect(service.isUrlAllowed('/stores/121')).toBeTrue();
+      expect(service.isUrlAllowed('/stores/121/products')).toBeTrue();
+      expect(service.isUrlAllowed('/apps/shop/121')).toBeTrue();
+    });
+  });
 });
 

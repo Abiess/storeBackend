@@ -47,3 +47,8 @@
 .app-account-logout:hover {
   opacity: 0.92;
 }
+
+.app-account-logout:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus, 0 0 0 3px rgba(102, 126, 234, 0.35));
+}

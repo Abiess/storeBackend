@@ -1,17 +1,30 @@
 <div class="app-switcher" *ngIf="visible">
-  <button type="button" class="app-switcher__toggle" (click)="toggle()">
-    {{ 'apps.switcher.label' | translate }} <span class="app-switcher__caret">▾</span>
+  <button
+    type="button"
+    class="app-switcher__toggle"
+    [cdkMenuTriggerFor]="isHandset() ? null : switcherMenu"
+    (click)="onToggleClick()"
+    [attr.aria-label]="'apps.switcher.label' | translate"
+  >
+    {{ 'apps.switcher.label' | translate }}
+    <span class="app-switcher__caret" aria-hidden="true">▾</span>
   </button>
+</div>
 
-  <div class="app-switcher__menu" *ngIf="open()">
+<!-- Desktop-Dropdown: `cdkMenu`/`cdkMenuItem` liefern role="menu"/"menuitem",
+     Keyboard-Navigation (Pfeiltasten/Home/End), Escape und Outside-Click
+     automatisch – kein eigenes Focus-/Escape-Handling nötig. -->
+<ng-template #switcherMenu>
+  <div class="app-switcher__menu" cdkMenu [attr.aria-label]="'apps.switcher.label' | translate">
     <button
       type="button"
       class="app-switcher__item"
+      cdkMenuItem
       *ngFor="let entry of apps"
-      (click)="select(entry)"
+      (cdkMenuItemTriggered)="select(entry)"
     >
-      <span class="app-switcher__icon">{{ entry.icon }}</span>
+      <span class="app-switcher__icon" aria-hidden="true">{{ entry.icon }}</span>
       <span>{{ entry.titleKey | translate }}</span>
     </button>
   </div>
-</div>
+</ng-template>

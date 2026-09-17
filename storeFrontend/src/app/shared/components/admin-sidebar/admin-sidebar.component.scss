@@ -51,6 +51,14 @@ $secondary:       #764ba2;
   flex-shrink: 0;
 }
 
+/* App-Switcher: dezent unterhalb des Logos, nur sichtbar bei >1 App
+   (siehe AppSwitcherComponent – kein eigenes Styling der Fachlogik, nur
+   Platzierung/Abstand innerhalb der Sidebar). */
+.sidebar-app-switcher {
+  padding: 0.5rem 1rem 0;
+  flex-shrink: 0;
+}
+
 .sidebar-logo {
   display: inline-flex;
   align-items: center;

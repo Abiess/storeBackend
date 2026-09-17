@@ -7,9 +7,10 @@
       type="button"
       class="app-card"
       *ngFor="let entry of apps"
+      [attr.aria-label]="(entry.titleKey | translate) + (entry.descriptionKey ? ', ' + (entry.descriptionKey | translate) : '')"
       (click)="open(entry)"
     >
-      <span class="app-card__icon">{{ entry.icon }}</span>
+      <span class="app-card__icon" aria-hidden="true">{{ entry.icon }}</span>
       <span class="app-card__title">{{ entry.titleKey | translate }}</span>
       <span class="app-card__description" *ngIf="entry.descriptionKey">
         {{ entry.descriptionKey | translate }}

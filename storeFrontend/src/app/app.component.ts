@@ -233,6 +233,12 @@ export class AppComponent implements OnInit {
     '/stores/',
     '/dashboard',
     '/store-wizard',
+    // SHOP Factory Phase 1: '/apps/shop/:storeId' lädt denselben
+    // StoreDetailComponent wie '/stores/:id' (Alias-Route) und benötigt
+    // deshalb dieselbe Admin-Shell (Sidebar). '/apps/dhl' und '/apps/loyalty'
+    // brauchen dies NICHT – deren Komponenten bringen bereits eine eigene
+    // AppNavigationComponent mit (keine doppelte Navigation).
+    '/apps/shop/',
     // '/choose-path', // DEACTIVATED: now using /create-store directly
     '/login',
     '/register',

@@ -3,9 +3,10 @@
     *ngFor="let item of config().items"
     class="app-nav__item"
     [class.app-nav__item--active]="isActive(item)"
+    [attr.aria-current]="isActive(item) ? 'page' : null"
     [routerLink]="targetFor(item)"
   >
-    <span class="app-nav__icon">{{ item.icon }}</span>
+    <span class="app-nav__icon" aria-hidden="true">{{ item.icon }}</span>
     <span class="app-nav__label">{{ item.labelKey | translate }}</span>
   </a>
 

@@ -1,6 +1,6 @@
 .app-switcher {
   position: relative;
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 .app-switcher__toggle {
@@ -22,20 +22,26 @@
   background: #ece5ff;
 }
 
+.app-switcher__toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus, 0 0 0 3px rgba(102, 126, 234, 0.35));
+}
+
 .app-switcher__caret {
   font-size: 0.7rem;
 }
 
+/* Positionierung (oben/unten, links/rechts inkl. RTL) übernimmt seit dem
+   UI-Hardening-Pass `@angular/cdk/menu` (Overlay-Positionsstrategie relativ
+   zum Trigger) – hier nur noch das visuelle Erscheinungsbild des Panels. */
 .app-switcher__menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.35rem);
+  display: flex;
+  flex-direction: column;
   min-width: 160px;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
   padding: 0.4rem;
-  z-index: 20;
 }
 
 .app-switcher__item {
@@ -51,7 +57,7 @@
   font-weight: 600;
   color: #2d3748;
   cursor: pointer;
-  text-align: left;
+  text-align: start;
 }
 
 .app-switcher__item:hover {
@@ -59,13 +65,13 @@
   color: #667eea;
 }
 
-/* Mobile: gleiche Daten/Auswahl-Logik, hier weiterhin als Dropdown.
-   Für Capacitor/native könnte dieselbe Liste (APP_REGISTRY-Einträge)
-   stattdessen in einem Bottom-Sheet/Drawer gerendert werden – kein
-   Hover-only-Verhalten, ausschließlich Klick/Tap-Interaktion. */
-@media (max-width: 600px) {
-  .app-switcher__menu {
-    right: -0.5rem;
-    left: auto;
-  }
+.app-switcher__item:focus-visible {
+  outline: none;
+  background: #f3f0ff;
+  color: #667eea;
+  box-shadow: var(--shadow-focus, 0 0 0 3px rgba(102, 126, 234, 0.35));
 }
+
+/* Handset (<=600px): kein Dropdown mehr, siehe `AppSwitcherComponent`
+   (`onToggleClick()` öffnet stattdessen `AppSwitcherSheetComponent` als
+   `MatBottomSheet` – bessere Touch-Ergonomie als ein Dropdown-Overlay). */

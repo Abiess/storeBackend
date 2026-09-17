@@ -1970,6 +1970,108 @@ für STORE-scoped Apps (siehe 7d) sind eine bewusste, dokumentierte
 Design-Entscheidung (heterogene historische URL-Formen), keine versehentliche
 Kopplung.
 
+## 7n. Shared Factory UI Hardening Pass (RTL, Accessibility, CDK)
+
+Vor der SHOP-Migration wurde ein gezielter Hardening-Pass auf genau den 5
+gemeinsamen Factory-UI-Bausteinen durchgeführt: `AppLauncherComponent`,
+`AppContextSelectorComponent`, `AppSwitcherComponent`,
+`AppNavigationComponent`, `AppAccountComponent`. Ziel: RTL-Fähigkeit,
+funktionale Accessibility und punktuelle CDK/Material-Mechanik – **ohne**
+neue UI-Library, **ohne** sichtbare Material-Standardoptik und **ohne**
+Änderung an der Factory-Fachlogik (`AppRegistry`, `AppContextService`,
+`AppAccessService` blieben unangetastet).
+
+**Verbindliche Entscheidung (vom Nutzer vorgegeben):** keine neue Library,
+Angular Material + CDK punktuell nutzen (bereits installiert, s. 7l-Analyse),
+bestehendes markt.ma-Design (`--theme-*`-Tokens, Lila-Gradient, Lucide-Icons,
+eigene Cards/Grid) beibehalten.
+
+### Was geändert wurde
+
+| Komponente | RTL | Accessibility | CDK/Material |
+|---|---|---|---|
+| `AppSwitcherComponent` | `margin-left`→`margin-inline-start`; `text-align:left`→`start`; hartkodierte `right:0`/mobiles `right/left`-Overlay-Positioning komplett entfernt (Overlay übernimmt Positionierung) | `aria-haspopup`/`aria-expanded` jetzt automatisch via CDK (kein manuelles ARIA mehr nötig); Icons `aria-hidden` | **`@angular/cdk/menu`** (`cdkMenuTriggerFor`/`cdkMenu`/`cdkMenuItem`) ersetzt das selbstgebaute `*ngIf`-Dropdown; **`MatBottomSheet`** + **`BreakpointObserver`** (`@angular/cdk/layout`) für Handset-Viewports (≤600px) statt Dropdown |
+| `AppContextSelectorComponent` | `text-align:left`→`start` | `aria-label` je Context-Karte, Icon `aria-hidden`, `:focus-visible`-Ring (`--shadow-focus`) | keine (bewusst kein `MatBottomSheet` – s.u.) |
+| `AppLauncherComponent` | `text-align:left`→`start` | `aria-label` je App-Karte (Titel+Beschreibung), Icon `aria-hidden`, `:focus-visible`-Ring | keine |
+| `AppNavigationComponent` | keine Änderung nötig (bereits logical/flex-basiert) | `aria-current="page"` auf aktivem Nav-Item ergänzt, Icon `aria-hidden` | keine |
+| `AppAccountComponent` | keine Änderung nötig (bereits flex-basiert, kein hartkodiertes left/right) | Karte per `role="group"` + `aria-labelledby` mit Überschrift verknüpft, `:focus-visible`-Ring auf Logout-Button | keine |
+
+Neue Datei: `app-switcher-sheet.component.ts` (kleine, reine Darstellungs-
+Komponente für den `MatBottomSheet`-Inhalt auf Handset-Viewports; enthält
+keine eigene Fachlogik, gibt die Auswahl per `MatBottomSheetRef.dismiss()` an
+`AppSwitcherComponent` zurück, das wie zuvor `AppAccessService` für die
+Navigation nutzt).
+
+### Warum kein `MatBottomSheet` für `AppContextSelectorComponent`
+
+Bewusst nicht umgesetzt: die Context-Auswahl ist eine vollwertige, geroutete
+Seite (`/apps/{app}` mit `data.app`), kein transientes Menü. Ein Bottom Sheet
+würde eine primäre Navigationsdestination in einen flüchtigen Overlay-Kontext
+zwingen – kein echter Mehrwert, daher gemäß Vorgabe ("nur dort verwenden, wo
+echter Mehrwert entsteht") nicht verwendet. Die bestehende, bereits
+responsive Grid-Darstellung bleibt unverändert.
+
+### Warum CDK Menu für `AppSwitcherComponent` sinnvoll war
+
+Das selbstgebaute Dropdown hatte weder Fokus-Management noch Escape- noch
+Outside-Click-Handling und keine ARIA-Attribute. `@angular/cdk/menu` liefert
+das alles automatisch (Overlay-Positionsstrategie, Roving-Tabindex,
+Pfeiltasten-/Home-/End-Navigation, Escape schließt das Menü, Klick außerhalb
+schließt das Menü, Fokus kehrt zum Trigger zurück) – **unstyled**, d.h. das
+bestehende Markup/CSS (`.app-switcher__menu`, `.app-switcher__item`) bleibt
+visuell identisch, nur die Positionierungs-CSS wurde entfernt (übernimmt jetzt
+die CDK-Overlay-Positionsstrategie, die automatisch RTL-/Dir-aware relativ
+zum Trigger rechnet).
+
+### Bundle-Vergleich (Production Build)
+
+| | vor Hardening | nach Hardening | Delta |
+|---|---|---|---|
+| Initial total (raw) | 969.05 kB | 969.73 kB | **+0.68 kB** |
+| Initial total (gzip) | 226.74 kB | 226.79 kB | **+0.05 kB** |
+
+Der bereits vor diesem Pass bestehende Budget-Overhang (500 kB Budget) ist
+**nicht** durch diesen Pass verursacht (Ursache: bereits vorhandene, große
+Drittanbieter-Chunks, siehe 7l-Analyse). `CdkMenuModule`, `BreakpointObserver`
+und `MatBottomSheet` verursachen praktisch keinen zusätzlichen Bundle-Impact,
+da `@angular/cdk`/`@angular/material` bereits Teil des Bundles waren
+(Tree-Shaking eliminiert ungenutzte Teile).
+
+### Tests
+
+- Production Build (`ng build --configuration production`): erfolgreich,
+  keine neuen Fehler/Warnungen.
+- Unit-Test-Suite (`ng test --watch=false --browsers=ChromeHeadless`):
+  identisches Ergebnis wie vor dem Hardening-Pass – 60 SUCCESS / 99 FAILED
+  (alle 99 Fehlschläge sind der bereits vorbestehende, unabhängige
+  `CameraAdapter`-Provider-Fehler in `ProductFormComponent`-Specs, keine
+  Regression durch diesen Pass).
+- Für die 5 Factory-Komponenten existieren aktuell keine dedizierten
+  Unit-Tests (weder vor noch nach diesem Pass) – Verhalten wurde stattdessen
+  durch Build- und Struktur-Verifikation (grep auf verbleibende
+  `left`/`right`/`margin-left` sowie auf `aria-`/`cdkMenu`-Attribute in allen
+  5 Templates) sowie CDK-Quellcode-Analyse (`node_modules/@angular/cdk`)
+  abgesichert.
+
+### Verbleibend / bewusst nicht angefasst
+
+- Farb-/Radius-Hardcodes (`#667eea`, `12px`, …) in den 5 Komponenten wurden
+  **nicht** auf `--theme-*`-Tokens migriert – außerhalb des Scopes dieses
+  Passes (nur RTL/A11y/CDK), siehe auch 7l-Empfehlung für einen möglichen
+  späteren, separaten Design-Token-Pass.
+- Kein Fokus-Trap-Override nötig: CDK Menu verwaltet Fokus bereits
+  automatisch (kein zusätzlicher `cdk-trap-focus` erforderlich).
+
+### Antwort auf die Ausgangsfrage
+
+**Ist das Shared-UI-Muster jetzt Basis-tauglich für die SHOP-Migration?**
+Ja. Alle 5 Factory-Komponenten sind jetzt RTL-sauber (Logical Properties),
+funktional barrierefrei (Fokus/Escape/Outside-Click/Keyboard über CDK bzw.
+funktionales ARIA) und nutzen CDK/Material ausschließlich für Mechanik, nicht
+für Branding – bei praktisch null Bundle-Mehrkosten. SHOP kann denselben
+Baustein-Satz 1:1 wiederverwenden, ohne dass an den 5 Komponenten selbst noch
+etwas nachgezogen werden müsste.
+
 ## 8. Übergangslösung storeId
 
 Aktuell ist `storeId` der **einzige** Tenant-/Scope-Schlüssel im gesamten
@@ -2148,4 +2250,462 @@ Nicht Teil der bisherigen Phasen, bewusst zurückgestellt:
 14. **DHL-Paketshop ohne zugehörigen Online-Store** – aktuell technisch nicht
     möglich, da jeder Paketshop ein `Store`-Datensatz sein muss (siehe
     Abschnitt 8). Bedarf klären, bevor Abschnitt 9 angegangen wird.
+
+## 12. SHOP Factory Audit (Analyse, keine Migration)
+
+Reine Bestandsaufnahme, wie das bestehende SHOP-Kerngeschäft (Produkte,
+Kategorien, Bestellungen, Storefront, Checkout, POS, Store-Settings) in die
+bereits mit DHL/LOYALTY (STORE-scoped) und MARITIME (GLOBAL-scoped)
+bewiesene App Factory passen würde. **Es wurde in diesem Schritt nichts
+migriert** – weder Frontend-Routen noch Backend-Controller noch DB/Tenant/
+Deployment wurden verändert. Ziel: eine kontrollierte Phase-1 identifizieren,
+die Produktion/Storefront/Checkout/Admin nicht gefährdet.
+
+### 12.1 Ist-Zustand
+
+SHOP ist bereits **teilweise** App-Factory-bewusst, aber **nicht**
+app-zentrisch migriert wie DHL/LOYALTY:
+
+- **Frontend:** `APP_REGISTRY[AppKey.SHOP]` existiert bereits
+  (`app-registry.ts`, Zeile 75–81) mit `scope: 'STORE'`, aber
+  `baseRoute: '/stores'` (Legacy-Pfad, kein `/apps/shop`) und **ohne**
+  `contextSelectorSupported` (also `undefined`/`false` – anders als DHL/
+  LOYALTY, die `contextSelectorSupported: true` gesetzt haben).
+- **`AppAccessService.classifyUrl()`** (Zeilen 76–92) erkennt bereits JEDE
+  `/stores/:id/...`-Unterseite (außer den expliziten `/dhl`- und
+  `/loyalty`-Ausnahmen) automatisch als `AppKey.SHOP` – SHOP ist also
+  bereits vollständig in die generische URL-Klassifizierung eingebunden,
+  ohne dass dafür Sondercode nötig wäre.
+- **`buildAppHomeUrl()`** (Zeile 169–170) hat für SHOP einen expliziten,
+  hartkodierten Case (`/stores/${storeId}` bzw. `/dashboard`), analog zu DHL/
+  LOYALTY – keine neue Abstraktion nötig für Phase 1.
+- **`AppContextService.getContexts(AppKey.SHOP)`** funktioniert bereits
+  generisch (rein datengetrieben aus `AppEntitlement[]`), sofern das Backend
+  in `apps` tatsächlich SHOP-Entitlements pro Store liefert (siehe 12.4,
+  Punkt „zu verifizieren“).
+- **Backend:** `AppKey.SHOP` existiert im Backend-Enum
+  (`storebackend/enums/AppKey.java`) und wird bereits auf ca. 30 von ~50
+  SHOP-nahen Controllern per `@RequiresApp(AppKey.SHOP)` durchgesetzt
+  (`AppAccessInterceptor` + `StoreAccessChecker`), u.a. `PosController`,
+  `DeliveryController`, `ProductController`/`CategoryController` u.v.a.
+  (siehe 12.4).
+- **Admin-Sidebar** (`admin-sidebar.component.ts`) ist die zentrale,
+  produktiv genutzte Navigation für den gesamten SHOP-Bereich – deutlich
+  reichhaltiger als die simplen `*_NAV_CONFIG`-Objekte von DHL/LOYALTY:
+  ~40+ Items, gruppiert in `NavGroup[]`, mit `visibleForBusinessTypes` (z.B.
+  POS/Lieferantenrechnungen/MHD/Promo-Banner/Lieferung/WooCommerce/
+  Telegram nur für `BusinessType.SHOP`) und `labelKeyByBusinessType`
+  (z.B. „Produkte“ → „Services“ für `BusinessType.SERVICE`).
+- **POS ist bereits Teil von SHOP**, kein eigener AppKey: `PosController`
+  hat `@RequiresApp(AppKey.SHOP)`, nutzt dieselbe `Order`-Entity und
+  denselben Multi-Tenant-Check wie der restliche SHOP-Bereich.
+
+### 12.2 Public-vs-App-Trennung
+
+Drei klar unterscheidbare Zonen, die **nicht** unter dieselbe
+App-Entitlement-Logik fallen dürfen:
+
+| Zone | Beispiele | Auth | App-Gate? |
+|---|---|---|---|
+| **SHOP App / Owner-Admin** | `/stores/:id/products`, `/orders`, `/pos`, `/settings`, `/coupons`, `/reviews`, `/roles`, … | JWT (Owner/Team) | ✅ `@RequiresApp(SHOP)` (Backend), `classifyUrl→SHOP` (Frontend) |
+| **Public Storefront** | `/`, `/s/:slug`, `/products/:id`, `/api/public/stores/*`, `/api/stores/*/products` (GET) | keiner | ❌ bewusst NICHT gegatet (Storefront muss ohne Login erreichbar sein) |
+| **Checkout/Cart** | `/cart`, `/checkout`, `/api/cart/**`, `/api/checkout/**`, `/api/public/orders/checkout`, `/api/public/stores/{id}/checkout/payments` | optional (Gast ODER JWT) | ❌ bewusst NICHT gegatet (Gast-Checkout muss funktionieren) |
+
+Diese Trennung ist **bereits korrekt umgesetzt** (`SecurityConfig.java`,
+Zeilen 43–127: alle drei Zonen sind über unterschiedliche
+`requestMatchers(...)`-Pattern sauber getrennt) – ein SHOP-App-Factory-Umbau
+darf diese Trennung **nicht** anfassen. Storefront/Checkout/Cart bleiben
+dauerhaft `permitAll()`, unabhängig davon, ob SHOP später `/apps/shop/...`
+nutzt oder nicht. Die Migration betrifft ausschließlich die **Owner-Admin**-
+Zone.
+
+Innerhalb der Owner-Admin-Zone gibt es zusätzlich MIXED-Fälle, die nicht
+eindeutig SHOP-exklusiv sind:
+- `DeliveryController` (Admin, `@RequiresApp(SHOP)`) vs.
+  `PublicDeliveryController` (Storefront-Checkout, `permitAll()`) – zwei
+  getrennte Controller für dieselbe Domäne, bewusst getrennt nach
+  Zielgruppe.
+- `PaymentController` (`/api/public/stores/{storeId}/checkout/payments`) ist
+  technisch „public“ (Gast-Zahlung), aber storeId-pfadgebunden – gehört
+  funktional zu Checkout, nicht zu SHOP-Admin.
+
+### 12.3 URL-Abhängigkeiten
+
+- **~40 authentifizierte Owner-Admin-Routen** hängen heute an
+  `/stores/:id/...` (Produkte, Kategorien, Bestellungen, POS, Settings,
+  Theme, SEO, Coupons, Reviews, Chatbot, Rollen, Lieferung, Banner,
+  WooCommerce, Telegram, Supplier-Invoices, MHD-Scanner) plus der
+  Catch-All-Route `/stores/:id` (`StoreDetailComponent`, muss laut
+  Kommentar **zuletzt** in der Routendefinition stehen).
+- **Bereits app-zentrisch:** `/apps/dhl/:storeId(/...)`,
+  `/apps/loyalty/:storeId(/...)` – mit `/stores/:storeId/dhl`,
+  `/stores/:storeId/loyalty` als weiterhin funktionsfähigen Legacy-Aliasen.
+- **Public/Storefront:** `/`, `/s/:slug`, `/products/:productId`,
+  `/storefront-landing`, `/order-confirmation` (öffentlich) sowie
+  `/storefront/order-confirmation`, `/storefront/profile` (mit
+  `authGuard`, Kunden-Login, NICHT Owner-Login).
+- **Checkout/Cart:** `/cart`, `/checkout` – beide ohne `authGuard`.
+- **Kunden-Konto:** `/customer`, `/customer/orders`, `/customer/wishlist`,
+  `/customer/saved-carts`, `/customer/addresses` – eigener, von SHOP-Admin
+  unabhängiger Auth-Kontext (Kunde, nicht Store-Owner).
+- **Backend-Spiegelbild:** Admin-Endpunkte liegen unter `/api/stores/{id}/...`
+  (JWT + `@RequiresApp(SHOP)`), Storefront-/Checkout-Endpunkte unter
+  `/api/public/...`, `/api/cart/**`, `/api/checkout/**`,
+  `/api/products/*/reviews` (GET) – **keine** Pfad-Kollision zwischen den
+  Zonen.
+
+### 12.4 Security-Status
+
+- **Backend bereits weitgehend abgesichert:** laut Abschnitt 10 („Bereits
+  geschützte Controller nach Phase 3.2“) sind Produkte, Varianten, Optionen,
+  Tier-Preise, Kategorien, Banner/Homepage/Slider/Theme, SEO/Redirects,
+  Lieferung/Zahlung (Admin), Supplier/StoreProduct, WooCommerce, Telegram
+  (Admin), Chatbot/FAQ (Admin), Kommission/Dropshipping bereits mit
+  `@RequiresApp(AppKey.SHOP)` versehen. POS (`PosController`) ebenfalls.
+- **Sicherheitskette unverändert gültig:** JWT → `@RequiresApp(SHOP)` /
+  `AppAccessInterceptor` → `StoreAccessChecker` (Owner/Team/Permission) →
+  Business-Logik – exakt dieselbe Kette wie bei DHL/LOYALTY, keine
+  Sonderbehandlung nötig.
+- **Frontend-Durchsetzung nur im `MANAGED`-Modus aktiv:** `isUrlAllowed()`
+  gibt für `appAccessMode !== MANAGED` (also `LEGACY`/unbekannt) immer
+  `true` zurück – d.h. die heutige Mehrheit der Store-Owner (LEGACY-Modus)
+  ist frontendseitig **gar nicht** durch `AppAccessService` gegatet; die
+  eigentliche Absicherung liegt beim Backend. Das ist unkritisch (Backend
+  ist die "source of truth"), aber wichtig für die Erwartungshaltung: eine
+  SHOP-App-Factory-Migration ändert am tatsächlichen Zugriffsschutz nichts,
+  nur an der URL-/Navigationsstruktur.
+- **Bewusst NICHT gegatet (korrekt so):** Storefront-GETs, `/api/cart/**`,
+  `/api/checkout/**`, `/api/public/**`, `/api/public/stores/{id}/checkout/
+  payments` – siehe 12.2. Diese dürfen bei einer SHOP-Migration nicht
+  versehentlich hinter `@RequiresApp`/JWT geraten.
+- **Bekannte, bereits dokumentierte Lücken (Abschnitt 11, unverändert
+  gültig):** einzelne Controller ohne pfadbasiert auflösbaren Scope
+  (`DropshippingController`, `ThemeController.createTheme`, …),
+  `AdminDeliveryController` nur "irgendein authentifizierter User" statt
+  Rollen-Check, `WizardProgressController` bewusst ungegatet
+  (Henne-Ei-Problem vor Store-Erstellung). Keine dieser Lücken entsteht neu
+  durch SHOP – sie bestehen unabhängig davon bereits heute.
+- **Zu verifizieren vor Phase 1:** ob `AuthResponse.UserDTO.apps` für
+  normale Store-Owner tatsächlich SHOP-Entitlements pro Store enthält
+  (relevant für `AppContextService.getContexts(SHOP)`/Context-Auswahl) –
+  bereits in Abschnitt 11, Punkt 13 als offen vermerkt.
+
+### 12.5 Shared-Factory-Reuse
+
+Was aus dem gehärteten Shared-Baustein-Satz (7a/7b/7n) **ohne Änderung**
+für SHOP wiederverwendbar wäre:
+
+| Baustein | Wiederverwendbar für SHOP? | Kommentar |
+|---|---|---|
+| `AppRegistry` | ✅ ja, Eintrag existiert bereits | nur `baseRoute`/`contextSelectorSupported` müssten für Phase 1 angepasst werden |
+| `AppContextService` | ✅ ja, unverändert | 100% generisch, kennt kein SHOP-Sonderwissen |
+| `AppAccessService` | ✅ ja, `classifyUrl` erkennt SHOP bereits; `buildAppHomeUrl` hat bereits einen SHOP-Case | keine Änderung nötig für eine reine Analyse-Phase |
+| `AppLauncherComponent` | ✅ ja, unverändert | zeigt SHOP-Kachel bereits an, sobald Entitlements vorhanden sind |
+| `AppSwitcherComponent` | ✅ ja, unverändert (inkl. CDK-Menu/BottomSheet-Härtung) | funktioniert bereits für SHOP, sobald `hasMultipleApps()` zutrifft |
+| `AppContextSelectorComponent` | ✅ ja, unverändert | würde bei `contextSelectorSupported: true` automatisch SHOP-Stores aus `getContexts(SHOP)` listen |
+| `AppNavigationComponent` + `AppAccountComponent` | ⚠️ nur für einen NEUEN, schlanken `/apps/shop/:storeId`-Einstieg geeignet | **nicht** als Ersatz für die bestehende Admin-Sidebar (siehe 12.6) |
+
+### 12.6 Beantwortung der offenen Detailfragen
+
+**Ist `/apps/shop/:storeId` als neuer Einstieg sinnvoll?**
+Ja, aber nur als **zusätzlicher, dünner Alias-Einstieg** analog zu DHL/
+LOYALTY (`classifyUrl`/`buildAppHomeUrl` unterstützen das Muster bereits),
+NICHT als Ersatz für die bestehende Admin-Shell. `/apps/shop/:storeId`
+könnte z.B. auf dieselbe `StoreDetailComponent`/denselben Admin-Layout-
+Wrapper umleiten, den `/stores/:storeId` heute schon rendert – rein additiv,
+ohne bestehende Unterrouten (`/stores/:id/products`, `/orders`, `/pos`, …)
+anzufassen.
+
+**Sollten intern zunächst die Legacy-Routen weiterverwendet werden?**
+Ja, klar empfohlen. Alle ~40 bestehenden `/stores/:id/...`-Unterrouten
+sollten in Phase 1 **unverändert** bleiben (Ziel-Bild wie bei DHL/LOYALTY:
+Legacy-Alias bleibt dauerhaft erreichbar). Nur der **Einstiegspunkt**
+(`/apps/shop` bzw. `/apps/shop/:storeId`) und die Registry-Metadaten würden
+ergänzt.
+
+**Ist ein `SHOP_NAV_CONFIG` sinnvoll?**
+Nein, nicht im Sinne eines 1:1-Ersatzes für die Admin-Sidebar. Die
+bestehende Admin-Sidebar hat ~40+ Items mit `visibleForBusinessTypes`,
+`labelKeyByBusinessType`, Gruppen (`NavGroup`) und dynamischer
+StoreId-/BusinessType-Auflösung – das generische `AppNavConfig`-Format
+(flache `items: AppNavItem[]`-Liste ohne Sichtbarkeits-/Label-Varianten)
+ist dafür zu simpel und würde entweder massiv erweitert (Risiko: neue
+Abstraktionsebene nur für SHOP) oder die Business-Logik gefährlich
+vereinfacht. Ein `SHOP_NAV_CONFIG` wäre höchstens für einen **schlanken
+Zusatz-Navigationsstreifen** (`AppNavigationComponent` mit 1–2 Einträgen,
+z.B. „Übersicht“ + „Apps wechseln“ am oberen Rand der bestehenden
+Admin-Shell) sinnvoll – nicht als Ersatz der Sidebar.
+
+**Kann die heutige Admin-Sidebar vollständig oder nur teilweise in die
+Shared Factory Navigation überführt werden?**
+Nur **teilweise, und nur additiv**: Die Sidebar bleibt als eigenständige,
+spezialisierte Komponente bestehen (sie enthält signifikante,
+produktionskritische Business-Logik: BusinessType-Gating,
+Label-Varianten, Gruppenstruktur, StoreId-Extraktion aus der aktuellen
+Route). Was sinnvoll überführbar ist: der bereits für DHL/LOYALTY genutzte
+`AppSwitcherComponent`-Baustein könnte zusätzlich **oberhalb** der
+bestehenden Sidebar eingehängt werden (z.B. im Admin-Layout-Header), damit
+ein Owner mit mehreren Apps (SHOP + DHL, SHOP + LOYALTY, …) konsistent
+wechseln kann – ohne die Sidebar selbst zu verändern.
+
+**Bleibt POS langfristig Teil von SHOP oder wird es eher eine eigene App?**
+Nach heutigem Befund: **Teil von SHOP**, keine eigene App. Begründung:
+POS hat bereits `@RequiresApp(AppKey.SHOP)` (kein eigener `AppKey.POS`),
+nutzt dieselbe `Order`-Entity, denselben Produktkatalog, dieselbe
+Multi-Tenant-Prüfung und ist in der Admin-Sidebar nur ein
+`visibleForBusinessTypes: [SHOP]`-gegateter Menüpunkt, keine eigene
+Shell/kein eigenes Routing-Präfix. Eine Trennung in einen eigenen `AppKey.
+POS` wäre nur gerechtfertigt, wenn POS künftig unabhängig von einem
+Online-Shop lizenziert/verkauft werden soll (z.B. reine Ladenkasse ohne
+Storefront) – das ist aktuell nicht der Fall und wird hier **nicht**
+empfohlen, ohne expliziten Produktentscheid.
+
+**BusinessType (SHOP/RESTAURANT/RIAD/SERVICE) – keine automatische
+E-Commerce-Annahme:**
+Bestätigt: alle vier `BusinessType`-Werte laufen technisch über **dieselbe**
+SHOP-Infrastruktur (`ProductController`, `CategoryController`,
+`OrderController`, dieselben Frontend-Routen) – sie unterscheiden sich
+ausschließlich in: Default-Theme-Template
+(`StoreThemeInitializer`), Starterpaket-Inhalten (`StarterPackService`),
+Bild-Vorschlägen (`UnsplashImageService`) und Sidebar-Label-/Sichtbarkeits-
+Varianten (`visibleForBusinessTypes`/`labelKeyByBusinessType`). Eine
+SHOP-App-Factory-Migration ist damit automatisch
+BusinessType-neutral – sie betrifft die URL-/Navigationsebene, nicht die
+Produkt-/Bestell-Domäne, und muss für RESTAURANT/RIAD/SERVICE nicht separat
+behandelt werden. Wichtig: „SHOP“ als `AppKey` ≠ „SHOP“ als `BusinessType`
+– der `AppKey.SHOP` gilt für **alle vier** BusinessTypes gleichermaßen (der
+Name ist etwas irreführend historisch gewachsen, siehe auch die POS-/
+Feature-Gates, die zusätzlich nach `BusinessType.SHOP` filtern).
+
+### 12.7 Risiken
+
+1. **Catch-All-Route `/stores/:id`** (`StoreDetailComponent`) muss in der
+   Routendefinition immer **zuletzt** stehen – jede neue Route unterhalb
+   `/stores/:id/...` muss vor dieser Catch-All eingefügt werden, sonst wird
+   sie nie erreicht. Bei einem zukünftigen `/apps/shop/:storeId`-Alias
+   besteht das gleiche Risiko in umgekehrter Reihenfolge nicht, da es ein
+   eigenes Präfix ist – aber die bestehende Reihenfolgenempfindlichkeit
+   bleibt ein generelles Risiko bei jeder Routen-Änderung in diesem Bereich.
+2. **Admin-Sidebar-Komplexität** (~40+ Items, BusinessType-Gating,
+   Label-Varianten) – jeder Versuch, sie vorschnell zu vereinheitlichen,
+   riskiert sichtbare Regressionen für Owner (z.B. falsches Label,
+   fehlendes POS-Item) in einem produktiv stark frequentierten Bereich.
+   Deshalb: additiv, nicht ersetzend vorgehen (siehe 12.6).
+3. **Storefront/Checkout/Cart sind hochsensibel** (Umsatz-kritisch,
+   Gast-Zugriff) – jede Änderung an `AppAccessService.classifyUrl()` oder
+   `SecurityConfig.java` in der Nähe dieser Zonen birgt das Risiko,
+   versehentlich `permitAll()`-Regeln zu verschieben oder zu verengen.
+   Phase 1 darf diese Zonen **nicht** anfassen.
+4. **`MANAGED`-vs-`LEGACY`-Doppelpfad im Frontend** – da `isUrlAllowed()`
+   für `LEGACY`-User praktisch wirkungslos ist, könnte eine zukünftige
+   Umstellung vieler Owner auf `MANAGED` unerwartete Sichtbarkeits-
+   Änderungen auslösen, wenn `apps`/Entitlements für SHOP nicht vollständig
+   befüllt sind (siehe „zu verifizieren“ in 12.4) – Test-Priorität vor
+   jeder echten Migration.
+5. **Naming-Kollision `SHOP` (AppKey) vs. `SHOP` (BusinessType)** – erhöhtes
+   Verwechslungsrisiko in Doku/Code-Reviews; sollte in einer künftigen
+   Migration explizit kommentiert werden (wie bereits in 12.6 hier
+   dokumentiert).
+6. **POS/Storefront/Checkout laufen mit hoher Frequenz in Produktion** –
+   jede Migration dieser Controller/Routen erfordert überdurchschnittlich
+   vorsichtige, schrittweise Verifikation (Canary-artig, nicht Big-Bang).
+
+### 12.8 Empfohlene SHOP-Phase-1 (Vorschlag, noch nicht umgesetzt)
+
+Rein additiv, ohne Änderung an bestehenden Routen/Controllern:
+
+1. `APP_REGISTRY[AppKey.SHOP].contextSelectorSupported = true` setzen und
+   `baseRoute` bewusst auf `/stores` belassen (kein Bruch von 40+ Unter-
+   routen) **oder** alternativ einen zusätzlichen, rein additiven
+   `/apps/shop/:storeId`-Redirect auf `/stores/:storeId` einführen (analog
+   DHL/LOYALTY-Muster, aber ohne eigene Unterrouten – nur Einstiegspunkt).
+2. `/apps/shop` (bare, ohne storeId) als Context-Auswahl-Route ergänzen,
+   analog `/apps/dhl`/`/apps/loyalty` – nutzt
+   `AppContextSelectorComponent` unverändert, sobald 1) vorausgesetzt ist.
+3. **Kein** neuer `SHOP_NAV_CONFIG`, **keine** Änderung an
+   `admin-sidebar.component.ts` – bestehende Sidebar bleibt exakt wie sie
+   ist.
+4. Vor der ersten Nutzung verifizieren, dass `AuthResponse.UserDTO.apps`
+   tatsächlich SHOP-Entitlements liefert (Abschnitt 11, Punkt 13), damit
+   `AppContextSelectorComponent`/`AppLauncherComponent` für SHOP korrekte
+   Daten zeigen.
+5. Test-Matrix analog LOYALTY (7m): Owner mit nur SHOP → Direkteinstieg;
+   Owner mit SHOP an 2 Stores → Context-Auswahl; Owner mit SHOP + DHL bzw.
+   SHOP + LOYALTY → `/apps`-Launcher zeigt beide; bestehendes
+   `/stores/:id/...`-Verhalten bleibt 1:1 unverändert (Regressionstest).
+6. Danach – separat, eigener Auftrag – **erst** entscheiden, ob/wie POS,
+   Storefront oder einzelne Settings-Bereiche einen tieferen
+   App-Factory-Bezug bekommen sollen.
+
+### 12.9 Bewusst nicht anfassen
+
+- Storefront-Routen/-Controller (`/`, `/s/:slug`, `/products/:id`,
+  `/api/public/**`) – bleiben public, unverändert.
+- Checkout/Cart (`/cart`, `/checkout`, `/api/cart/**`, `/api/checkout/**`,
+  `/api/public/orders/checkout`, `/api/public/stores/{id}/checkout/
+  payments`) – bleiben public/Gast-fähig, unverändert.
+- Kunden-Konto-Routen (`/customer/**`, `/storefront/profile`) – eigener
+  Kunden-Auth-Kontext, unabhängig von Owner-App-Entitlements.
+- Admin-Sidebar (`admin-sidebar.component.ts`) – bleibt vollständig
+  bestehen, keine Ersetzung durch `AppNavigationComponent`.
+- Alle ~40 bestehenden `/stores/:id/...`-Unterrouten – bleiben exakt wie
+  sie sind (kein Big-Bang-Umzug nach `/apps/shop/...`).
+- POS bleibt Teil von SHOP (kein eigener `AppKey.POS` in dieser Phase).
+- DB-Schema, Tenant-/Location-Modell (Abschnitt 9), Deployment-Topologie
+  (ein JAR/Service) – keine Änderung, wie vom Auftrag gefordert.
+
+### 12.10 Fazit
+
+SHOP ist strukturell bereits **kompatibel** mit der bewiesenen App-Factory
+(Registry-Eintrag, generische URL-Klassifizierung, generischer
+Context-Service, Backend-`@RequiresApp(SHOP)` größtenteils vorhanden) –
+der Unterschied zu DHL/LOYALTY liegt ausschließlich in der **Reichhaltigkeit
+der bestehenden Admin-Oberfläche** (Sidebar mit 40+ Items,
+BusinessType-Varianten) und der **hohen Kritikalität** von
+Storefront/Checkout/POS, die eine additive statt ersetzende Migration
+erfordern. Eine kontrollierte Phase 1 (Registry-Metadaten + optionaler
+`/apps/shop`-Einstieg, ohne Sidebar-/Routen-Ersatz) ist risikoarm möglich;
+eine vollständige Übernahme der Shared Factory Navigation für SHOP wird zum
+jetzigen Zeitpunkt **nicht** empfohlen.
+
+## 13. SHOP Factory Phase 1 – Umsetzung (additiv, implementiert)
+
+Aufbauend auf dem Audit in Abschnitt 12 wurde Phase 1 wie folgt **minimal und
+additiv** umgesetzt. Bestehender Admin, Storefront, Checkout und alle
+Legacy-Routen sind dabei unverändert geblieben.
+
+### 13.1 Was geändert wurde
+
+1. **`app-registry.ts`**: `AppKey.SHOP` hat jetzt
+   `baseRoute: '/apps/shop'` (vorher `/stores`) und
+   `contextSelectorSupported: true`. Rein deklarative Registry-Änderung –
+   keine neue Logik.
+2. **`app-access.service.ts`**:
+   - `classifyUrl()`: neuer Match-Block für `/apps/shop(?:\/(\d+))?(\/.*)?`
+     (analog DHL/LOYALTY), VOR dem bestehenden generischen
+     `/stores/:id/...`-Match eingefügt. Der bestehende Fallback („alle
+     übrigen Store-Unterseiten = SHOP“) bleibt unverändert bestehen – er
+     bedient weiterhin die kompletten ~40 Legacy-Unterrouten.
+   - `buildAppHomeUrl()`: SHOP-Case liefert jetzt
+     `/apps/shop/${storeId}` statt `/stores/${storeId}` als berechnete
+     Ziel-URL (Login-Redirect, Launcher-Klick, Context-Auswahl-Klick,
+     Switcher). Die Legacy-Route `/stores/:id/...` bleibt davon unberührt
+     100 % erreichbar – nur die von der Factory *berechnete* Ziel-URL hat
+     sich geändert.
+3. **`app.routes.ts`** (rein additiv, keine bestehende Route entfernt/
+   umbenannt):
+   - `apps/shop` → `AppContextSelectorComponent` (`data: { app: AppKey.SHOP }`,
+     generisch, keine neue Komponente).
+   - `apps/shop/:storeId` → **derselbe** `StoreDetailComponent`, der auch
+     unter der bestehenden Catch-All-Route `stores/:id` geladen wird (Route-
+     Alias, kein `redirectTo` – die sichtbare URL bleibt `/apps/shop/121`).
+     `StoreDetailComponent` liest bereits generisch sowohl `params['id']`
+     als auch `params['storeId']`, daher war **keine** Komponentenänderung
+     nötig. Kein neuer Shop-Admin.
+4. **`app.component.ts`** (globale Shell): `/apps/shop/` zur bestehenden
+   `adminPathPrefixes`-Liste hinzugefügt, damit die neue Alias-Route
+   weiterhin innerhalb der bestehenden Sidebar-Shell (`<app-admin-sidebar>`)
+   gerendert wird – ohne diesen Zusatz wäre `StoreDetailComponent` unter dem
+   neuen Pfad ohne Sidebar/Navigation dargestellt worden (Bugfix, damit der
+   Alias überhaupt funktionsfähig ist). Bewusst **nicht** für
+   `/apps/dhl`/`/apps/loyalty` ergänzt, da deren Komponenten bereits eine
+   eigene `AppNavigationComponent` mitbringen (keine doppelte Navigation).
+5. **`admin-sidebar.component.ts`/`.html`/`.scss`**: `AppSwitcherComponent`
+   additiv in den Sidebar-Header eingehängt (`*ngIf="!isCollapsed"`,
+   `@defer (on idle)`), ausschließlich sichtbar bei >1 App
+   (Eigenlogik von `AppSwitcherComponent`, unverändert). Damit ist die
+   Anforderung „AppSwitcher sauber in den bestehenden Admin-Header/Sidebar
+   integrieren, keine parallele SHOP-Navigation“ erfüllt, **ohne** die
+   bestehende, große `admin-sidebar`-Navigation zu verändern oder zu
+   ersetzen. `@defer` verhindert, dass CDK Menu/`MatBottomSheet` (nur vom
+   Switcher benötigt) in den eagerly geladenen Initial-Bundle wandern – die
+   Sidebar wird auf jeder Seite geladen, ein eager Import hätte den
+   Bundle für alle User unnötig vergrößert (siehe 13.3).
+6. **Tests**: `app-access.service.spec.ts` um die vollständige SHOP-
+   Testmatrix ergänzt (nur SHOP 121; SHOP 121+122; SHOP+DHL; SHOP+LOYALTY;
+   SHOP+MARITIME; LEGACY unverändert) – siehe 13.2.
+
+### 13.2 Test-Matrix (verifiziert)
+
+| Szenario | Erwartung | Ergebnis |
+|---|---|---|
+| Nur SHOP 121 | `getPrimaryAppHomeUrl()` → `/apps/shop/121` | ✅ |
+| SHOP 121 + SHOP 122 | `/apps/shop` (Context-Auswahl) | ✅ |
+| SHOP + DHL | `/apps` (beide sichtbar) | ✅ |
+| SHOP + LOYALTY | `/apps` (beide sichtbar) | ✅ |
+| SHOP + MARITIME | `/apps` (beide sichtbar) | ✅ |
+| LEGACY | `/stores/121`, `/stores/121/products`, `/apps/shop/121` weiterhin frei erreichbar | ✅ |
+| Fremder Store (SHOP 121 only, Zugriff auf 999) | `/apps/shop/999` und `/stores/999` blockiert | ✅ |
+
+`ng test --include='**/app-access.service.spec.ts'`: **33/33 SUCCESS**
+(24 bestehende + 9 neue SHOP-Tests). Vollständiger Testlauf: unverändert
+99 vorbestehende `CameraAdapter`/`AppNavigationComponent`-Fehlschläge (Test-
+Mock-Lücke in DHL-Spezifikationen, nicht durch diese Änderung verursacht),
+keine neuen Fehlschläge.
+
+### 13.3 Production Build / Bundle
+
+`ng build --configuration production`:
+
+| | Initial Bundle (raw) |
+|---|---|
+| Vorher (Baseline, `git stash`) | 969.05 kB |
+| Nachher (mit SHOP Phase 1 + AppSwitcher in Sidebar) | 970.82 kB (+1.8 kB) |
+
+Ohne `@defer` um `<app-switcher>` wäre der Initial-Bundle auf **1.11 MB**
+gestiegen (CDK Menu + `MatBottomSheet` wären eager in den globalen
+Sidebar-Bundle gewandert, der auf jeder Seite lädt) – das hätte das
+1.00-MB-Error-Budget überschritten. Mit `@defer (on idle)` bleibt
+`AppSwitcherComponent` ein separater Lazy-Chunk (~48 kB), der nur bei
+Bedarf nachgeladen wird. Build ist grün, kein Error-Budget überschritten
+(Warning bei 500 kB Budget besteht bereits in der Baseline unverändert).
+
+### 13.4 Backend
+
+Keine Backend-Änderung nötig oder vorgenommen: SHOP nutzt bereits
+`@RequiresApp(AppKey.SHOP)` (Abschnitt 12.3), `AppAccessInterceptor` und
+`StoreAccessChecker` unverändert. Public Storefront/Checkout/Cart wurden
+nicht angefasst (keine neuen `@RequiresApp`-Annotationen, kein
+`SecurityConfig.java`-Change).
+
+### 13.5 Ist die Factory jetzt mit zwei STORE-Apps und einer GLOBAL-App bewiesen?
+
+**Ja.** Mit SHOP kommt ein **dritter** STORE-scoped Factory-Consumer hinzu
+(neben DHL und LOYALTY), zusätzlich zu MARITIME als GLOBAL-scoped Consumer.
+Alle drei STORE-Apps (DHL, LOYALTY, SHOP) laufen über exakt dieselben
+Shared-Bausteine (`AppRegistry`, `AppContextService`, `AppAccessService`,
+`AppContextSelectorComponent`) ohne app-spezifische Sonderlogik in der
+Factory selbst – SHOP war der bislang anspruchsvollste Beweis, da er (im
+Gegensatz zu DHL/LOYALTY) **keine** eigene, generische
+`AppNavigationComponent`-Einbindung bekommen hat, sondern bewusst den
+bestehenden, hochkomplexen Legacy-Admin (40+ Sidebar-Items,
+BusinessType-Varianten) unverändert hinter einem neuen app-zentrischen
+Einstiegspunkt weiterverwendet. Die Factory-Logik (Registry + 2 generische
+Services + 1 generische Routing-Komponente) musste dafür an keiner Stelle
+SHOP-spezifisch erweitert werden – nur Konfiguration (`baseRoute`,
+`contextSelectorSupported`) und additive Routen kamen hinzu.
+
+### 13.6 Verbleibende Loyalty-/Shop-spezifische Hardcodings (dokumentiert, nicht refactored)
+
+- `AppAccessService.classifyUrl()` enthält weiterhin explizite,
+  App-spezifische Regex-Blöcke für DHL/LOYALTY/SHOP statt einer vollständig
+  generischen Pfad-Erkennung (wie sie für GLOBAL-Apps bereits existiert,
+  Zeile „Generische GLOBAL-App-Erkennung“). Eine analoge generische
+  STORE-Erkennung (z.B. über `baseRoute`-Präfix-Matching) wäre möglich,
+  wurde hier bewusst **nicht** refactored, um das Risiko einer
+  Verhaltensänderung für die produktiv laufenden Legacy-Routen zu
+  vermeiden (YAGNI/Scope-Disziplin dieses Auftrags).
+- `AppAccessService.buildAppHomeUrl()` bleibt ein `switch(app)` mit
+  explizitem Case pro STORE-App statt einer generischen, registry-
+  getriebenen URL-Berechnung – aus demselben Grund unverändert belassen.
+- `app.component.ts`s `adminPathPrefixes` ist weiterhin eine manuell
+  gepflegte Liste (kein automatischer Bezug zur `AppRegistry`). Für SHOP
+  wurde `/apps/shop/` ergänzt; eine künftige App, die ebenfalls den
+  Legacy-Admin-Shell-Look erben soll, benötigt denselben manuellen Schritt.
+- Die Admin-Sidebar (`admin-sidebar.component.ts`) bleibt vollständig
+  Legacy-eigenständig (40+ Items, BusinessType-Gating) – nur um den
+  generischen `AppSwitcherComponent` additiv ergänzt. Sie ist **keine**
+  `AppNavigationComponent`-Instanz und wird es in Phase 1 bewusst nicht.
+- POS bleibt Teil von SHOP (kein eigener `AppKey.POS`), wie in 12.9
+  empfohlen.
 
