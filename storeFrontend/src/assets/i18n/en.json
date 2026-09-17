@@ -3566,6 +3566,9 @@
     }
   },
   "loyalty": {
+    "nav": {
+      "overview": "Overview"
+    },
     "title": "Loyalty Points",
     "subtitle": "Enter a card/customer code to look up points and assign purchases.",
     "codeLabel": "Card/Customer Code",

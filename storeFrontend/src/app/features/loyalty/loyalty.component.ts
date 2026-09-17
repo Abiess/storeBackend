@@ -9,6 +9,8 @@ import { LucideAngularModule } from 'lucide-angular';
 import { ResponsiveDataListComponent, ColumnConfig, ActionConfig } from '@app/shared/components/responsive-data-list/responsive-data-list.component';
 import { FilterBarComponent, FilterChip } from '@app/shared/components/filter-bar/filter-bar.component';
 import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barcode-input.component';
+import { AppNavigationComponent } from '@app/shared/components/app-navigation/app-navigation.component';
+import { LOYALTY_NAV_CONFIG } from './loyalty-nav.config';
 
 /**
  * Loyalty Test-Flow (MVP)
@@ -33,7 +35,7 @@ import { BarcodeInputComponent } from '@app/shared/components/barcode-input/barc
 @Component({
   selector: 'app-loyalty',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslatePipe, LucideAngularModule, ResponsiveDataListComponent, FilterBarComponent, BarcodeInputComponent],
+  imports: [CommonModule, FormsModule, TranslatePipe, LucideAngularModule, ResponsiveDataListComponent, FilterBarComponent, BarcodeInputComponent, AppNavigationComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './loyalty.component.html',
   styleUrls: ['./loyalty.component.scss']
@@ -43,6 +45,9 @@ export class LoyaltyComponent implements OnInit {
   private router = inject(Router);
   private loyaltyService = inject(LoyaltyService);
   private translationService = inject(TranslationService);
+
+  /** App-Factory: generische App-Navigation oben (analog DHL/MARITIME). */
+  readonly navConfig = LOYALTY_NAV_CONFIG;
 
   storeId!: number;
 

@@ -68,8 +68,9 @@ export const APP_REGISTRY: Record<AppKey, AppRegistryEntry> = {
     titleKey: 'apps.registry.loyalty.title',
     descriptionKey: 'apps.registry.loyalty.description',
     icon: '🎁',
-    baseRoute: '/stores',
-    scope: 'STORE'
+    baseRoute: '/apps/loyalty',
+    scope: 'STORE',
+    contextSelectorSupported: true
   },
   [AppKey.SHOP]: {
     key: AppKey.SHOP,

@@ -114,9 +114,12 @@ export class AdminSidebarComponent implements OnInit {
 
         if (resolvedStoreId == null) {
             // Unterstützt sowohl die klassische Shop-URL (/stores/:id/...)
-            // als auch die app-zentrische DHL-Route (/apps/dhl/:id/...) als
-            // Quelle für den technischen Store-/Mandantenkontext.
-            const urlMatch = this.router.url.match(/\/stores\/(\d+)/) || this.router.url.match(/\/apps\/dhl\/(\d+)/);
+            // als auch die app-zentrischen DHL-/LOYALTY-Routen
+            // (/apps/dhl/:id/..., /apps/loyalty/:id/...) als Quelle für den
+            // technischen Store-/Mandantenkontext.
+            const urlMatch = this.router.url.match(/\/stores\/(\d+)/)
+                || this.router.url.match(/\/apps\/dhl\/(\d+)/)
+                || this.router.url.match(/\/apps\/loyalty\/(\d+)/);
 
             if (urlMatch?.[1] != null) {
                 const parsedId = Number(urlMatch[1]);
@@ -202,7 +205,10 @@ export class AdminSidebarComponent implements OnInit {
                     {
                         labelKey: 'sidebarAdmin.items.loyalty',
                         icon: 'gift',
-                        route: `${baseRoute}/loyalty`,
+                        // App-zentrische Route (Ziel-Bild: LOYALTY als eigenständige App,
+                        // analog DHL). Der bisherige Pfad `${baseRoute}/loyalty` bleibt
+                        // als Legacy-Alias weiterhin voll funktionsfähig.
+                        route: resolvedStoreId != null ? `/apps/loyalty/${resolvedStoreId}` : `${baseRoute}/loyalty`,
                         requiresStore: true,
                         visibleForBusinessTypes: [BusinessType.SHOP]  // Loyalty-MVP nur für SHOP
                     },

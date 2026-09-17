@@ -1832,6 +1832,144 @@ für einen ersten echten Testlauf erforderlich. Sobald beides vorhanden ist,
 sollte "Run workflow" ohne weitere Anpassung einen Build direkt in
 TestFlight liefern.
 
+## 7m. Architekturtest: LOYALTY als zweiter STORE-scoped Consumer
+
+Nachdem MARITIME (7c) den ersten GLOBAL-scoped Consumer bewiesen hat, wurde
+`LOYALTY` – bisher eine isolierte Single-Page-Ansicht unter
+`stores/:storeId/loyalty` ohne eigene Navigation, ohne Account-Bereich, mit
+`AppRegistry`-Eintrag `baseRoute: '/stores'` (kein echter App-Auftritt) – auf
+dieselben Shared-Bausteine wie DHL umgestellt. Damit ist LOYALTY der zweite
+**STORE-scoped** Consumer (DHL war der erste) und ergänzt MARITIME als
+GLOBAL-scoped Beweis.
+
+### Analyse vor der Umsetzung
+
+- **Routen:** nur `stores/:storeId/loyalty` → `LoyaltyComponent`. Kein
+  Context-Auswahl-Pfad, keine Account-Unterseite.
+- **Navigation:** keine (`LoyaltyComponent` rendert direkt Fachinhalt), keine
+  Sidebar-Sonderfälle außer dem statischen `sidebarAdmin.items.loyalty`-Eintrag
+  (Shop-Admin-Sidebar).
+- **Account-/Store-Abhängigkeiten:** `LoyaltyComponent` liest `storeId`
+  bereits nach dem verbindlichen 3-stufigen Muster
+  (`paramMap('storeId')` → `paramMap('id')` → `route.parent` → URL-Regex) und
+  reicht sie unverändert an `LoyaltyService` (Backend-Calls
+  `/api/stores/{storeId}/loyalty/...`) durch – reine Fachlogik, unabhängig von
+  Navigation/Shell.
+- **StoreId-Nutzung:** identisch zum bereits etablierten DHL-Muster (Store-ID
+  bleibt der technische Mandanten-/Datenkontext, keine neue Kontextart).
+- **Bereits vorhandene Komponenten:** `AppRegistry`, `AppContextService`,
+  `AppAccessService`, `AppLauncherComponent`, `AppSwitcherComponent`,
+  `AppNavigationComponent`, `AppAccountComponent`, `AppContextSelectorComponent`
+  – alle bereits vollständig generisch (siehe 7a–7d), keine einzige Komponente
+  enthielt DHL- oder MARITIME-spezifischen Code.
+
+### Ergebnis: 0 neue Shared-Komponenten, nur Konfiguration + Routing
+
+- **Keine** neue `LoyaltyNavComponent`, `LoyaltyAccountComponent`-Logik,
+  `LoyaltyAppSwitcher` oder `LoyaltyContextService` gebaut. Stattdessen:
+  - `features/loyalty/loyalty-nav.config.ts` (`LOYALTY_NAV_CONFIG`, reine
+    Daten: `appSegment: 'loyalty'`, `legacySegment: 'loyalty'`, Items
+    `overview`/`account` – exakt das gleiche Muster wie `DHL_NAV_CONFIG`).
+  - `features/loyalty/loyalty-account.component.ts` (`LoyaltyAccountComponent`)
+    ist reine Verdrahtung aus `AppNavigationComponent` + `AppAccountComponent`
+    (analog `DhlAccountComponent`/`MaritimeAccountComponent`), nutzt die
+    generischen `app.account.*` i18n-Keys (keine eigenen
+    `loyalty.account.*`-Texte nötig).
+  - `LoyaltyComponent` bindet zusätzlich `<app-navigation [config]="navConfig">`
+    ein – ansonsten unverändert (Fachlogik nicht angefasst).
+- `APP_REGISTRY[AppKey.LOYALTY]`: `baseRoute` von `/stores` auf `/apps/loyalty`
+  geändert, `contextSelectorSupported: true` ergänzt (identisch zu DHL) –
+  Struktur der `AppRegistryEntry` selbst blieb unverändert.
+- `AppContextSelectorComponent`, `AppLauncherComponent`,
+  `AppSwitcherComponent`, `AppContextService` – **0 Änderungen**, funktionieren
+  für LOYALTY exakt wie für DHL, da sie ausschließlich generisch über
+  `APP_REGISTRY`/`AppKey` arbeiten.
+
+### Neue Routen (Ziel-Bild, Legacy erhalten)
+
+```
+apps/loyalty                    → AppContextSelectorComponent (data.app: LOYALTY)
+apps/loyalty/:storeId           → LoyaltyComponent (app-zentrisch, NEU)
+apps/loyalty/:storeId/account   → LoyaltyAccountComponent (NEU)
+stores/:storeId/loyalty         → LoyaltyComponent (Legacy-Alias, UNVERÄNDERT)
+```
+
+Die Legacy-Route bleibt vollständig erhalten (kein Breaking-Change für
+bestehende Bookmarks/Links); `AppAccessService.buildAppHomeUrl()` /
+`resolveAppEntryUrl()` leiten neu auf die app-zentrische Route.
+
+### Einzige Erweiterung an gemeinsamer Infrastruktur (analog DHL/MARITIME)
+
+- `AppAccessService.classifyUrl()`: ein zusätzlicher expliziter Match-Block für
+  `/apps/loyalty(?:/:storeId)?(/...)?`, exakt nach dem Muster des bestehenden
+  DHL-Blocks (der `/stores/:id/loyalty`-Zweig existierte bereits vorher).
+- `AppAccessService.buildAppHomeUrl()`: `case AppKey.LOYALTY` liefert jetzt
+  `/apps/loyalty/${storeId}` statt `/stores/${storeId}/loyalty` (Legacy-Alias
+  bleibt separat erreichbar).
+- `AdminSidebarComponent`: Sidebar-Link für Loyalty zeigt bei bekannter
+  `storeId` jetzt auf `/apps/loyalty/${storeId}` (minimal, analog zum
+  bestehenden DHL-Sidebar-Eintrag); die URL-Erkennung für den Storekontext
+  wurde um `/apps/loyalty/:id` ergänzt.
+
+Alle drei Stellen sind reine 1:1-Wiederholungen des bereits für DHL etablierten
+Musters – keine neue Abstraktion, keine LOYALTY-spezifische Sonderlogik in
+generischem Code.
+
+### Was bewusst LOYALTY-spezifisch bleibt (dokumentierte Hardcodings)
+
+- Die gesamte Fachlogik in `loyalty.component.ts` (Karten-/Kundencode-Flow,
+  Punktestand, Credit/"Anschreiben", Kunden-Verknüpfung) – unverändert.
+- Der explizite `case AppKey.LOYALTY` in `AppAccessService.buildAppHomeUrl()`
+  (siehe 7d: bleibt für STORE-scoped Apps bewusst bestehen, da deren URL-Formen
+  historisch heterogen sind).
+- Der `/stores/:id/loyalty`-Zweig in `AppAccessService.classifyUrl()` (Legacy-
+  Erkennung) sowie der Sidebar-Eintrag `sidebarAdmin.items.loyalty` – beide
+  bewusst nicht generalisiert, weil sie (wie beim DHL-Fix) an eine
+  Legacy-URL-Form gebunden sind, die nicht ohne Risiko vereinheitlicht werden
+  kann.
+- `visibleForBusinessTypes: [BusinessType.SHOP]` im Sidebar-Eintrag –
+  fachliche Sichtbarkeitsregel, keine App-Factory-Angelegenheit.
+
+### Backend-Security (unverändert)
+
+Keine DB-/JWT-/Tenant-/Deployment-Änderung. Die bestehende Kette bleibt
+unangetastet: JWT → `@RequiresApp(LOYALTY)` (`LoyaltyController`) →
+`AppAccessInterceptor` → `StoreAccessChecker` → Fachlogik (`LoyaltyController`/
+`LoyaltyService` im Backend).
+
+### Verifizierte Testfälle (siehe `app-access.service.spec.ts`)
+
+| Szenario                                  | Erwartetes Verhalten                          |
+|--------------------------------------------|-----------------------------------------------|
+| nur LOYALTY, Store 121                     | `getPrimaryAppHomeUrl()` → `/apps/loyalty/121` |
+| LOYALTY Store 121 **+** LOYALTY Store 122   | `getPrimaryAppHomeUrl()` → `/apps/loyalty` (Context-Auswahl) |
+| DHL **+** LOYALTY                          | `getPrimaryAppHomeUrl()` → `/apps` (beide Apps im Launcher sichtbar) |
+| MARITIME **+** LOYALTY                     | `getPrimaryAppHomeUrl()` → `/apps` (GLOBAL + STORE gleichzeitig) |
+| LEGACY-User (kein `appAccessMode`)          | `/stores/121/loyalty` weiterhin uneingeschränkt erreichbar |
+
+### Verdikt: Ist die Factory mit zwei STORE-Apps und einer GLOBAL-App bewiesen?
+
+**Ja.** Mit DHL und LOYALTY als zwei unabhängigen STORE-scoped Consumern und
+MARITIME als GLOBAL-scoped Consumer benötigte **keine** der drei
+Shared-Komponenten (`AppLauncherComponent`, `AppSwitcherComponent`,
+`AppNavigationComponent`, `AppAccountComponent`, `AppContextSelectorComponent`,
+`AppContextService`) eine App-spezifische Änderung. Eine neue STORE-scoped App
+benötigt nachweislich nur:
+
+1. Backend: `AppKey`, Controller + `@RequiresApp` (bereits vorhanden für
+   LOYALTY).
+2. Frontend: `APP_REGISTRY`-Eintrag (`baseRoute`, `contextSelectorSupported`),
+   `*-nav.config.ts` (reine Daten), eine dünne `*AccountComponent`-Verdrahtung,
+   Routen (app-zentrisch + optionaler Legacy-Alias), i18n.
+3. Zwei punktuelle, wiederkehrende Erweiterungen in `AppAccessService`
+   (`classifyUrl`/`buildAppHomeUrl`) – dieselbe Handvoll Zeilen wie bei DHL,
+   keine neue Abstraktionsebene.
+
+Die verbleibenden App-spezifischen `switch`/`if`-Zweige in `AppAccessService`
+für STORE-scoped Apps (siehe 7d) sind eine bewusste, dokumentierte
+Design-Entscheidung (heterogene historische URL-Formen), keine versehentliche
+Kopplung.
+
 ## 8. Übergangslösung storeId
 
 Aktuell ist `storeId` der **einzige** Tenant-/Scope-Schlüssel im gesamten

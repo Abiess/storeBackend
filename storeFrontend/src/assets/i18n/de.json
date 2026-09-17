@@ -3599,6 +3599,9 @@
     }
   },
   "loyalty": {
+    "nav": {
+      "overview": "Übersicht"
+    },
     "title": "Bonuspunkte",
     "subtitle": "Karten-/Kundencode eingeben, um Punktestand und Einkäufe zuzuordnen.",
     "codeLabel": "Karten-/Kundencode",

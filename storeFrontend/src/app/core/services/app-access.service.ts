@@ -65,6 +65,14 @@ export class AppAccessService {
       return { kind: 'app', app: AppKey.DHL, storeId };
     }
 
+    // App-zentrische LOYALTY-Route: /apps/loyalty/:storeId(/...) – analog DHL,
+    // zweiter STORE-scoped Beweis für die generische App-Factory-Struktur.
+    const appsLoyaltyMatch = path.match(/^\/apps\/loyalty(?:\/(\d+))?(\/.*)?$/);
+    if (appsLoyaltyMatch) {
+      const storeId = appsLoyaltyMatch[1] != null ? Number(appsLoyaltyMatch[1]) : null;
+      return { kind: 'app', app: AppKey.LOYALTY, storeId };
+    }
+
     const storeMatch = path.match(/^\/stores\/(\d+)(\/.*)?$/);
     if (storeMatch) {
       const storeId = Number(storeMatch[1]);
@@ -154,7 +162,10 @@ export class AppAccessService {
         // `/stores/:id/dhl`-Route bleibt als Legacy-Alias weiter erreichbar.
         return `/apps/dhl/${storeId}`;
       case AppKey.LOYALTY:
-        return `/stores/${storeId}/loyalty`;
+        // App-zentrische URL (Ziel-Bild, analog DHL); die klassische
+        // `/stores/:id/loyalty`-Route bleibt als Legacy-Alias weiter
+        // erreichbar (siehe app.routes.ts).
+        return `/apps/loyalty/${storeId}`;
       case AppKey.SHOP:
         return storeId != null ? `/stores/${storeId}` : '/dashboard';
       default:

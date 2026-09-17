@@ -262,6 +262,15 @@ export const routes: Routes = [
     data: { app: AppKey.DHL },
     canActivate: [authGuard]
   },
+  {
+    path: 'apps/loyalty',
+    loadComponent: () =>
+      import('./shared/components/app-context-selector/app-context-selector.component').then(
+        m => m.AppContextSelectorComponent
+      ),
+    data: { app: AppKey.LOYALTY },
+    canActivate: [authGuard]
+  },
 
   // ==================== DHL Parcel Management ====================
   {
@@ -338,6 +347,29 @@ export const routes: Routes = [
   {
     path: 'apps/dhl/:storeId/account',
     loadComponent: () => import('./features/dhl/dhl-account.component').then(m => m.DhlAccountComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== LOYALTY App (app-zentrische Alias-Routen) ====================
+  // Faktortest App Factory: LOYALTY ist der zweite STORE-scoped Consumer und
+  // nutzt dieselben Shared-Bausteine wie DHL (AppNavigationComponent/
+  // AppAccountComponent/AppContextSelectorComponent/AppRegistry), nur eigene
+  // Konfiguration (LOYALTY_NAV_CONFIG). Das bestehende Loyalty-Backend/DB
+  // bleibt unverändert an storeId gebunden. Diese Routen laden dieselbe,
+  // bereits vorhandene Komponente unter einem app-zentrischen Pfad – die
+  // klassische 'stores/:storeId/loyalty'-Route oben bleibt unverändert als
+  // Legacy-Alias bestehen (kein Breaking-Change).
+  {
+    path: 'apps/loyalty/:storeId',
+    loadComponent: () => {
+      console.log('✅ Route matched: apps/loyalty/:storeId');
+      return import('./features/loyalty/loyalty.component').then(m => m.LoyaltyComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/loyalty/:storeId/account',
+    loadComponent: () => import('./features/loyalty/loyalty-account.component').then(m => m.LoyaltyAccountComponent),
     canActivate: [authGuard]
   },
 

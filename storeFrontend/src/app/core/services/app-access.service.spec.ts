@@ -220,5 +220,102 @@ describe('AppAccessService', () => {
       expect(service.isUrlAllowed('/apps/dhl/135')).toBeTrue();
     });
   });
+
+  describe('MANAGED-User mit ausschließlich LOYALTY/Store 121 (Faktortest: 2. STORE-scoped Consumer)', () => {
+    it('leitet direkt auf die app-zentrische LOYALTY-Startseite (nicht die Shop-/Legacy-Route)', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [{ app: AppKey.LOYALTY, storeId: 121, enabled: true }]
+        })
+      );
+
+      expect(service.getPrimaryAppHomeUrl()).toBe('/apps/loyalty/121');
+    });
+
+    it('erlaubt die neue app-zentrische LOYALTY-Route sowie den Legacy-Alias /stores/121/loyalty', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [{ app: AppKey.LOYALTY, storeId: 121, enabled: true }]
+        })
+      );
+
+      expect(service.isUrlAllowed('/apps/loyalty/121')).toBeTrue();
+      expect(service.isUrlAllowed('/stores/121/loyalty')).toBeTrue();
+    });
+
+    it('blockiert LOYALTY für einen anderen Store (weder app-zentrisch noch Legacy)', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [{ app: AppKey.LOYALTY, storeId: 121, enabled: true }]
+        })
+      );
+
+      expect(service.isUrlAllowed('/apps/loyalty/999')).toBeFalse();
+      expect(service.isUrlAllowed('/stores/999/loyalty')).toBeFalse();
+    });
+  });
+
+  describe('MANAGED-User: LOYALTY mit mehreren Contexts (Stores 121 + 122)', () => {
+    beforeEach(() => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [
+            { app: AppKey.LOYALTY, storeId: 121, enabled: true },
+            { app: AppKey.LOYALTY, storeId: 122, enabled: true }
+          ]
+        })
+      );
+    });
+
+    it('springt NICHT direkt in einen zufälligen Context, sondern öffnet die generische Context-Auswahl (/apps/loyalty)', () => {
+      expect(service.getPrimaryAppHomeUrl()).toBe('/apps/loyalty');
+    });
+
+    it('erlaubt die bare App-Route (Context-Auswahl) und beide konkreten Contexts', () => {
+      expect(service.isUrlAllowed('/apps/loyalty')).toBeTrue();
+      expect(service.isUrlAllowed('/apps/loyalty/121')).toBeTrue();
+      expect(service.isUrlAllowed('/apps/loyalty/122')).toBeTrue();
+    });
+  });
+
+  describe('MANAGED-User mit DHL + LOYALTY (zwei STORE-scoped Apps gleichzeitig)', () => {
+    it('leitet auf den App-Launcher (/apps) – beide Apps sind sichtbar', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [
+            { app: AppKey.DHL, storeId: 121, enabled: true },
+            { app: AppKey.LOYALTY, storeId: 121, enabled: true }
+          ]
+        })
+      );
+
+      expect(service.getPrimaryAppHomeUrl()).toBe('/apps');
+      expect(service.getAvailableApps()).toEqual(jasmine.arrayContaining([AppKey.DHL, AppKey.LOYALTY]));
+      expect(service.getAvailableApps().length).toBe(2);
+    });
+  });
+
+  describe('MANAGED-User mit MARITIME + LOYALTY (GLOBAL + STORE-scoped gleichzeitig)', () => {
+    it('leitet auf den App-Launcher (/apps) – beide Apps sind sichtbar', () => {
+      mockAuthService.getCurrentUser.and.returnValue(
+        buildUser({
+          appAccessMode: AppAccessMode.MANAGED,
+          apps: [
+            { app: AppKey.MARITIME, storeId: null, enabled: true },
+            { app: AppKey.LOYALTY, storeId: 121, enabled: true }
+          ]
+        })
+      );
+
+      expect(service.getPrimaryAppHomeUrl()).toBe('/apps');
+      expect(service.getAvailableApps()).toEqual(jasmine.arrayContaining([AppKey.MARITIME, AppKey.LOYALTY]));
+      expect(service.getAvailableApps().length).toBe(2);
+    });
+  });
 });
 
