@@ -1291,6 +1291,225 @@ Promise-Caching-Hack) und die dafür notwendige Sync-Kompatibilität für
 Guards/Interceptor/Fach-Services über einen expliziten In-Memory-Cache in
 `AuthService` gelöst.
 
+## 7j. Mobile-Factory-Pilot M4 – iOS Capacitor Pilot (Status: Struktur umgesetzt, Build erfordert Mac/Xcode)
+
+Architekturtest: läuft derselbe `storeFrontend`-Code (gleiche App Factory,
+gleicher `AuthService`, gleicher `StorageAdapter`, gleiche APIs) auch als
+iOS-App? Ergebnis: **Ja, ohne Code-Änderung an der Kern-Architektur** – es
+wurden ausschließlich Plattform-Artefakte hinzugefügt (`ios/`-Ordner,
+`@capacitor/ios`-Dependency, `NSCameraUsageDescription`), keine einzige Zeile
+in `AuthService`, `StorageAdapter`, `PlatformService`, `CameraAdapter`,
+`AppRegistry`/`AppContextService`/`AppAccessService` oder der Android-Struktur
+wurde angefasst.
+
+### 1. Analyse vor der Umsetzung
+
+| Geprüft | Ergebnis |
+|---|---|
+| `capacitor.config.ts` | `appId: 'ma.markt.app'`, `appName: 'markt.ma'` (neutral, siehe §7h) – unverändert übernommen, **keine** neue/zweite Config-Datei für iOS nötig (eine Config gilt für beide Plattformen) |
+| Capacitor-Version | `@capacitor/core` / `@capacitor/cli` bereits `8.5.2` (aus M2) – `@capacitor/ios@8.5.2` exakt passend nachinstalliert, keine Versions-Divergenz zwischen den Plattformen |
+| `PlatformService` | `detectType()` erkennt `CAPACITOR_IOS` bereits seit M1 generisch (`window.Capacitor.isNativePlatform()` + `/iPhone|iPad|iPod/i`-Regex) – **keine Code-Änderung nötig** |
+| `CapacitorSecureStorageAdapter` | plattformneutral geschrieben (nutzt nur die JS/TS-API `SecureStorage.getItem/setItem/removeItem` des Plugins) – **keine Code-Änderung nötig** |
+| `CameraAdapter` | `WebCameraAdapter` (M1) nutzt nur Standard-`getUserMedia`, läuft identisch in der iOS-`WKWebView` – **keine Code-Änderung nötig** |
+| iOS-Unterstützung des Secure-Storage-Plugins | `@aparajita/capacitor-secure-storage@8.0.0` enthält bereits native iOS-Quellen (`"capacitor": {"ios": {"src": "ios"}}` im Plugin-`package.json`, siehe §M3a) – iOS-Keychain-Implementierung war von Anfang an Teil des in M3a gewählten Plugins, nicht nachgerüstet |
+
+Ergebnis der Analyse: **kompatibel, keine neue Mobile-Architektur nötig** →
+iOS-Plattform hinzugefügt.
+
+### 2. Ausgeführte Schritte
+
+```
+npm install @capacitor/ios@8.5.2   # neue Dependency, analog @capacitor/android aus M2
+ng build --configuration production
+npx cap add ios                    # ✅ erfolgreich
+npx cap sync ios                   # ✅ erfolgreich
+```
+
+Ergebnis-Struktur (wie gefordert, Android unverändert daneben):
+
+```
+storeFrontend/
+├── android/          (unverändert, M2/M3a)
+├── ios/              (NEU, M4)
+│   ├── App/
+│   │   ├── App/                 (Xcode-App-Target: Info.plist, AppDelegate, Assets, public/ = Web-Build)
+│   │   ├── App.xcodeproj/
+│   │   └── CapApp-SPM/          (Swift-Package-Manager-Manifest für Capacitor + Plugins)
+│   ├── capacitor-cordova-ios-plugins/
+│   └── .gitignore
+└── capacitor.config.ts   (unverändert – eine Config für Android UND iOS)
+```
+
+`npx cap sync ios` hat automatisch erkannt:
+`Found 1 Capacitor plugin for ios: @aparajita/capacitor-secure-storage@8.0.0`
+– dieselbe Plugin-Version wie unter Android (aus M3a), keine iOS-spezifische
+Adapter-Variante nötig.
+
+### 3. App Identity (unverändert, wie gefordert)
+
+`ios/App/App.xcodeproj/project.pbxproj` → `PRODUCT_BUNDLE_IDENTIFIER = ma.markt.app;`
+`Info.plist` → `CFBundleDisplayName = markt.ma`.
+
+Beides direkt aus `capacitor.config.ts` (`appId`/`appName`) übernommen –
+**keine** DHL-spezifische oder sonst app-spezifische Bundle-ID eingeführt,
+identisch zur bewussten Entscheidung aus §7h für Android.
+
+### 4. Auth / Secure Storage – Keychain
+
+Kein `IosAuthService`, kein `IosStorageService`. Identischer Flow wie
+Android (M3a):
+
+```
+AuthService
+  → StorageAdapter (abstract, async)
+  → CapacitorSecureStorageAdapter   ← plattformneutral, exakt dieselbe TS-Klasse
+  → @aparajita/capacitor-secure-storage
+      ├── Android: EncryptedSharedPreferences (Keystore)
+      └── iOS: System-Keychain
+```
+
+`provideStorageAdapter()` (`app.config.ts`) wählt weiterhin nur über
+`PlatformService.isNative` (`true` für `CAPACITOR_ANDROID` UND
+`CAPACITOR_IOS`) – **keine** Fallunterscheidung Android/iOS im
+Provider-Code nötig.
+
+**Zusätzliche iOS-Capabilities/Konfiguration für Keychain?** Geprüft: **keine
+nötig.** Keychain-Zugriff (`SecItemAdd`/`SecItemCopyMatching` unter der Haube
+des Plugins) ist eine Standard-iOS-API, benötigt weder ein spezielles
+Xcode-Capability/Entitlement noch einen App Group/Keychain-Sharing-Eintrag,
+solange nur INNERHALB derselben App gelesen/geschrieben wird (kein
+Keychain-Sharing zwischen mehreren Apps geplant). Das Plugin nutzt außerdem
+standardmäßig `KeychainAccess.whenUnlocked` (Default, siehe Plugin-API) –
+für unseren Use-Case (Foreground-Zugriff beim App-Start) ausreichend, siehe
+offene Punkte unten.
+
+### 5. CORS – Origin ermittelt, NICHT blind gefixt
+
+Aktuelle `capacitor.config.ts` setzt `server.androidScheme: 'https'`, aber
+**kein** `server.iosScheme`. Laut Capacitor-Dokumentation
+(`@capacitor/cli` Typdefinition, `iosScheme` `@default 'capacitor'`) ergibt
+sich daraus für iOS:
+
+```
+Origin (iOS, aktuelle Config) = capacitor://localhost
+Origin (Android, aktuelle Config, unverändert seit M2) = https://localhost
+```
+
+**Wichtiger Befund:** Das Backend (`WebConfig.java`,
+`corsConfigurationSource()`) hat in M2 den Eintrag `"https://localhost"`
+bewusst mit dem Kommentar *"Capacitor Android/iOS WebView"* ergänzt – der
+Kommentar geht implizit davon aus, dass iOS ebenfalls `https://localhost`
+sendet. **Das stimmt mit der aktuellen Config nicht** (iOS sendet
+`capacitor://localhost`, ein anderer Origin-String). Es wurde **keine**
+Backend-CORS-Regel blind ergänzt oder der Kommentar korrigiert – das ist
+bewusst dem ersten echten iOS-Gerätetest vorbehalten (siehe unten). Zwei
+mögliche, gleichwertig einfache spätere Fixes, ausschließlich falls ein
+echter Test tatsächlich einen CORS-Fehler zeigt:
+1. `server.iosScheme: 'https'` in `capacitor.config.ts` ergänzen (Frontend-seitig,
+   dann matcht der bestehende `"https://localhost"`-CORS-Eintrag auch iOS,
+   **keine** Backend-Änderung nötig), ODER
+2. `"capacitor://localhost"` zusätzlich in `WebConfig.java` aufnehmen
+   (Backend-seitig, falls Variante 1 aus anderen Gründen nicht gewünscht ist).
+
+Keine der beiden Optionen wurde jetzt umgesetzt – reine Dokumentation des
+Ist-Zustands, wie vom Auftrag gefordert.
+
+### 6. Kamera / Barcode (iOS)
+
+- `WebCameraAdapter` (unverändert, M1) läuft identisch in der iOS-`WKWebView`
+  (WebKit unterstützt `getUserMedia` inkl. `facingMode: 'environment'`).
+- **Notwendige iOS-Permission:** `NSCameraUsageDescription` in
+  `ios/App/App/Info.plist` – **war im von `cap add ios` generierten Info.plist
+  NICHT enthalten** und wurde ergänzt (analog zur
+  `android.permission.CAMERA`-Ergänzung in M2a). Ohne diesen Key verweigert/
+  crasht iOS jede `getUserMedia`-Anfrage aus der WKWebView, unabhängig von
+  einer Laufzeit-Dialogabfrage – identisches Muster zum Android-Manifest-Befund
+  aus M2a.
+- Kein `NativeScannerAdapter`/keine native Scanner-Implementierung ergänzt –
+  `WebCameraAdapter` ist für den Pilot ausreichend, identisch zur
+  Android-Entscheidung in M2a.
+
+### 7. Build-/Sync-Ergebnis
+
+| Schritt | Ergebnis |
+|---|---|
+| `npm install @capacitor/ios@8.5.2` | ✅ erfolgreich |
+| `ng build --configuration production` | ✅ erfolgreich (Exit 0, bereits bekannte Budget-/Unused-Warnings) |
+| `npx cap add ios` | ✅ erfolgreich – `ios/`-Ordner erzeugt, Web-Assets nach `ios/App/App/public` kopiert |
+| `npx cap sync ios` | ✅ erfolgreich – Plugin `@aparajita/capacitor-secure-storage@8.0.0` als iOS-Plugin erkannt, `Package.swift` aktualisiert |
+| Xcode-Build (`xcodebuild`/Xcode-IDE) | ❌ nicht ausführbar – **kein Mac/Xcode in dieser Sandbox verfügbar** (Windows-Umgebung) |
+
+**Was automatisch vorbereitet wurde (ohne Mac):**
+- Vollständige Xcode-Projektstruktur (`App.xcodeproj`, `Info.plist`,
+  `AppDelegate`/`SceneDelegate`-Referenzen, `LaunchScreen`/`Main.storyboard`).
+- Web-Assets bereits nach `ios/App/App/public` kopiert (Production-Build).
+- Plugin-Integration bereits vollständig verdrahtet: Capacitor 8 nutzt
+  standardmäßig **Swift Package Manager** statt CocoaPods
+  (`ios/App/CapApp-SPM/Package.swift`, automatisch von `cap sync` geschrieben)
+  – `@aparajita/capacitor-secure-storage` ist dort bereits als lokale
+  Package-Dependency eingetragen. **Kein Podfile, kein `pod install`
+  nötig** – das wäre auf einem Mac ohnehin CocoaPods-spezifisches Tooling
+  gewesen, entfällt hier komplett.
+- `NSCameraUsageDescription` in `Info.plist` ergänzt.
+
+**Was zwingend einen Mac/Xcode benötigt (kein Workaround möglich):**
+1. Auflösen der Swift-Package-Manager-Dependencies (`capacitor-swift-pm`,
+   Plugin-Package) – erfordert Xcode/`xcodebuild`, keine reine CLI-Aktion
+   unter Windows/Linux.
+2. Erster Xcode-Build (Debug/Simulator oder Gerät) – `xcodebuild`/Xcode-IDE
+   läuft ausschließlich auf macOS.
+3. Code-Signing (Development-Team/Provisioning Profile) für Simulator ist
+   nicht zwingend nötig, für ein echtes iPhone jedoch schon (Apple
+   Developer Account + Signing-Zertifikat).
+4. Echter Geräte-/Simulator-Test der Keychain-Persistenz, Kamera-Permission-
+   Dialog und CORS-Verhalten (siehe §5) – analog zum offenen Android-
+   Emulator-Test aus §7h/§7i.
+
+### 8. GitHub Actions – noch kein Workflow
+
+Es wurde **kein** `build-ios.yml` angelegt. Wie beauftragt zunächst nur
+Beurteilung: ein iOS-Build-Workflow (Debug-Build für Simulator, analog zu
+`build-android-apk.yml`) würde einen **macOS-Runner**
+(`runs-on: macos-14`/`macos-latest`) benötigen – GitHub-gehostete
+macOS-Runner sind grundsätzlich verfügbar, aber (a) deutlich teurer als
+Ubuntu-Runner (höherer Minuten-Multiplikator) und (b) für einen reinen
+Simulator-Debug-Build ohne Signing bereits ausreichend, für ein
+installierbares IPA/TestFlight/App-Store-Artefakt wäre zusätzlich ein
+Apple-Signing-Setup (Zertifikat + Provisioning Profile als GitHub Secrets)
+nötig. Empfehlung: `build-ios.yml` erst anlegen, wenn ein echter
+Mac-Gerätetest (§7) die grundsätzliche Lauffähigkeit bestätigt hat – vorher
+wäre ein CI-Workflow nur Kostenfaktor ohne zusätzlichen Erkenntnisgewinn
+gegenüber der lokalen Struktur-Analyse hier.
+
+### 9. Was zwischen Android und iOS tatsächlich gemeinsam geblieben ist
+
+| Baustein | Android | iOS | Gemeinsam? |
+|---|---|---|---|
+| `AuthService` | ✅ | ✅ | ✅ 100 % identischer Code |
+| `StorageAdapter` (abstract) | ✅ | ✅ | ✅ 100 % identischer Code |
+| `CapacitorSecureStorageAdapter` | ✅ (Keystore) | ✅ (Keychain) | ✅ 100 % identischer TS-Code, nur native Implementierung im Plugin unterscheidet sich |
+| `PlatformService` | `type = CAPACITOR_ANDROID` | `type = CAPACITOR_IOS` | ✅ dieselbe Klasse, nur Enum-Wert unterscheidet sich |
+| `CameraAdapter` (`WebCameraAdapter`) | ✅ | ✅ | ✅ 100 % identischer Code |
+| `AppRegistry`/`AppContextService`/`AppAccessService` | ✅ | ✅ | ✅ unverändert, nicht angefasst |
+| `capacitor.config.ts` | ✅ | ✅ | ✅ eine gemeinsame Datei, keine Duplikation |
+| App Identity (`appId`/`appName`) | `ma.markt.app` / `markt.ma` | `ma.markt.app` / `markt.ma` | ✅ identisch |
+| Nativer Storage-Backend | EncryptedSharedPreferences | Keychain | ⚠️ unterschiedlich (erwartet – jeweilige Plattform-Norm), aber hinter identischem `StorageAdapter`-Vertrag versteckt |
+| WebView-Origin | `https://localhost` | `capacitor://localhost` (aktuell, siehe §5) | ⚠️ unterschiedlich – dokumentierter, noch nicht behobener CORS-Punkt |
+| Manifest/Plist-Permissions | `AndroidManifest.xml` (`CAMERA`) | `Info.plist` (`NSCameraUsageDescription`) | ⚠️ plattform-native Deklarationsform unterschiedlich, aber gleiche fachliche Berechtigung (Kamera) |
+
+### 10. Verdikt
+
+Die Factory hält auch für M4 stand: **keine** zweite Mobile-Codebasis,
+**kein** `IosAuthService`/`IosStorageService`, **keine** iOS-spezifische
+Sonderbehandlung in `AuthService`/`StorageAdapter`/`PlatformService`/
+`CameraAdapter`. iOS ist – wie Android in M2/M3a – ein reiner zusätzlicher
+Host/Client um denselben `storeFrontend`-Build, gesteuert ausschließlich über
+dieselben Adapter und dieselbe `capacitor.config.ts`. Der Android-Ordner
+wurde nicht verändert. Zwei offene, bewusst nicht blind gefixte Punkte bleiben
+für den ersten echten Gerätetest: (1) CORS-Origin-Diskrepanz
+`capacitor://localhost` vs. erwartetem `https://localhost` (§5), (2)
+tatsächlicher Xcode-Build/Signing, der zwingend einen Mac erfordert (§7).
+
 ## 8. Übergangslösung storeId
 
 Aktuell ist `storeId` der **einzige** Tenant-/Scope-Schlüssel im gesamten
