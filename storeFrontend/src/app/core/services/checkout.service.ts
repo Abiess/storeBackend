@@ -5,6 +5,7 @@ import { environment } from '@env/environment';
 import { MockCheckoutService } from '../mocks/mock-checkout.service';
 import { Router } from '@angular/router';
 import { catchError } from 'rxjs/operators';
+import { AuthService } from './auth.service';
 
 export interface CheckoutRequest {
   storeId: number;
@@ -74,14 +75,18 @@ export class CheckoutService {
 
   constructor(
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   /**
-   * Holt den JWT Token aus localStorage (optional für Guest-Checkout)
+   * Holt den JWT Token (optional für Guest-Checkout).
+   * M3a: Über AuthService.getToken() (In-Memory-Cache) statt direktem
+   * localStorage-Zugriff, damit dies auch auf Android/iOS mit Secure Storage
+   * korrekt funktioniert.
    */
   private getAuthToken(): string | null {
-    const token = localStorage.getItem('auth_token');
+    const token = this.authService.getToken();
     if (!token) {
       console.log('ℹ️ Kein Auth-Token - Guest-Checkout wird verwendet');
     }

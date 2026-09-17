@@ -73,11 +73,9 @@ export class PhoneQuickAuthService {
       code
     }).pipe(
       tap(response => {
-        // Wie normaler Login – Token und User speichern
-        localStorage.setItem('auth_token', response.token);
-        localStorage.setItem('currentUser', JSON.stringify(response.user));
-        // FIX: AuthService BehaviorSubject über öffentliche Methode aktualisieren
-        this.authService.setAuthFromStorage();
+        // M3a: Über AuthService.setSession() statt direktem localStorage-Zugriff,
+        // damit Token/User auf Android/iOS korrekt in Secure Storage landen.
+        this.authService.setSession(response.token, response.user as any);
         console.log('✅ [PhoneAuth] Login erfolgreich – User:', response.user.id);
       })
     );

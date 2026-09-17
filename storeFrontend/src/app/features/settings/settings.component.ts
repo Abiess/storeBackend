@@ -959,16 +959,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.emailSaving = false;
         this.emailSaved = true;
         this.showAddEmailForm = false;
-        const stored = localStorage.getItem('auth_user');
-        if (stored) {
-          try {
-            const user = JSON.parse(stored);
-            user.email = email;
-            localStorage.setItem('auth_user', JSON.stringify(user));
-            if (res.token) localStorage.setItem('auth_token', res.token);
-          } catch {}
-        }
-        this.authService.setAuthFromStorage();
+        // M3a: Über AuthService.updateCurrentUser() statt direktem
+        // localStorage-Zugriff (vorher inkonsistenter Key 'auth_user' statt
+        // 'currentUser' – wurde nie korrekt von AuthService gelesen).
+        this.authService.updateCurrentUser({ email } as any, res.token);
       },
       error: (err) => {
         this.emailSaving = false;

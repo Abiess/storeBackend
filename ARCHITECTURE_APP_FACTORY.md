@@ -949,6 +949,10 @@ Code-Änderung in Auth/Registry/Navigation nötig.
 
 ### 4. Secure Storage – Analyse statt Hack
 
+> **Update M3a (umgesetzt):** Die hier skizzierte Migrationsstrategie wurde
+> vollständig umgesetzt, siehe §7i. Dieser Abschnitt bleibt als
+> Entscheidungs-Historie (M2-Analyse) erhalten.
+
 `StorageAdapter` (M1) ist bewusst **synchron** (`get/set/remove` geben
 `string | null` bzw. `void` direkt zurück), weil `AuthService` heute an
 mehreren Stellen synchron darauf zugreift (Konstruktor, `isAuthenticated()`,
@@ -1073,6 +1077,219 @@ bewusst nicht gehackt, sondern auf M3 mit einer sauberen
 Async-Migrationsstrategie verschoben. Der Android-Build selbst ist lokal
 nicht abschließbar, weil SDK/Netzwerk in dieser Umgebung fehlen – kein
 Architekturproblem, sondern ein reines Umgebungs-Setup-Thema.
+
+## 7i. Mobile-Factory-Pilot M3a – Secure Storage (umgesetzt)
+
+Setzt die in §7h/4 dokumentierte Analyse um: `AuthService`-Secrets landen auf
+Android jetzt im Android Keystore statt im WebView-`localStorage`.
+
+### 1. Gewähltes Plugin
+
+**`@aparajita/capacitor-secure-storage@8.0.0`**
+
+| Kriterium | Bewertung |
+|---|---|
+| Aktiv gepflegt | ✅ Releases über mehrere Jahre, `8.0.0` erst kürzlich veröffentlicht |
+| Capacitor 8 kompatibel | ✅ `peerDependencies`/`dependencies` verlangen `@capacitor/core ^8.0.2` (exakt unser `8.5.2`) |
+| Android Keystore | ✅ Android: `EncryptedSharedPreferences` (Keystore-gesichert) |
+| iOS Keychain | ✅ iOS: System-Keychain (`ios/`-Quellen bereits im Paket enthalten) |
+| Keine Cloud-/Account-Abhängigkeit | ✅ rein lokal/gerätegebunden; optionales iCloud-Sync (`setSynchronize`) ist opt-in und wird **nicht** aktiviert |
+| API | `getItem/setItem/removeItem(key, value): Promise<...>` – deckt sich 1:1 mit `StorageAdapter` |
+
+Alternative geprüft: `capacitor-secure-storage-plugin` (ebenfalls
+Capacitor-8-fähig) – nicht gewählt, da `@aparajita/...` eine aktivere
+Release-Historie, first-class TypeScript-Typisierung und eine schlankere,
+zu unserem `StorageAdapter`-Interface passende Low-Level-API
+(`getItem/setItem/removeItem`) bietet.
+
+Installiert via `npm install @aparajita/capacitor-secure-storage@8.0.0`;
+Android-Modul wird durch `npx cap sync android` automatisch in
+`android/app/capacitor.build.gradle` eingebunden
+(`implementation project(':aparajita-capacitor-secure-storage')`).
+
+### 2. Sync/Async-Strategie (Kernentscheidung)
+
+`StorageAdapter` ist jetzt **durchgehend async** (`Promise<string | null>` /
+`Promise<void>`), weil native Secure Storage (Keystore/Keychain) grundsätzlich
+nur async ansprechbar ist. Es gibt **keinen Fake-Sync-Wrapper** und **keinen
+Promise-Caching-Hack** über dem nativen Storage selbst.
+
+Die Sync-Anforderung von `AuthService.getToken()` / `isAuthenticated()`
+(aufgerufen von `authGuard`, `AuthInterceptor`, `RoleService`,
+`CartService`, `CheckoutService`, `CustomerProfileService` u.a.) wird über
+einen **In-Memory-Cache in `AuthService`** gelöst:
+
+- `tokenCache: string | null` – wird EINMAL beim App-Start async aus dem
+  `StorageAdapter` befüllt (`AuthService.initialize()`), danach ausschließlich
+  synchron gelesen (`getToken()` gibt `this.tokenCache` zurück).
+- Schreibvorgänge (`login()`, `logout()`, `setSession()`,
+  `updateCurrentUser()`, `reloadCurrentUser()`, `validateTokenWithBackend()`)
+  aktualisieren `tokenCache` / `currentUserSubject` **sofort synchron**;
+  die Persistenz in den `StorageAdapter` läuft parallel async
+  (fire-and-forget mit Error-Logging, `void this.storage.set(...)`).
+- Dieses Muster ist bewusst KEIN Cache über den Promise selbst (kein
+  „Promise-Memoization"), sondern ein gewöhnlicher In-Memory-State, der von
+  einer async geladenen Quelle gespeist wird – Standardmuster für native
+  Mobile-Apps mit Secure Storage.
+
+**App-Start-Flow (Zielbild umgesetzt):**
+
+```
+App Start
+  → APP_INITIALIZER: StorageAdapter-Provider ausgewählt (PlatformService)
+  → APP_INITIALIZER: AuthService.initialize() (async, await storage.get(...))
+  → Token/User in tokenCache / currentUserSubject geladen (oder Session bereinigt, falls abgelaufen)
+  → AuthService.authReady$ → true
+  → Routing/Guards starten (Angular blockiert Bootstrap bis alle APP_INITIALIZER resolved sind)
+```
+
+`AuthService` bekommt dafür einen expliziten Ready-Status:
+`authReady$: Observable<boolean>` (zusätzlich zur bestehenden
+`currentUser$`), falls Komponenten explizit auf "Auth vollständig
+initialisiert" warten wollen (aktuell nicht zwingend nötig, da
+`APP_INITIALIZER` bereits das gesamte Bootstrap blockiert).
+
+### 3. Web vs. Mobile Storage (Provider-Switch)
+
+```
+StorageAdapter (abstract, async)
+  ├── WebLocalStorageAdapter          → WEB / PWA (Default)
+  └── CapacitorSecureStorageAdapter   → CAPACITOR_ANDROID (heute), CAPACITOR_IOS (später)
+```
+
+`app.config.ts` wählt den Provider zur Laufzeit über `PlatformService.isNative`
+(keine Build-Variante, keine zweite App):
+
+```ts
+export function provideStorageAdapter(platform: PlatformService, web: WebLocalStorageAdapter, secure: CapacitorSecureStorageAdapter): StorageAdapter {
+  return platform.isNative ? secure : web;
+}
+// { provide: StorageAdapter, useFactory: provideStorageAdapter, deps: [PlatformService, WebLocalStorageAdapter, CapacitorSecureStorageAdapter] }
+```
+
+`WebLocalStorageAdapter` bleibt inhaltlich unverändert (`localStorage`), nur
+in eine bereits aufgelöste `Promise` gewrappt – **Web-Verhalten ist 1:1
+identisch zu vorher**, kein Bruch für bestehende Web-Nutzer.
+
+### 4. Welche Werte brauchen Secure Storage?
+
+Bewusst **nicht** alle bisherigen `localStorage`-Keys blind übernommen:
+
+| Key | Über `StorageAdapter` (Secure Storage auf Android)? | Begründung |
+|---|---|---|
+| `auth_token` (JWT) | ✅ Ja | Zugangs-Secret |
+| `currentUser` (Profil-Cache) | ✅ Ja | an denselben Key/Adapter gekoppelt wie Token, klein, unkritisch mitzusichern |
+| `cart_session_id` | ❌ Nein – bleibt in `localStorage` (WebView-intern) | reine Warenkorb-Korrelations-ID, kein Secret, muss nicht Keystore-verschlüsselt sein |
+| `last_store_id`, UI-Preferences | ❌ Nein – bleibt in `localStorage` | unkritische UI-/Navigationsdaten |
+
+`AuthService.logout()`/`clearSession()` entfernen `cart_session_id` deshalb
+weiterhin direkt via `localStorage.removeItem(...)` (nicht über den
+`StorageAdapter`) – unverändert zum bisherigen Verhalten.
+
+### 5. Bereinigte Bypass-Stellen (Bug-Fix, tightly-coupled zu M3a)
+
+Bei der Analyse "welche Stellen hängen an synchroner Token-Verfügbarkeit"
+wurden mehrere Stellen gefunden, die `AuthService`/`StorageAdapter` **umgingen**
+und direkt `localStorage.setItem('auth_token'/'currentUser', ...)` +
+`authService.setAuthFromStorage()` aufriefen (Phone-Auth, anonyme
+Store-Erstellung, Save-Email-Flows in Settings/Store-Detail/
+Create-Store-Public). Auf Android hätte das bedeutet: Token landet weiterhin
+im WebView-`localStorage` statt in Secure Storage – der komplette Zweck von
+M3a wäre für diese Flows umgangen worden. Zusätzlich gab es reine
+Lese-Bypässe (`localStorage.getItem('auth_token')` in `CartService`,
+`CheckoutService`, `CustomerProfileService`, `checkout.component.ts`), die auf
+Android nach der Umstellung `null` zurückgegeben hätten.
+
+Alle betroffenen Stellen wurden auf `AuthService` umgestellt:
+- Neue öffentliche Methoden `AuthService.setSession(token, user)` (voller
+  Login-artiger Zustand) und `AuthService.updateCurrentUser(patch, newToken?)`
+  (partielles Update, z.B. nachträgliche E-Mail) ersetzen das
+  `localStorage.setItem(...) + setAuthFromStorage()`-Pattern.
+- Reine Token-Reads nutzen jetzt durchgehend `authService.getToken()`
+  (weiterhin synchron, siehe In-Memory-Cache) statt `localStorage.getItem(...)`.
+- Nebeneffekt: ein vorbestehender Bug in `settings.component.ts` (Schreiben
+  unter dem Key `auth_user` statt `currentUser` – wurde von `AuthService` nie
+  gelesen) wurde dadurch mitbehoben.
+
+### 6. Migration bestehender Sessions
+
+- **Web-Nutzer:** keine Migration nötig – `WebLocalStorageAdapter` liest/schreibt
+  weiterhin denselben `localStorage`, Verhalten unverändert.
+- **Android:** Secure Storage ist ein separater nativer Store, komplett
+  getrennt vom WebView-`localStorage`. Ein vorhandener Android-Login (falls
+  z.B. aus einem M2-Testbuild ohne Secure Storage vorhanden) liegt nach dem
+  Update im `localStorage`, nicht in Secure Storage → `AuthService.initialize()`
+  findet dort keinen Token → User muss sich einmalig neu einloggen.
+  **Entscheidung:** kein automatischer Einmal-Migrationsschritt (Token aus
+  `localStorage` in Secure Storage kopieren), weil (a) der M2-Android-Build nie
+  produktiv ausgeliefert wurde (nur lokale/CI-Debug-APKs, siehe §7h), es also
+  keine echten Bestandsnutzer mit Android-Session gibt, und (b) ein
+  automatischer Copy-Schritt zusätzliche Komplexität für einen
+  Einmalig-relevanten Edge-Case wäre. Erneutes Login ist akzeptiert.
+
+### 7. Tests (manuell verifiziert / durch Code-Review abgesichert)
+
+| Szenario | Ergebnis |
+|---|---|
+| Web Login | ✅ unverändert – `WebLocalStorageAdapter` = alter `localStorage`-Pfad |
+| Web Reload | ✅ `AuthService.initialize()` lädt Token/User async, Promise löst im selben Tick auf wie vorher synchron |
+| Web Logout | ✅ `tokenCache`/`currentUserSubject` sofort `null`, Storage-Remove async im Hintergrund |
+| Android Login | ✅ (Code-Pfad) `setSession()`/`login()` schreiben synchron in `tokenCache`, async in `CapacitorSecureStorageAdapter` → Keystore |
+| Android App Kill/Neustart | ✅ (Code-Pfad) `initialize()` liest Token via `SecureStorage.getItem()` aus Keystore neu ein, vor Routing/Guards |
+| Android Logout / Token wirklich entfernt | ✅ `logout()` ruft `storage.remove('auth_token'/'currentUser')` → `SecureStorage.removeItem()` (Keystore-Eintrag gelöscht) |
+| `AuthInterceptor` erhält Token weiterhin korrekt | ✅ nutzt weiterhin `authService.getToken()` (synchron, In-Memory) – keine Änderung am Interceptor nötig |
+| App-Bootstrap wartet auf Auth-Init | ✅ `APP_INITIALIZER` (`initializeAuth`) blockiert Angular-Bootstrap bis `AuthService.initialize()` resolved ist |
+
+Echter Geräte-/Emulator-Test (adb/Android-Studio) war in dieser Sandbox nicht
+möglich (kein Android SDK/Emulator verfügbar, siehe §7h §9) – die
+Storage-Bridge-Aufrufe selbst (`SecureStorage.getItem/setItem/removeItem`)
+sind aber reine Plugin-Wrapper-Aufrufe ohne eigene Geschäftslogik.
+
+### 8. Build + Sync (verifiziert)
+
+| Schritt | Ergebnis |
+|---|---|
+| `npm install @aparajita/capacitor-secure-storage@8.0.0` | ✅ erfolgreich |
+| `ng build --configuration production` | ✅ erfolgreich (Exit 0, nur bereits bekannte Budget-/Unused-Warnings) |
+| `npx cap sync android` | ✅ erfolgreich – Plugin `@aparajita/capacitor-secure-storage@8.0.0` als Android-Plugin erkannt, `capacitor.build.gradle` aktualisiert |
+| `gradlew assembleDebug` (lokal) | ❌ weiterhin blockiert (kein Netzwerkzugriff auf `services.gradle.org` in dieser Sandbox, siehe §7h §9) – **kein neues Problem durch M3a**, identischer Blocker wie in M2 |
+| `.github/workflows/build-android-apk.yml` | unverändert kompatibel – `npm ci` installiert die neue Dependency aus dem aktualisierten `package-lock.json`, `npx cap sync android` bindet das native Android-Modul automatisch ein |
+
+### 9. Offene Punkte für iOS (CAPACITOR_IOS)
+
+- `CapacitorSecureStorageAdapter` ist bereits iOS-fähig (Plugin enthält
+  `ios/`-Quellen, nutzt Keychain) – **kein Code-Änderungsbedarf** in
+  `capacitor-secure-storage-adapter.ts` selbst.
+- `PlatformService.detectType()` erkennt `CAPACITOR_IOS` bereits (M1),
+  `provideStorageAdapter()` behandelt `CAPACITOR_ANDROID`/`CAPACITOR_IOS`
+  identisch über `platform.isNative` – keine iOS-spezifische Fallunterscheidung
+  nötig.
+- Noch offen (kein Blocker für Android-Pilot, aber vor einem echten
+  iOS-Build zu klären):
+  1. `npx cap add ios` wurde noch nicht ausgeführt (kein `ios/`-Ordner im
+     Repo) – analog zu M2 für Android nachzuziehen.
+  2. Keychain-`KeychainAccess`-Option (`whenUnlocked` ist Plugin-Default)
+     nicht explizit gesetzt/geprüft – Default ist für unseren Use-Case
+     (Foreground-App, kein Background-Zugriff nötig) ausreichend, sollte aber
+     vor Store-Release bewusst bestätigt werden.
+  3. `setSynchronize`/iCloud-Sync bewusst NICHT aktiviert (Default `false`) –
+     vor iOS-Rollout sollten Produkt/Security explizit bestätigen, dass Tokens
+     NICHT über iCloud zwischen Geräten synchronisiert werden sollen.
+  4. Kein Mac/Xcode in dieser Sandbox verfügbar – iOS-Build/Test kann nur auf
+     entsprechender Hardware/CI erfolgen (analog zum Android-SDK-Blocker aus
+     §7h).
+
+### 10. Verdikt
+
+Kein neuer `MobileAuthService`, keine parallele Mobile-Architektur:
+`AuthService` bleibt die einzige Auth-Quelle für Web und Android, nur die
+Low-Level-Persistenz ist per `PlatformService`-gesteuertem Provider
+austauschbar. `AppRegistry`/`AppContextService`/`AppAccessService` sowie
+Tenant/Location/Scanner-Logik wurden nicht angefasst. Die Async-Migration von
+`StorageAdapter` wurde vollständig durchgezogen (kein Sync-Fake, kein
+Promise-Caching-Hack) und die dafür notwendige Sync-Kompatibilität für
+Guards/Interceptor/Fach-Services über einen expliziten In-Memory-Cache in
+`AuthService` gelöst.
 
 ## 8. Übergangslösung storeId
 

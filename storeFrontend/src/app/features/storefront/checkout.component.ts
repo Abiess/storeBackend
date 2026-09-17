@@ -1995,7 +1995,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
 
     loadSavedAddresses(): void {
-        const token = localStorage.getItem('auth_token');
+        const token = this.authService.getToken();
         if (!token) {
             console.log('ℹ️ User nicht eingeloggt - keine gespeicherten Adressen');
             return;
@@ -2929,7 +2929,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
 
     savePhoneToProfile(): void {
-        const token = localStorage.getItem('auth_token');
+        const token = this.authService.getToken();
         if (!token) {
             console.log('ℹ️ Nutzer nicht angemeldet - Telefonnummer wird nicht im Profil gespeichert');
             return;

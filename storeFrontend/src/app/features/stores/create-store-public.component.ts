@@ -741,15 +741,12 @@ export class CreateStorePublicComponent implements OnInit, OnDestroy {
     this.http.post<{ token: string; message: string }>(
       `${environment.apiUrl}/public/create-store/save-email`,
       { email, storeId: this.createdStoreId },
-      { headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` } }
+      { headers: { Authorization: `Bearer ${this.authService.getToken()}` } }
     ).subscribe({
       next: (res) => {
         if (res.token) {
-          localStorage.setItem('auth_token', res.token);
-          const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
-          user.email = email;
-          localStorage.setItem('currentUser', JSON.stringify(user));
-          this.authService.setAuthFromStorage();
+          // M3a: Über AuthService.updateCurrentUser() statt direktem localStorage-Zugriff.
+          this.authService.updateCurrentUser({ email } as any, res.token);
         }
         this.emailSaving.set(false);
         this.emailSent.set(true);

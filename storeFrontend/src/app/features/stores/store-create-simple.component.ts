@@ -659,7 +659,7 @@ export class StoreCreateSimpleComponent implements OnInit {
     this.error.set(null);
 
     const { storeName, storeSlug } = this.storeForm.value;
-    const isLoggedIn = !!localStorage.getItem('auth_token');
+    const isLoggedIn = !!this.authService.getToken();
 
     if (isLoggedIn) {
       // Eingeloggter User → normaler API-Call
@@ -704,17 +704,15 @@ export class StoreCreateSimpleComponent implements OnInit {
         next: async (res) => {
           this.loading.set(false);
           // JWT speichern → User ist jetzt eingeloggt
-          localStorage.setItem('auth_token', res.token);
-          localStorage.setItem('currentUser', JSON.stringify({
+          // M3a: Über AuthService.setSession() statt direktem localStorage-Zugriff,
+          // damit Token/User auf Android/iOS korrekt in Secure Storage landen.
+          this.authService.setSession(res.token, {
             id: res.userId,
             email: `anon-${res.userId}@markt.ma`,
             name: storeName,
             role: 'USER',
             roles: ['USER']
-          }));
-          // FIX: AuthService currentUserSubject aktualisieren, damit AuthGuard
-          // beim Navigieren zu /stores/:id keinen Redirect zu /login macht
-          this.authService.setAuthFromStorage();
+          } as any);
 
           // Unsplash-Bilder anwenden (falls ausgewählt)
           if (this.selectedUnsplashImages().length > 0) {

@@ -6,6 +6,7 @@ import { MockCartService } from '../mocks/mock-cart.service';
 import { map, catchError, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import {SubdomainService} from "@app/core/services/subdomain.service";
+import { AuthService } from './auth.service';
 
 export interface CartItem {
   id: number;
@@ -63,6 +64,7 @@ export class CartService {
     private http: HttpClient,
     private router: Router,
     private subDomainService: SubdomainService,
+    private authService: AuthService,
   ) {  }
 
   private getStoreId(): number {
@@ -88,10 +90,13 @@ export class CartService {
   }
 
   /**
-   * Holt den JWT Token aus localStorage (optional für Cart-Operationen)
+   * Holt den JWT Token (optional für Cart-Operationen).
+   * M3a: Über AuthService.getToken() (In-Memory-Cache) statt direktem
+   * localStorage-Zugriff, damit dies auch auf Android/iOS mit Secure Storage
+   * korrekt funktioniert.
    */
   private getAuthToken(): string | null {
-    const token = localStorage.getItem('auth_token');
+    const token = this.authService.getToken();
     return token; // Kein Redirect mehr - Token ist optional für Cart
   }
 

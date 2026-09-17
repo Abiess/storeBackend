@@ -1028,16 +1028,8 @@ export class StoreDetailComponent implements OnInit, AfterViewInit {
       next: (res) => {
         this.anonEmailSaving = false;
         this.anonEmailSaved = true;
-        const stored = localStorage.getItem('currentUser');
-        if (stored) {
-          try {
-            const u = JSON.parse(stored);
-            u.email = email;
-            localStorage.setItem('currentUser', JSON.stringify(u));
-            if (res.token) localStorage.setItem('auth_token', res.token);
-          } catch {}
-        }
-        this.authService.setAuthFromStorage();
+        // M3a: Über AuthService.updateCurrentUser() statt direktem localStorage-Zugriff.
+        this.authService.updateCurrentUser({ email } as any, res.token);
         this.isAnonymous = false;
         this.resetSaveEmailCaptcha();
       },

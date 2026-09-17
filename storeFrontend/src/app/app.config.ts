@@ -52,7 +52,10 @@ import { TranslateHttpLoader, provideTranslateHttpLoader } from '@ngx-translate/
 import { importProvidersFrom } from '@angular/core';
 import { LanguageService } from './core/services/language.service';
 import { StorageAdapter, WebLocalStorageAdapter } from './core/services/storage-adapter';
+import { CapacitorSecureStorageAdapter } from './core/services/capacitor-secure-storage-adapter';
 import { CameraAdapter, WebCameraAdapter } from './core/services/camera-adapter';
+import { PlatformService } from './core/services/platform.service';
+import { AuthService } from './core/services/auth.service';
 import { provideServiceWorker } from '@angular/service-worker';
 import { isDevMode } from '@angular/core';
 
@@ -66,16 +69,50 @@ export function initializeLanguage(languageService: LanguageService) {
   return () => languageService.initialize();
 }
 
+/**
+ * Auth-Initializer (Mobile-Factory M3a).
+ *
+ * Blockiert Bootstrap/Routing/Guards bis `AuthService.initialize()`
+ * abgeschlossen ist (Token/User async aus dem `StorageAdapter` geladen):
+ *
+ *   App Start → Storage initialisieren → Token/User laden → Auth ready → Routing/Guards
+ *
+ * Auf Web ist das praktisch unmerklich (localStorage-Read löst im selben
+ * Tick auf). Auf Android/iOS wartet die App auf den (schnellen) Read aus
+ * Keystore/Keychain, bevor z.B. der `authGuard` erstmals einen Token
+ * abfragt – verhindert einen falschen "nicht eingeloggt"-Redirect direkt
+ * nach App-Start.
+ */
+export function initializeAuth(authService: AuthService) {
+  return () => authService.initialize();
+}
+
+/**
+ * Storage-Adapter-Factory (Mobile-Factory M3a).
+ *
+ * WEB/PWA → WebLocalStorageAdapter (unverändertes localStorage-Verhalten)
+ * CAPACITOR_ANDROID / CAPACITOR_IOS → CapacitorSecureStorageAdapter
+ * (Android Keystore / iOS Keychain, siehe `capacitor-secure-storage-adapter.ts`)
+ */
+export function provideStorageAdapter(platform: PlatformService, web: WebLocalStorageAdapter, secure: CapacitorSecureStorageAdapter): StorageAdapter {
+  return platform.isNative ? secure : web;
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
     provideHttpClient(withInterceptorsFromDi()),
     provideAnimations(),
     provideCouponService(),
-    // Storage-Abstraktion (Mobile-Factory-Pilot M1): Web nutzt weiterhin
-    // localStorage 1:1. Für Capacitor genügt später ein Austausch dieses
-    // einen Providers (kein Umbau von AuthService nötig).
-    { provide: StorageAdapter, useClass: WebLocalStorageAdapter },
+    // Storage-Abstraktion (Mobile-Factory M1 → M3a): WEB/PWA nutzt weiterhin
+    // localStorage 1:1. CAPACITOR_ANDROID (später CAPACITOR_IOS) nutzt
+    // Secure Storage (Android Keystore / iOS Keychain) über denselben
+    // `StorageAdapter`-Vertrag – AuthService selbst bleibt unverändert.
+    {
+      provide: StorageAdapter,
+      useFactory: provideStorageAdapter,
+      deps: [PlatformService, WebLocalStorageAdapter, CapacitorSecureStorageAdapter]
+    },
     { provide: CameraAdapter, useClass: WebCameraAdapter },
     // Lucide Icons – global für alle Standalone-Components
     {
@@ -137,6 +174,14 @@ export const appConfig: ApplicationConfig = {
       provide: APP_INITIALIZER,
       useFactory: initializeLanguage,
       deps: [LanguageService],
+      multi: true
+    },
+    // APP_INITIALIZER für Auth (Mobile-Factory M3a): lädt Token/User async
+    // aus dem StorageAdapter, BEVOR Routing/Guards laufen.
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeAuth,
+      deps: [AuthService],
       multi: true
     },
     {

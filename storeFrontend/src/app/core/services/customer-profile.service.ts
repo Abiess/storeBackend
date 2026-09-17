@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
+import { AuthService } from './auth.service';
 
 export interface Address {
   firstName: string;
@@ -68,13 +69,13 @@ export interface OrderHistoryItem {
 export class CustomerProfileService {
   private apiUrl = `${environment.publicApiUrl}/customer`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private authService: AuthService) {}
 
   /**
    * Lädt das Customer Profile des eingeloggten Users
    */
   getProfile(): Observable<CustomerProfile> {
-    const token = localStorage.getItem('auth_token');
+    const token = this.authService.getToken();
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`
     });
@@ -87,7 +88,7 @@ export class CustomerProfileService {
    * Speichert die Adressen des Customers
    */
   saveAddress(request: SaveAddressRequest): Observable<CustomerProfile> {
-    const token = localStorage.getItem('auth_token');
+    const token = this.authService.getToken();
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -101,7 +102,7 @@ export class CustomerProfileService {
    * Aktualisiert das Customer Profile
    */
   updateProfile(request: UpdateProfileRequest): Observable<CustomerProfile> {
-    const token = localStorage.getItem('auth_token');
+    const token = this.authService.getToken();
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -115,7 +116,7 @@ export class CustomerProfileService {
    * Ändert das Passwort des Customers
    */
   changePassword(request: PasswordChangeRequest): Observable<any> {
-    const token = localStorage.getItem('auth_token');
+    const token = this.authService.getToken();
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -129,7 +130,7 @@ export class CustomerProfileService {
    * Lädt die Bestellhistorie des Customers
    */
   getOrderHistory(email: string): Observable<OrderHistory[]> {
-    const token = localStorage.getItem('auth_token');
+    const token = this.authService.getToken();
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`
     });
