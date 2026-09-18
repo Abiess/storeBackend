@@ -2,6 +2,17 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSlideToggleModule, MatSlideToggleChange } from '@angular/material/slide-toggle';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import {
   AppProvisioningService,
   AdminUserSummary,
@@ -11,7 +22,7 @@ import {
 } from '@app/core/services/app-provisioning.service';
 import { AppKey, AppAccessMode } from '@app/core/models';
 import { APP_REGISTRY, APP_REGISTRY_ORDER, AppRegistryEntry } from '@app/core/config/app-registry';
-import { TranslatePipe } from '@app/core/i18n.exports';
+import { TranslatePipe, TranslationService } from '@app/core/i18n.exports';
 
 /**
  * App Provisioning Phase 1 (Platform Administration).
@@ -27,7 +38,23 @@ import { TranslatePipe } from '@app/core/i18n.exports';
 @Component({
   selector: 'app-platform-app-provisioning',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, TranslatePipe],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    TranslatePipe,
+    MatCardModule,
+    MatChipsModule,
+    MatSelectModule,
+    MatSlideToggleModule,
+    MatSnackBarModule,
+    MatButtonModule,
+    MatIconModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule
+  ],
   templateUrl: './platform-app-provisioning.component.html',
   styleUrls: ['./platform-app-provisioning.component.scss']
 })
@@ -56,7 +83,24 @@ export class PlatformAppProvisioningComponent implements OnInit {
   saving = signal(false);
   errorMessage = signal<string | null>(null);
 
-  constructor(private appProvisioningService: AppProvisioningService) {}
+  constructor(
+    private appProvisioningService: AppProvisioningService,
+    private snackBar: MatSnackBar,
+    private translationService: TranslationService
+  ) {}
+
+  /** Anzeigename einer App fürs Snackbar-Feedback (nutzt bestehende i18n-Keys aus dem APP_REGISTRY). */
+  private appDisplayName(app: AppKey): string {
+    return this.translationService.translate(APP_REGISTRY[app].titleKey);
+  }
+
+  private notify(message: string): void {
+    this.snackBar.open(message, undefined, { duration: 3500, panelClass: 'platform-snackbar' });
+  }
+
+  storeName(storeId: number): string {
+    return this.stores().find(s => s.id === storeId)?.name ?? `Store ${storeId}`;
+  }
 
   ngOnInit(): void {
     // Store-Liste für die Context-Picker (Phase 1: einmalig geladen, max. 50 - siehe Backend).
@@ -107,6 +151,24 @@ export class PlatformAppProvisioningComponent implements OnInit {
 
   entitlementsForApp(app: AppKey): AdminEntitlement[] {
     return this.entitlementsData()?.entitlements.filter(e => e.app === app) ?? [];
+  }
+
+  /** GLOBAL-Apps besitzen höchstens ein Entitlement (kein Store-Kontext). */
+  globalEntitlement(app: AppKey): AdminEntitlement | undefined {
+    return this.entitlementsForApp(app)[0];
+  }
+
+  activeStoreCount(app: AppKey): number {
+    return this.entitlementsForApp(app).filter(e => e.enabled).length;
+  }
+
+  /** MatSlideToggle-Handler für GLOBAL-Apps: legt Entitlement an oder togglet das bestehende. */
+  onGlobalToggle(app: AppKey, existing: AdminEntitlement | undefined, event: MatSlideToggleChange): void {
+    if (existing) {
+      this.toggleEntitlement(existing);
+    } else if (event.checked) {
+      this.activateGlobalApp(app);
+    }
   }
 
   /** Ob ein User aktuell (noch) gar keine Entitlements hat, d.h. LEGACY-weit auf alles zugreift. */
@@ -166,10 +228,16 @@ export class PlatformAppProvisioningComponent implements OnInit {
     if (!user) return;
     this.saving.set(true);
     this.errorMessage.set(null);
-    this.appProvisioningService.patchEntitlement(user.id, entitlement.id, !entitlement.enabled).subscribe({
+    const willEnable = !entitlement.enabled;
+    this.appProvisioningService.patchEntitlement(user.id, entitlement.id, willEnable).subscribe({
       next: () => {
         this.saving.set(false);
         this.loadEntitlements(user.id);
+        const appName = this.appDisplayName(entitlement.app);
+        const context = entitlement.scope === 'STORE' && entitlement.storeId
+          ? ` für ${this.storeName(entitlement.storeId)}`
+          : '';
+        this.notify(willEnable ? `${appName}${context} aktiviert` : `${appName}${context} deaktiviert`);
       },
       error: () => {
         this.saving.set(false);
@@ -190,6 +258,8 @@ export class PlatformAppProvisioningComponent implements OnInit {
         this.loadEntitlements(user.id);
         // AppAccessMode des Users in der Suchliste ist jetzt ggf. veraltet (LEGACY -> MANAGED).
         this.refreshSelectedUserSummary();
+        const appName = this.appDisplayName(app);
+        this.notify(storeId ? `${appName} für ${this.storeName(storeId)} freigeschaltet` : `${appName} aktiviert`);
       },
       error: (err) => {
         this.saving.set(false);
