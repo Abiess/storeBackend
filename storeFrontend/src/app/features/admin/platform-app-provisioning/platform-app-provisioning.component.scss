@@ -2,6 +2,10 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 24px;
+  padding-block-start: calc(24px + env(safe-area-inset-top, 0px));
+  padding-block-end: calc(24px + env(safe-area-inset-bottom, 0px));
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .page-header {
@@ -21,6 +25,16 @@
     color: var(--theme-text-secondary, #6b7280);
     margin: 0;
     font-size: 0.95rem;
+  }
+
+  @media (max-width: 640px) {
+    h1 {
+      font-size: 1.4rem;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+    }
   }
 }
 
@@ -62,6 +76,24 @@ mat-card.app-card {
     align-items: center;
     justify-content: center;
     gap: 8px;
+  }
+
+  // Mobile: Suchfeld + Button klar untereinander, Button volle Breite (großes Touch-Target)
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+
+    .search-field {
+      flex: 1 1 auto;
+      width: 100%;
+    }
+
+    .search-btn {
+      inline-size: 100%;
+      width: 100%;
+      min-block-size: 48px;
+    }
   }
 }
 
@@ -122,16 +154,32 @@ mat-card.app-card {
     align-items: flex-start;
     gap: 2px;
     min-width: 0;
+    flex: 1 1 auto;
   }
 
   .user-email {
     font-weight: 500;
     color: var(--theme-text, #1f2937);
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .user-name {
     color: var(--theme-text-secondary, #6b7280);
     font-size: 0.85rem;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  mat-chip-set {
+    flex: 0 0 auto;
+  }
+
+  @media (max-width: 640px) {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    min-block-size: 56px;
   }
 }
 
@@ -146,6 +194,14 @@ mat-chip.mode-managed,
 mat-chip.status-chip.mode-managed {
   --mdc-chip-elevated-container-color: #d1fae5;
   --mdc-chip-label-text-color: #065f46;
+}
+
+// Der Status-Chip im User-Header ist die wichtigste Information auf der
+// Seite (LEGACY vs. MANAGED) - bewusst größer/fetter als andere Chips.
+mat-chip.status-chip {
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
 }
 
 // -- Selected user summary ------------------------------------------------
@@ -167,6 +223,7 @@ mat-chip.status-chip.mode-managed {
 
 .user-summary-info {
   min-width: 0;
+  flex: 1 1 200px;
 }
 
 .user-summary-primary {
@@ -174,22 +231,51 @@ mat-chip.status-chip.mode-managed {
   align-items: baseline;
   gap: 8px;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .user-summary-email {
   font-size: 1.15rem;
   font-weight: 600;
   color: var(--theme-text, #1f2937);
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .user-summary-name {
   color: var(--theme-text-secondary, #6b7280);
+  overflow-wrap: anywhere;
 }
 
 .user-summary-id {
   color: var(--theme-text-secondary, #6b7280);
   font-size: 0.85rem;
   margin-block-start: 4px;
+}
+
+.status-chip-set {
+  flex: 0 0 auto;
+}
+
+// Mobile: User-Card kompakt, LEGACY/MANAGED bleibt gut sichtbar (eigene Zeile)
+@media (max-width: 640px) {
+  .user-summary-card mat-card-content {
+    padding: 14px !important;
+  }
+
+  .user-summary-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .user-summary-email {
+    font-size: 1.02rem;
+  }
+
+  .status-chip-set {
+    align-self: flex-start;
+  }
 }
 
 .loading-row {
@@ -259,6 +345,12 @@ mat-chip.status-chip.mode-managed {
 
   .platform-provisioning {
     padding: 16px;
+    padding-block-start: calc(16px + env(safe-area-inset-top, 0px));
+    padding-block-end: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  mat-card.app-card mat-card-content {
+    padding: 14px !important;
   }
 }
 
@@ -274,12 +366,14 @@ mat-chip.status-chip.mode-managed {
   margin-block-end: 14px;
 
   .app-icon {
-    font-size: 1.3rem;
+    font-size: 2rem; // ~32px
     line-height: 1;
+    flex: 0 0 auto;
   }
 
   .app-name {
     color: var(--theme-text, #1f2937);
+    overflow-wrap: anywhere;
   }
 
   .scope-badge {
@@ -294,6 +388,12 @@ mat-chip.status-chip.mode-managed {
   }
 }
 
+@media (max-width: 640px) {
+  .app-card-title .app-icon {
+    font-size: 2.25rem; // ~36px, gut sichtbar auf kleinen Screens
+  }
+}
+
 // -- GLOBAL apps --------------------------------------------------------
 .global-toggle-row {
   display: flex;
@@ -301,6 +401,12 @@ mat-chip.status-chip.mode-managed {
   justify-content: space-between;
   gap: 12px;
   min-block-size: 48px;
+
+  // Größere Klickfläche fürs Toggle selbst (Touch-Target auf Capacitor)
+  mat-slide-toggle {
+    padding: 6px;
+    margin-inline-end: -6px;
+  }
 }
 
 .global-status {
@@ -310,6 +416,16 @@ mat-chip.status-chip.mode-managed {
 
   &.active {
     color: #065f46;
+  }
+}
+
+@media (max-width: 640px) {
+  .global-toggle-row {
+    min-block-size: 56px;
+  }
+
+  .global-status {
+    font-size: 0.95rem;
   }
 }
 
@@ -349,6 +465,20 @@ mat-chip.store-chip {
   font-size: 0.75rem;
   margin-inline-start: 4px;
   text-decoration: none;
+}
+
+// Mobile: Chips deutlich größer, damit der Remove/Reactivate-Button gut
+// tippbar bleibt (min. 44x44px Touch-Target, siehe Apple/Material HIG).
+@media (max-width: 640px) {
+  mat-chip.store-chip {
+    --mdc-chip-container-height: 40px;
+    font-size: 0.9rem;
+
+    ::ng-deep .mat-mdc-chip-remove {
+      min-block-size: 40px;
+      min-inline-size: 40px;
+    }
+  }
 }
 
 .add-store-row {
