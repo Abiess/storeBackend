@@ -25,6 +25,7 @@ import storebackend.util.IpAddressUtil;
 import storebackend.enums.EventType;
 import storebackend.enums.BlockReason;
 import storebackend.enums.MailType;
+import storebackend.util.EmailNormalizer;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -76,8 +77,8 @@ public class AuthController {
                     .body(new ErrorResponse("INVALID_EMAIL", "Invalid email format"));
         }
         
-        // Prüfe ob E-Mail existiert
-        boolean exists = userRepository.existsByEmail(email.toLowerCase().trim());
+        // Prüfe ob E-Mail existiert (zentral normalisiert, siehe EmailNormalizer)
+        boolean exists = userRepository.existsByEmail(EmailNormalizer.normalize(email));
         
         // SECURITY: Timing-konstant antworten (verhindert Timing-Angriffe)
         // In Produktion könnte hier eine minimale zufällige Verzögerung hinzugefügt werden

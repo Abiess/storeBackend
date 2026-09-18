@@ -3,6 +3,7 @@ package storebackend.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import storebackend.util.EmailNormalizer;
 
 @Data
 public class LoginRequest {
@@ -18,6 +19,16 @@ public class LoginRequest {
 
     // Optional: CAPTCHA Token (hCaptcha oder reCAPTCHA)
     private String captchaToken;
+
+    /**
+     * Normalisiert die E-Mail zentral (trim + lowercase) direkt beim
+     * JSON-Binding, damit ALLE Konsumenten dieses Requests (Rate-Limiting,
+     * CAPTCHA-Schwelle, Security-Event-Logging, AuthService.login) automatisch
+     * dieselbe normalisierte E-Mail sehen - siehe EmailNormalizer.
+     */
+    public void setEmail(String email) {
+        this.email = EmailNormalizer.normalize(email);
+    }
 
     // Explizite Getter für Lombok-Kompatibilität
     public String getEmail() {

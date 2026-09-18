@@ -10,6 +10,7 @@ import storebackend.dto.woocommerce.api.WooProductDto;
 import storebackend.entity.*;
 import storebackend.enums.ProductStatus;
 import storebackend.repository.*;
+import storebackend.util.EmailNormalizer;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -804,7 +805,7 @@ public class WooCommerceImportService {
                         continue;
                     }
                     
-                    String email = wooCustomer.getEmail().trim().toLowerCase();
+                    String email = EmailNormalizer.normalize(wooCustomer.getEmail());
                     
                     // Check if CustomerProfile already exists for this store + externalId
                     Optional<CustomerProfile> existingProfile = 

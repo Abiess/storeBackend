@@ -29,6 +29,7 @@ import storebackend.service.SecurityEventService;
 import storebackend.service.EmailDomainValidationService;
 import storebackend.config.SaasProperties;
 import storebackend.util.IpAddressUtil;
+import storebackend.util.EmailNormalizer;
 import storebackend.enums.RateLimitType;
 
 import jakarta.validation.Valid;
@@ -464,7 +465,17 @@ public class PublicStoreCreationController {
         long storeId,
         String captchaToken,  // CAPTCHA Token (Pflicht!)
         String website        // Honeypot-Feld (muss leer bleiben!)
-    ) {}
+    ) {
+        /**
+         * Compact Constructor: normalisiert die E-Mail zentral (trim+lowercase)
+         * direkt beim JSON-Binding - siehe EmailNormalizer. Records erlauben
+         * keine Setter-Überschreibung, daher hier statt in LoginRequest/
+         * RegisterRequest-Stil.
+         */
+        public SaveEmailRequest {
+            email = EmailNormalizer.normalize(email);
+        }
+    }
 
     private String buildUniqueSlug(String requestedSlug, String storeName) {
         String slug;

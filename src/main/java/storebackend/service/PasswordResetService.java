@@ -10,6 +10,7 @@ import storebackend.entity.PasswordResetToken;
 import storebackend.entity.User;
 import storebackend.repository.PasswordResetTokenRepository;
 import storebackend.repository.UserRepository;
+import storebackend.util.EmailNormalizer;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -35,8 +36,11 @@ public class PasswordResetService {
      */
     @Transactional
     public EmailDeliveryResult initiatePasswordReset(String email, String preferredLanguage) {
+        // Zentral normalisieren (trim+lowercase) - siehe EmailNormalizer.
+        String normalizedEmail = EmailNormalizer.normalize(email);
+
         // User finden (oder ignorieren wenn nicht existiert - aus Sicherheitsgründen)
-        User user = userRepository.findByEmail(email).orElse(null);
+        User user = userRepository.findByEmail(normalizedEmail).orElse(null);
 
         if (user == null) {
             // SECURITY: Gib keine Info, ob Email existiert - verhindert User Enumeration

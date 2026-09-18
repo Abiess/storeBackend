@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import storebackend.enums.Role;
+import storebackend.util.EmailNormalizer;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -89,8 +90,15 @@ public class User {
         return email;
     }
 
+    /**
+     * SECURITY/DATA-INTEGRITY: Normalisiert die E-Mail IMMER zentral über
+     * {@link EmailNormalizer#normalize(String)} (trim + lowercase), egal von
+     * wo der User erzeugt/aktualisiert wird (Registrierung, Phone-Auth,
+     * anonyme Store-Erstellung, WooCommerce-Import, ...). Verhindert
+     * Duplikate wie z.B. "essoudati@hotmail.de" vs. "Essoudati@hotmail.de".
+     */
     public void setEmail(String email) {
-        this.email = email;
+        this.email = EmailNormalizer.normalize(email);
     }
 
     public String getName() {

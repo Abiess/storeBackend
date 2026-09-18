@@ -18,6 +18,7 @@ import storebackend.repository.StoreRepository;
 import storebackend.repository.StoreRoleRepository;
 import storebackend.repository.TeamInvitationRepository;
 import storebackend.repository.UserRepository;
+import storebackend.util.EmailNormalizer;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -56,17 +57,23 @@ public class TeamInvitationService {
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new RuntimeException("Store not found: " + storeId));
 
+        // Zentral normalisieren (trim+lowercase) - siehe EmailNormalizer.
+        // Vorher inkonsistent: Zeile "findByEmail(req.email)" nutzte die
+        // ROH-E-Mail, während "invitation.setEmail(req.email.toLowerCase())"
+        // bereits normalisiert wurde - jetzt einheitlich eine Variable.
+        String normalizedEmail = EmailNormalizer.normalize(req.email);
+
         // 1. Prüfen ob bereits aktive Einladung existiert
         invitationRepository.findByStoreIdAndEmailAndStatus(
                 storeId,
-                req.email.toLowerCase(),
+                normalizedEmail,
                 TeamInvitation.InvitationStatus.PENDING
         ).ifPresent(existing -> {
             throw new RuntimeException("Aktive Einladung für " + req.email + " existiert bereits");
         });
 
         // 2. Prüfen ob User bereits Mitglied ist
-        User existingUser = userRepository.findByEmail(req.email).orElse(null);
+        User existingUser = userRepository.findByEmail(normalizedEmail).orElse(null);
         if (existingUser != null) {
             boolean alreadyMember = storeRoleRepository
                     .findByStoreIdAndUserId(storeId, existingUser.getId())
@@ -85,7 +92,7 @@ public class TeamInvitationService {
         // 5. Einladung speichern
         TeamInvitation invitation = new TeamInvitation();
         invitation.setStore(store);
-        invitation.setEmail(req.email.toLowerCase());
+        invitation.setEmail(normalizedEmail);
         invitation.setRole(req.role);
         invitation.setTokenHash(tokenHash);
         invitation.setStatus(TeamInvitation.InvitationStatus.PENDING);

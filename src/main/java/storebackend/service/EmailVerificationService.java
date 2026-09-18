@@ -11,6 +11,7 @@ import storebackend.entity.User;
 import storebackend.exception.RateLimitExceededException;
 import storebackend.repository.EmailVerificationRepository;
 import storebackend.repository.UserRepository;
+import storebackend.util.EmailNormalizer;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -115,7 +116,8 @@ public class EmailVerificationService {
      */
     @Transactional
     public EmailDeliveryResult resendVerificationEmail(String email) {
-        User user = userRepository.findByEmail(email)
+        // Zentral normalisieren (trim+lowercase) - siehe EmailNormalizer.
+        User user = userRepository.findByEmail(EmailNormalizer.normalize(email))
             .orElse(null);
 
         // SECURITY: Neutrale Antwort - keine Information ob User existiert

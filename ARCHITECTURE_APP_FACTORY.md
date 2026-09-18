@@ -3069,3 +3069,61 @@ Scope-Validierung (s.u.):**
   verlinkt (nur direkt über die URL erreichbar) – wie beauftragt lag der
   Fokus auf der Funktion selbst, nicht auf einem neuen Navigationspunkt.
 
+## 16. Globale Identity-Konvention: E-Mail-Normalisierung (additiv, implementiert)
+
+Anlass: Zwei User (`essoudati@hotmail.de` / `Essoudati@hotmail.de`) konnten
+sich ausschließlich durch Groß-/Kleinschreibung unterscheidend gleichzeitig
+in der DB befinden (manuell bereinigt). Diese Konvention gilt **global für
+den Platform-Core** (User-Identity), unabhängig von Store-Rollen oder
+App-Entitlements – **keine** Änderung an `StoreRole`, App Entitlements,
+JWT-Struktur oder Platform Admin (Abschnitt 14/15).
+
+**Regel:** E-Mail-Adressen sind im gesamten Backend als eindeutige Identity
+zu behandeln, case-insensitive und whitespace-tolerant:
+- Beim **Speichern** (Registrierung, Admin-Anlage, Profil-/E-Mail-Änderung,
+  Team-Einladung, WooCommerce-Import) wird die E-Mail **immer** normalisiert
+  (`trim()` + `toLowerCase(Locale.ROOT)`) über die zentrale Utility
+  `storebackend.util.EmailNormalizer.normalize(email)` – keine
+  Normalisierungslogik an mehreren Stellen duplizieren.
+- Beim **Lesen/Vergleichen** (Login, `existsByEmail`, Duplikatsprüfung)
+  wird ebenfalls case-insensitive verglichen
+  (`UserRepository.findByEmail`/`existsByEmail` nutzen `LOWER(email)` per
+  `@Query`, Methodensignaturen bewusst unverändert gelassen, um die
+  ca. 30 bestehenden Call-Sites – `StoreAccessChecker`,
+  `JwtAuthenticationFilter`, `CustomUserDetailsService` etc. – nicht
+  anzufassen).
+- **Registrierung** mit bereits vorhandener E-Mail in anderer
+  Groß-/Kleinschreibung wird abgelehnt (bestehende Fehlerkonvention:
+  HTTP 400 über `ErrorResponse`, **nicht** 409 – kein neuer
+  Fehlercode eingeführt).
+- **Login** funktioniert unabhängig von der eingegebenen
+  Groß-/Kleinschreibung.
+- **DB-Schutz (Defense-in-Depth):** Neue Migration
+  `V026__unique_index_users_email_lower.sql` – dokumentierte
+  Safety-Query (`SELECT LOWER(email), COUNT(*) ... HAVING COUNT(*) > 1`),
+  automatischer Abbruch der Migration bei gefundenen Duplikaten
+  (`DO $$ ... RAISE EXCEPTION`, **keine** automatische Bereinigung, **keine**
+  Änderung bestehender User-IDs), danach
+  `CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_lower ON users (LOWER(email))`.
+- Bestehende Dev-Daten wurden geprüft (Safety-Query gegen H2-Dev-DB): keine
+  aktuellen Case-Duplikate vorhanden.
+
+**Betroffene Pfade (alle auf `EmailNormalizer` umgestellt):** Registrierung
+(`RegisterRequest`), Login (`LoginRequest`), `User.setEmail()` (letzte
+Verteidigungslinie für alle Erzeugungspfade), `AuthController.checkEmailAvailability`,
+`PasswordResetService`, `EmailVerificationService`,
+`PublicStoreCreationController.SaveEmailRequest` (Java-Record, Normalisierung
+über kompakten Konstruktor), `TeamInvitationService` (dabei eine
+vorbestehende Inkonsistenz behoben – Suche und Speicherung nutzten zuvor
+unterschiedlich normalisierte Werte), `WooCommerceImportService`. Phone/Quick-Auth
+leitet E-Mails nicht eigenständig ab und ist nicht betroffen; OAuth existiert
+im Projekt nicht.
+
+**Tests:** `EmailNormalizerTest`, `EmailBindingNormalizationTest`, `UserTest`,
+`UserRepositoryEmailCaseInsensitivityTest` (inkl. DB-Constraint-Verletzung
+bei Case-Duplikat), `EmailUniqueIndexMigrationSqlTest`,
+`AuthServiceEmailNormalizationTest` (Register/Login-Szenarien exakt wie
+beauftragt). Volle Testsuite vor/nach Änderung verglichen (Baseline via
+`git stash`): identische 20 Failures/19 Errors in beiden Ständen (511 vs.
+537 Tests) – keine Regression durch diese Änderung.
+

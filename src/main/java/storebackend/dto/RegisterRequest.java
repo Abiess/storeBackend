@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.ToString;
+import storebackend.util.EmailNormalizer;
 
 @Data
 public class RegisterRequest {
@@ -26,6 +27,16 @@ public class RegisterRequest {
     // Optional: CAPTCHA Token (hCaptcha oder reCAPTCHA)
     @ToString.Exclude
     private String captchaToken;
+
+    /**
+     * Normalisiert die E-Mail zentral (trim + lowercase) direkt beim
+     * JSON-Binding - siehe LoginRequest#setEmail / EmailNormalizer. Damit
+     * greifen Rate-Limiting, Duplikat-Check (AuthService#register) und
+     * spätere Speicherung durchgängig auf dieselbe normalisierte E-Mail zu.
+     */
+    public void setEmail(String email) {
+        this.email = EmailNormalizer.normalize(email);
+    }
 
     // Explizite Getter für Lombok-Kompatibilität
     public String getEmail() {
