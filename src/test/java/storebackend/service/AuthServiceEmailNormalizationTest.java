@@ -42,9 +42,12 @@ import static org.mockito.Mockito.*;
  * - register "Test@Example.com"      -> abgelehnt (Duplikat, da bereits
  *                                        "test@example.com" existiert -
  *                                        bestehende Fehlerkonvention: siehe
- *                                        AuthController#register, das jede
- *                                        RuntimeException aus AuthService als
- *                                        HTTP 400 mit ErrorResponse mappt)
+ *                                        AuthController#register, das die
+ *                                        "Email already registered"-Meldung
+ *                                        aus AuthService als HTTP 409 CONFLICT
+ *                                        mappt, siehe auch LoyaltyController/
+ *                                        TeamInvitationService für dasselbe
+ *                                        Muster bei anderen Konflikten)
  * - login "test@example.com"          -> erfolgreich
  * - login "TEST@EXAMPLE.COM"          -> erfolgreich (case-insensitiv)
  * - führende/nachgestellte Leerzeichen -> werden vor der Suche normalisiert

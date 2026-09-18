@@ -191,6 +191,15 @@ public class AuthController {
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
+            // PLATFORM IDENTITY HARDENING: Duplicate-Registration (E-Mail bereits
+            // vergeben - inkl. case-insensitiv/normalisiert, siehe AuthService#register
+            // + UserRepository#existsByEmail) folgt der bestehenden Projekt-Konvention
+            // für "bereits existiert"-Konflikte (409 CONFLICT, siehe z.B.
+            // LoyaltyController/CreditController/TeamInvitationService).
+            if ("Email already registered".equals(e.getMessage())) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(new ErrorResponse("EMAIL_ALREADY_REGISTERED", e.getMessage()));
+            }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse(e.getMessage()));
         }

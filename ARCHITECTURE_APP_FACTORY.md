@@ -3078,7 +3078,10 @@ den Platform-Core** (User-Identity), unabhängig von Store-Rollen oder
 App-Entitlements – **keine** Änderung an `StoreRole`, App Entitlements,
 JWT-Struktur oder Platform Admin (Abschnitt 14/15).
 
-**Regel:** E-Mail-Adressen sind im gesamten Backend als eindeutige Identity
+**Kernregel (kurz):** Email identity is normalized centrally and unique
+case-insensitively.
+
+**Regel (ausführlich):** E-Mail-Adressen sind im gesamten Backend als eindeutige Identity
 zu behandeln, case-insensitive und whitespace-tolerant:
 - Beim **Speichern** (Registrierung, Admin-Anlage, Profil-/E-Mail-Änderung,
   Team-Einladung, WooCommerce-Import) wird die E-Mail **immer** normalisiert
@@ -3093,9 +3096,15 @@ zu behandeln, case-insensitive und whitespace-tolerant:
   `JwtAuthenticationFilter`, `CustomUserDetailsService` etc. – nicht
   anzufassen).
 - **Registrierung** mit bereits vorhandener E-Mail in anderer
-  Groß-/Kleinschreibung wird abgelehnt (bestehende Fehlerkonvention:
-  HTTP 400 über `ErrorResponse`, **nicht** 409 – kein neuer
-  Fehlercode eingeführt).
+  Groß-/Kleinschreibung wird abgelehnt. **Update (Platform Identity
+  Hardening, Folgesession):** `AuthController.register()` mappt die
+  `RuntimeException("Email already registered")` jetzt auf
+  **HTTP 409 CONFLICT** (`ErrorResponse("EMAIL_ALREADY_REGISTERED", ...)`),
+  passend zur projektweiten Konvention für "bereits existiert"-Konflikte
+  (siehe `LoyaltyController`, `CreditController`,
+  `TeamInvitationService.acceptInvitation`). Alle anderen
+  `RuntimeException`s aus `AuthService.register` bleiben unverändert bei
+  HTTP 400.
 - **Login** funktioniert unabhängig von der eingegebenen
   Groß-/Kleinschreibung.
 - **DB-Schutz (Defense-in-Depth):** Neue Migration
@@ -3123,7 +3132,9 @@ im Projekt nicht.
 `UserRepositoryEmailCaseInsensitivityTest` (inkl. DB-Constraint-Verletzung
 bei Case-Duplikat), `EmailUniqueIndexMigrationSqlTest`,
 `AuthServiceEmailNormalizationTest` (Register/Login-Szenarien exakt wie
-beauftragt). Volle Testsuite vor/nach Änderung verglichen (Baseline via
+beauftragt), `AuthControllerRegisterConflictTest` (neu, Folgesession:
+verifiziert HTTP 409 bei Duplicate-Registration auf Controller-Ebene).
+Volle Testsuite vor/nach Änderung verglichen (Baseline via
 `git stash`): identische 20 Failures/19 Errors in beiden Ständen (511 vs.
 537 Tests) – keine Regression durch diese Änderung.
 
