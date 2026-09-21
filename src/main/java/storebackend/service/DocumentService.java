@@ -84,8 +84,8 @@ public class DocumentService {
         storeFile(document, owner, file);
 
         document = documentRepository.save(document);
-        log.info("✅ Dokument mit Datei hochgeladen: id={}, owner={}, datei={}",
-                document.getId(), owner.getId(), file.getOriginalFilename());
+        log.info("✅ Dokument mit Datei hochgeladen: id={}, owner={}, datei={}, contentType={}, size={}",
+                document.getId(), owner.getId(), file.getOriginalFilename(), file.getContentType(), file.getSize());
         return toDTO(document, owner);
     }
 

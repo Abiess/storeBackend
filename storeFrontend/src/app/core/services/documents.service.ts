@@ -67,15 +67,47 @@ export const DOCUMENT_CATEGORIES = [
 export class DocumentsService {
   private readonly baseUrl = `${environment.apiUrl}/documents`;
 
-  private readonly ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+  private readonly ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+  private readonly EXTENSION_MIME_MAP: Record<string, string> = {
+    pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+    png: 'image/png', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif'
+  };
   private readonly MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * Root Cause (Capture-Pfad): `<input capture="environment">` liefert auf vielen
+   * Android-Geräten/WebViews (Samsung/Xiaomi u.a.) ein `File` mit leerem `type` ("")
+   * oder generischem "application/octet-stream" statt z.B. "image/jpeg", weil das OS
+   * beim Kamera-Capture das MIME-Type nicht zuverlässig aus der Content-URI ableitet.
+   * Die normale Dateiauswahl (Galerie) liefert hier i.d.R. ein korrektes MIME-Type vom
+   * Dateisystem. Fallback auf die Dateiendung verhindert, dass valide Fotos client-seitig
+   * fälschlich abgelehnt werden.
+   */
+  private resolveMimeType(file: File): string {
+    const type = (file.type || '').toLowerCase();
+    if (type && type !== 'application/octet-stream') {
+      return type;
+    }
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    return this.EXTENSION_MIME_MAP[ext] || type;
+  }
+
+  /** Korrigiert ein fehlendes/generisches MIME-Type direkt am File-Objekt (siehe resolveMimeType),
+   *  damit Backend/MinIO den tatsächlichen Content-Type für spätere Anzeige/Download speichern. */
+  private normalizeFile(file: File): File {
+    const resolvedType = this.resolveMimeType(file);
+    if (resolvedType && resolvedType !== file.type) {
+      return new File([file], file.name, { type: resolvedType, lastModified: file.lastModified });
+    }
+    return file;
+  }
+
   validateFile(file: File): string | null {
     if (!file) return 'documents.errors.uploadFailed';
     if (file.size === 0 || file.size > this.MAX_FILE_SIZE) return 'documents.errors.uploadFailed';
-    if (!this.ALLOWED_MIME_TYPES.includes(file.type)) return 'documents.errors.uploadFailed';
+    if (!this.ALLOWED_MIME_TYPES.includes(this.resolveMimeType(file))) return 'documents.errors.uploadFailed';
     return null;
   }
 
@@ -98,7 +130,7 @@ export class DocumentsService {
   /** Fotografieren/Datei hochladen (Datei + Metadaten in einem Request). */
   uploadNew(file: File, request: DocumentCreateRequest): Observable<UploadProgress | DocumentDTO> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', this.normalizeFile(file));
     formData.append('title', request.title);
     if (request.category) formData.append('category', request.category);
     if (request.note) formData.append('note', request.note);
@@ -125,7 +157,7 @@ export class DocumentsService {
 
   attachFile(id: number, file: File): Observable<DocumentDTO> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', this.normalizeFile(file));
     return this.http.post<DocumentDTO>(`${this.baseUrl}/${id}/file`, formData);
   }
 

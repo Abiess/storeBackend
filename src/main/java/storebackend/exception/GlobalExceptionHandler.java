@@ -312,6 +312,29 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Behandelt MaxUploadSizeExceededException (Datei/Request groesser als
+     * spring.servlet.multipart.max-file-size/max-request-size) -> HTTP 413 statt
+     * dem sonst durchfallenden generischen 500. Betrifft u.a. Foto-Upload via
+     * Kamera-Capture (siehe DocumentController#upload), wo Fotos in voller
+     * Sensorauflösung das Limit eher reissen als kleinere Datei-Auswahlen.
+     * MUSS vor handleGeneralException stehen!
+     */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleMaxUploadSizeExceeded(
+            org.springframework.web.multipart.MaxUploadSizeExceededException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.PAYLOAD_TOO_LARGE.value());
+        errorResponse.put("error", "Payload Too Large");
+        errorResponse.put("code", "FILE_TOO_LARGE");
+        errorResponse.put("message", "Die Datei ist zu gross für den Upload");
+
+        return ResponseEntity
+            .status(HttpStatus.PAYLOAD_TOO_LARGE)
+            .body(errorResponse);
+    }
+
+    /**
      * Behandelt ResponseStatusException (z.B. aus DocumentService/TeamInvitationController)
      * mit dem darin gesetzten Status statt pauschal HTTP 500 (vorher fiel dies auf
      * handleGeneralException zurück, da kein spezifischer Handler existierte).

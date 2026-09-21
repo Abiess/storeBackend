@@ -43,8 +43,11 @@ spring:
 
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      # Muss >= Frontend-Limit (documents.service.ts MAX_FILE_SIZE=15MB) sein: Kamera-Fotos
+      # (volle Sensorauflösung) sind oft groesser als aus der Galerie gewaehlte Bilder und
+      # scheiterten zuvor an diesem zu niedrigen Backend-Limit (MaxUploadSizeExceededException).
+      max-file-size: 20MB
+      max-request-size: 20MB
 
   mail:
     host: ${SMTP_HOST:smtp.gmail.com}
