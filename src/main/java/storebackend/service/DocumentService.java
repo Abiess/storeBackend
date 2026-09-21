@@ -77,6 +77,11 @@ public class DocumentService {
     public DocumentDTO uploadNew(User owner, MultipartFile file, DocumentCreateRequest request) throws IOException {
         requireTitle(request.getTitle());
         requireFile(file);
+        // Direkt am Anfang loggen (VOR Storage/DB-Zugriff): so ist die Datei-Info auch dann
+        // sichtbar, wenn später im Ablauf eine unbehandelte Exception auftritt (z.B. iPhone-Upload).
+        // Keine Datei-Inhalte loggen, nur Metadaten.
+        log.info("📥 Dokument-Upload gestartet: owner={}, originalFilename={}, contentType={}, size={}",
+                owner.getId(), file.getOriginalFilename(), file.getContentType(), file.getSize());
 
         UserDocument document = new UserDocument();
         document.setOwner(owner);
@@ -93,6 +98,8 @@ public class DocumentService {
     @Transactional
     public DocumentDTO attachFile(Long documentId, User owner, MultipartFile file) throws IOException {
         requireFile(file);
+        log.info("📥 Datei-Anhang gestartet: documentId={}, owner={}, originalFilename={}, contentType={}, size={}",
+                documentId, owner.getId(), file.getOriginalFilename(), file.getContentType(), file.getSize());
         UserDocument document = requireOwnedDocument(documentId, owner);
 
         String previousObjectKey = document.getObjectKey();

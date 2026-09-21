@@ -1,5 +1,6 @@
 package storebackend.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -22,6 +23,7 @@ import java.util.Map;
  * spezifischere Handler müssen VOR dem generischen Exception.class-Handler kommen.
  */
 @ControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     // ════════════════════════════════════════════════════════════════════════
@@ -358,11 +360,16 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneralException(Exception ex) {
+        // WICHTIG: Bisher wurde die Exception hier nur in ex.getMessage() extrahiert und
+        // danach verworfen -> kein Stacktrace in den Logs (Root Cause für "500 ohne Details").
+        // Stacktrace geht NUR in die Server-Logs, NICHT an den Client (keine Exception-Details im Response-Body).
+        log.error("Unhandled exception while processing request", ex);
+
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("timestamp", LocalDateTime.now().toString());
         errorResponse.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         errorResponse.put("error", "Internal Server Error");
-        errorResponse.put("message", ex.getMessage());
+        errorResponse.put("message", "Ein unerwarteter Fehler ist aufgetreten");
 
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
