@@ -1,0 +1,27 @@
+name: markt_ma_documents_poc
+description: >
+  Isolierter Flutter Proof-of-Concept fuer markt.ma - testet NUR den Pfad
+  Login -> DOCUMENTS -> Fotografieren -> Upload gegen das bestehende,
+  unveraenderte Spring Boot Backend. Kein App-Factory-Rewrite, kein neues
+  Backend, keine neuen Endpunkte. Siehe README.md.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.2
+  http_parser: ^4.0.2
+  flutter_secure_storage: ^9.2.2
+  image_picker: ^1.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
