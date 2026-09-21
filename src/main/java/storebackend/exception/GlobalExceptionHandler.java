@@ -314,6 +314,27 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Behandelt MissingServletRequestPartException (fehlender Multipart-Part, z.B. wenn der
+     * Client den "file"-Part nicht sendet) -> HTTP 400 statt generischem 500. Das ist ein
+     * Client-Request-Fehler (Multipart-Body unvollständig), keine Server-Störung.
+     * MUSS vor handleGeneralException stehen!
+     */
+    @ExceptionHandler(org.springframework.web.multipart.support.MissingServletRequestPartException.class)
+    public ResponseEntity<Map<String, Object>> handleMissingServletRequestPart(
+            org.springframework.web.multipart.support.MissingServletRequestPartException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
+        errorResponse.put("error", "Bad Request");
+        errorResponse.put("code", "MISSING_MULTIPART_PART");
+        errorResponse.put("message", "Erforderlicher Teil '" + ex.getRequestPartName() + "' fehlt im Request");
+
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(errorResponse);
+    }
+
+    /**
      * Behandelt MaxUploadSizeExceededException (Datei/Request groesser als
      * spring.servlet.multipart.max-file-size/max-request-size) -> HTTP 413 statt
      * dem sonst durchfallenden generischen 500. Betrifft u.a. Foto-Upload via

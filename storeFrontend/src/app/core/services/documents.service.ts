@@ -129,13 +129,30 @@ export class DocumentsService {
 
   /** Fotografieren/Datei hochladen (Datei + Metadaten in einem Request). */
   uploadNew(file: File, request: DocumentCreateRequest): Observable<UploadProgress | DocumentDTO> {
+    const normalized = this.normalizeFile(file);
+
+    // TEMP-DIAGNOSE (iPhone-Capture-Bug "MissingServletRequestPartException required part file"):
+    // vor dem HTTP-Aufruf prüfen, ob die Datei zu diesem Zeitpunkt überhaupt noch gültig/lesbar ist.
+    // Kann nach Verifikation des Fixes wieder entfernt werden.
+    console.log('[documents] pre-upload file check', {
+      hasFile: !!normalized,
+      name: normalized?.name,
+      type: normalized?.type,
+      size: normalized?.size
+    });
+
     const formData = new FormData();
-    formData.append('file', this.normalizeFile(file));
+    formData.append('file', normalized, normalized.name);
     formData.append('title', request.title);
     if (request.category) formData.append('category', request.category);
     if (request.note) formData.append('note', request.note);
     if (request.documentDate) formData.append('documentDate', request.documentDate);
     if (request.expiryDate) formData.append('expiryDate', request.expiryDate);
+
+    // TEMP-DIAGNOSE: FormData-Inhalt direkt nach dem Aufbau prüfen (erwartet: key='file', value=File).
+    formData.forEach((value, key) => {
+      console.log('[documents] formData entry', key, value);
+    });
 
     return this.http.post<DocumentDTO>(`${this.baseUrl}/upload`, formData, {
       reportProgress: true,

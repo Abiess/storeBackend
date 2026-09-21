@@ -141,7 +141,19 @@ export class DocumentUploadDialogComponent implements OnDestroy {
     this.destroy$.complete();
   }
 
-  onFileSelected(event: Event): void {
+  /**
+   * iOS/WKWebView-Root-Cause (siehe MissingServletRequestPartException in Production):
+   * Der frisch fotografierte Kamera-Blob ist auf iOS an die Input-/Capture-Session gebunden
+   * (ephemer), anders als Galerie-Bilder (persistenter Photos-Asset) oder Desktop-Dateien
+   * (FS-backed). Sobald `selectedFile` gesetzt wird, entfernt `*ngIf="!selectedFile"` das
+   * `<input #fileInput>` aus dem DOM - während der Nutzer danach noch das Metadaten-Formular
+   * ausfüllt (mehrere Sekunden). In dieser Zeitspanne kann der ursprüngliche Blob auf iOS
+   * ungültig werden; Safari lässt den nicht mehr lesbaren "file"-Part beim Multipart-Encoding
+   * dann still fallen, statt einen Fehler zu werfen.
+   * Fix: Bytes SOFORT bei Auswahl in den Speicher lesen (`arrayBuffer()`) und daraus ein neues,
+   * ausschließlich speicherresidentes File bauen - unabhängig vom Ursprungs-Blob/-Input.
+   */
+  async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
@@ -151,7 +163,17 @@ export class DocumentUploadDialogComponent implements OnDestroy {
         return;
       }
       this.error = null;
-      this.selectedFile = file;
+
+      let stableFile = file;
+      try {
+        const buffer = await file.arrayBuffer();
+        stableFile = new File([buffer], file.name, { type: file.type, lastModified: file.lastModified });
+      } catch {
+        // Fallback: falls arrayBuffer() ausnahmsweise fehlschlägt, Original-File weiterverwenden
+        // (z.B. sehr alte Browser) statt den Upload komplett zu blockieren.
+      }
+
+      this.selectedFile = stableFile;
       if (!this.title) {
         this.title = file.name.replace(/\.[^/.]+$/, '');
       }
