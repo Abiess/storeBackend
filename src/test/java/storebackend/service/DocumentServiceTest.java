@@ -213,6 +213,107 @@ class DocumentServiceTest {
         assertEquals("Sonstiges", dto.getCategory());
     }
 
+    @Test
+    @DisplayName("Download: Owner darf herunterladen")
+    void getContent_ownerCanDownload() {
+        documentOfA.setObjectKey("documents/1/abc.pdf");
+        documentOfA.setMimeType("application/pdf");
+        documentOfA.setOriginalFilename("versicherung.pdf");
+
+        when(documentRepository.findById(100L)).thenReturn(Optional.of(documentOfA));
+        when(minioService.getFileFromPrivateBucket("documents/1/abc.pdf"))
+                .thenReturn(new ByteArrayInputStream("dummy".getBytes()));
+
+        DocumentService.DownloadResult result = documentService.getContent(100L, userA);
+
+        assertEquals("application/pdf", result.mimeType());
+        assertEquals("versicherung.pdf", result.filename());
+    }
+
+    @Test
+    @DisplayName("Download: geteilter User (VIEW) darf ebenfalls herunterladen")
+    void getContent_sharedUserCanDownload() {
+        documentOfA.setObjectKey("documents/1/abc.pdf");
+        documentOfA.setMimeType("application/pdf");
+        documentOfA.setOriginalFilename("versicherung.pdf");
+
+        when(documentRepository.findById(100L)).thenReturn(Optional.of(documentOfA));
+        when(shareRepository.existsByDocumentIdAndSharedWithUserId(100L, userB.getId())).thenReturn(true);
+        when(minioService.getFileFromPrivateBucket("documents/1/abc.pdf"))
+                .thenReturn(new ByteArrayInputStream("dummy".getBytes()));
+
+        DocumentService.DownloadResult result = documentService.getContent(100L, userB);
+
+        assertEquals("versicherung.pdf", result.filename());
+    }
+
+    @Test
+    @DisplayName("Download: User ohne Owner-/Share-Beziehung -> 403, kein MinIO-Zugriff")
+    void getContent_unauthorizedUser_forbidden() {
+        documentOfA.setObjectKey("documents/1/abc.pdf");
+
+        when(documentRepository.findById(100L)).thenReturn(Optional.of(documentOfA));
+        when(shareRepository.existsByDocumentIdAndSharedWithUserId(100L, userB.getId())).thenReturn(false);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> documentService.getContent(100L, userB));
+        assertEquals(org.springframework.http.HttpStatus.FORBIDDEN, ex.getStatusCode());
+        verify(minioService, never()).getFileFromPrivateBucket(anyString());
+    }
+
+    @Test
+    @DisplayName("Download: nach Revoke des Shares verliert B sofort den Download-Zugriff")
+    void getContent_afterRevoke_sharedUserLosesDownloadAccess() {
+        documentOfA.setObjectKey("documents/1/abc.pdf");
+        documentOfA.setMimeType("application/pdf");
+        documentOfA.setOriginalFilename("versicherung.pdf");
+
+        when(documentRepository.findById(100L)).thenReturn(Optional.of(documentOfA));
+        // Erster Aufruf: Share existiert noch -> Zugriff erlaubt.
+        // Zweiter Aufruf (nach simuliertem Revoke): Share existiert nicht mehr -> 403.
+        when(shareRepository.existsByDocumentIdAndSharedWithUserId(100L, userB.getId()))
+                .thenReturn(true, false);
+        when(minioService.getFileFromPrivateBucket("documents/1/abc.pdf"))
+                .thenReturn(new ByteArrayInputStream("dummy".getBytes()));
+
+        DocumentService.DownloadResult beforeRevoke = documentService.getContent(100L, userB);
+        assertEquals("versicherung.pdf", beforeRevoke.filename());
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> documentService.getContent(100L, userB));
+        assertEquals(org.springframework.http.HttpStatus.FORBIDDEN, ex.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("B (nur geteilt) darf NICHT die Metadaten ändern (Titel/Kategorie) -> 403")
+    void sharedUserB_cannotUpdateDocument_forbidden() {
+        when(documentRepository.findByIdAndOwnerId(100L, userB.getId())).thenReturn(Optional.empty());
+        when(documentRepository.existsById(100L)).thenReturn(true);
+
+        DocumentUpdateRequest request = new DocumentUpdateRequest();
+        request.setTitle("Fremd-Änderung");
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> documentService.update(100L, userB, request));
+        assertEquals(org.springframework.http.HttpStatus.FORBIDDEN, ex.getStatusCode());
+        verify(documentRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("B (nur geteilt) darf NICHT selbst weiterteilen (nur Owner darf share()) -> 403")
+    void sharedUserB_cannotShareDocumentFurther_forbidden() {
+        when(documentRepository.findByIdAndOwnerId(100L, userB.getId())).thenReturn(Optional.empty());
+        when(documentRepository.existsById(100L)).thenReturn(true);
+
+        ShareDocumentRequest request = new ShareDocumentRequest();
+        request.setEmail("c@example.com");
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> documentService.share(100L, userB, request));
+        assertEquals(org.springframework.http.HttpStatus.FORBIDDEN, ex.getStatusCode());
+        verify(shareRepository, never()).save(any());
+    }
+
     private DocumentShare buildShare(UserDocument document, User target) {
         DocumentShare share = new DocumentShare();
         share.setDocument(document);

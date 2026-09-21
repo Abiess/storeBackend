@@ -23,6 +23,21 @@
       <mat-icon>add_circle_outline</mat-icon>
       {{ 'documents.actions.createManual' | translate }}
     </button>
+    <!-- Verstecktes Kamera-Input: takePhoto() klickt es DIREKT an (kein Zwischen-Dialog mehr).
+         capture="environment" ist HIER (im Gegensatz zum generischen "Datei hochladen"-Input
+         im Dialog) bewusst gesetzt, damit iPhone/Android möglichst direkt die Rückkamera statt
+         eines Auswahl-Dialogs (Kamera/Galerie) öffnen. Das ist sicher, weil onCameraFileSelected()
+         die Datei SOFORT via DocumentsService.materializeFile() (arrayBuffer()-Fix) materialisiert,
+         BEVOR der Dialog überhaupt geöffnet wird - der ursprüngliche 500er kam nicht vom
+         capture-Attribut selbst, sondern davon, dass das *ngIf-Input im Dialog verschwand,
+         während der User noch das Formular ausfüllte, und der iOS-Blob dabei ephemer war. -->
+    <input
+      #cameraFileInput
+      type="file"
+      accept="image/*"
+      capture="environment"
+      (change)="onCameraFileSelected($event)"
+      style="display: none;">
   </div>
 
   <!-- Tabs: Meine Dokumente / Mit mir geteilt -->

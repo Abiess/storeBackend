@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -37,6 +37,10 @@ export class DocumentsComponent implements OnInit {
   private dialog = inject(MatDialog);
   private documentsService = inject(DocumentsService);
   private translationService = inject(TranslationService);
+
+  /** Verstecktes Kamera-Input für die Quick-Action "Fotografieren": wird direkt angeklickt,
+   *  kein Zwischen-Dialog mit einem zweiten Button mehr (siehe takePhoto()/onCameraFileSelected()). */
+  @ViewChild('cameraFileInput') cameraFileInput!: ElementRef<HTMLInputElement>;
 
   readonly navConfig = DOCUMENTS_NAV_CONFIG;
 
@@ -88,18 +92,41 @@ export class DocumentsComponent implements OnInit {
     return this.activeTab === 'mine' ? this.mineDocuments : this.sharedDocuments;
   }
 
+  /**
+   * Vereinfachter Foto-Flow (vorher: Button -> Dialog -> nochmal Button -> Kamera).
+   * Jetzt: Button klickt DIREKT das versteckte Kamera-Input an, das bewusst
+   * `capture="environment"` trägt, damit iPhone/Android möglichst direkt die Rückkamera
+   * öffnen (kein Kamera/Galerie-Auswahl-Dialog des OS). Erst NACH der Auswahl öffnet sich
+   * der Dialog, direkt im Metadaten-Formular (Datei ist dann schon via
+   * DocumentsService.materializeFile() materialisiert - siehe onCameraFileSelected()).
+   */
   takePhoto(): void {
-    this.openUploadDialog('camera');
+    this.cameraFileInput.nativeElement.click();
+  }
+
+  async onCameraFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // Reset, damit dieselbe Datei erneut gewählt werden kann
+
+    if (!file) {
+      return;
+    }
+
+    // iOS/WKWebView-Fix: Bytes sofort materialisieren, BEVOR der Dialog geöffnet wird (siehe
+    // DocumentsService.materializeFile() für Details zum ephemeren Kamera-Blob-Problem).
+    const stableFile = await this.documentsService.materializeFile(file);
+    this.openUploadDialog('camera', stableFile);
   }
 
   uploadFile(): void {
     this.openUploadDialog('file');
   }
 
-  private openUploadDialog(mode: 'camera' | 'file'): void {
+  private openUploadDialog(mode: 'camera' | 'file', file?: File): void {
     const ref = this.dialog.open<DocumentUploadDialogComponent, DocumentUploadDialogData, DocumentDTO | undefined>(
       DocumentUploadDialogComponent,
-      { width: '420px', maxWidth: '92vw', data: { mode } }
+      { width: '420px', maxWidth: '92vw', data: { mode, file } }
     );
     ref.afterClosed().subscribe((result) => {
       if (result) {

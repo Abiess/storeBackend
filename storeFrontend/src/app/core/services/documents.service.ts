@@ -104,6 +104,27 @@ export class DocumentsService {
     return file;
   }
 
+  /**
+   * iOS/WKWebView-Fix (siehe MissingServletRequestPartException in Production): ein frisch
+   * fotografiertes Kamera-Bild kann an einen ephemeren Blob gebunden sein, der ungültig wird,
+   * bevor das FormData tatsächlich gesendet wird (z.B. während der Nutzer noch das
+   * Metadaten-Formular ausfüllt). Deshalb werden die Bytes SOFORT bei Auswahl in den Speicher
+   * gelesen (`arrayBuffer()`) und daraus ein neues, ausschließlich speicherresidentes File
+   * gebaut - unabhängig vom Ursprungs-Blob/-Input. Wird sowohl vom Kamera-Quick-Action
+   * (`DocumentsComponent`) als auch vom Datei-Picker im Dialog (`DocumentUploadDialogComponent`)
+   * verwendet, damit es nur EINE Stelle mit dieser Logik gibt.
+   */
+  async materializeFile(file: File): Promise<File> {
+    try {
+      const buffer = await file.arrayBuffer();
+      return new File([buffer], file.name, { type: file.type, lastModified: file.lastModified });
+    } catch {
+      // Fallback: falls arrayBuffer() ausnahmsweise fehlschlägt, Original-File weiterverwenden
+      // (z.B. sehr alte Browser) statt den Upload komplett zu blockieren.
+      return file;
+    }
+  }
+
   validateFile(file: File): string | null {
     if (!file) return 'documents.errors.uploadFailed';
     if (file.size === 0 || file.size > this.MAX_FILE_SIZE) return 'documents.errors.uploadFailed';
