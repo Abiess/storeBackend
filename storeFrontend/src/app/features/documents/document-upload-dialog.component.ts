@@ -10,18 +10,30 @@ import { TranslationService } from '@app/core/services/translation.service';
 import { DocumentsService, DOCUMENT_CATEGORIES } from '@app/core/services/documents.service';
 
 export interface DocumentUploadDialogData {
-  /** 'camera' -> Datei-Input öffnet direkt die Rückkamera (capture=environment, Mobile),
-   *  'file' -> normaler Datei-/PDF-Picker. Kein eigener Kamera-Service nötig: das native
-   *  `<input type="file" capture>` deckt Capacitor/WebView + mobile Browser bereits ab. */
+  /** 'camera' -> Datei-Input mit accept="image/*" (Foto/Galerie-Auswahl über den nativen
+   *  Bildauswahl-Dialog des Betriebssystems), 'file' -> Datei-/PDF-Picker. */
   mode: 'camera' | 'file';
 }
 
 /**
  * DOCUMENTS-App (Phase 1): Foto/Datei-Upload-Dialog.
  *
- * Bewusst KEIN neuer, paralleler Mobile-Camera-Service: `capture="environment"`
- * auf dem nativen `<input type="file">` reicht (Web + Capacitor-WebView), analog
- * zum bereits vorhandenen Dropzone-Muster in `SupplierInvoiceUploadDialogComponent`.
+ * WICHTIG: Verwendet bewusst denselben, bereits app-weit bewährten Capture-Pfad wie
+ * `ImageUploadComponent` (shared/components/image-upload, genutzt u.a. von Issue Analysis,
+ * Produktbildern, Branding-Editor, SEO-Settings, Store-Slider): ein einfaches
+ * `<input type="file" accept="image/*">` OHNE `capture`-Attribut. Der Browser/das OS bietet
+ * dann selbst "Kamera" vs. "Galerie" an (iOS Photos-Picker, Android Chooser). Dieser Pfad ist
+ * nachweislich stabil auf Web/iPhone/Android/Capacitor.
+ *
+ * Der zuvor hier verwendete, DOCUMENTS-exklusive `capture="environment"`-Pfad war die einzige
+ * Stelle im gesamten Frontend mit erzwungenem Capture und wurde als Root-Cause-Kandidat für
+ * die iPhone-500-Fehler identifiziert (inkonsistente File-Objekte je nach iOS/WebKit-Version) -
+ * deshalb entfernt statt eine neue, parallele Kamera-Implementierung zu bauen.
+ * `CameraAdapter`/`WebCameraAdapter` (core/services/camera-adapter.ts) ist NICHT geeignet:
+ * er liefert nur einen rohen `MediaStream` fürs Live-Barcode-Scanning, keinen File/Blob.
+ *
+ * Kein eigener Kamera-Service nötig. Die Datei wird unverändert 1:1 an `DocumentsService`
+ * weitergereicht (siehe submit()).
  */
 @Component({
   selector: 'app-document-upload-dialog',
@@ -42,7 +54,6 @@ export interface DocumentUploadDialogData {
             #fileInput
             type="file"
             [attr.accept]="data.mode === 'camera' ? 'image/*' : 'application/pdf,image/jpeg,image/png,image/webp'"
-            [attr.capture]="data.mode === 'camera' ? 'environment' : null"
             (change)="onFileSelected($event)"
             style="display: none;">
         </div>
