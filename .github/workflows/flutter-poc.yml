@@ -1,0 +1,108 @@
+name: Flutter PoC (DOCUMENTS) – Build/Analyze/Test/APK
+
+# ──────────────────────────────────────────────────────────────────────────
+# Isolierter PoC-Workflow fuer mobile-flutter-poc/ (siehe README.md dort).
+#
+# Ablauf (rein lesend/bauend, KEIN Repo-Schreibzugriff):
+#   Checkout → Flutter stable installieren (mit Cache)
+#   → flutter pub get → flutter analyze → flutter test
+#   → flutter build apk --debug
+#   → app-debug.apk als GitHub Actions Artifact
+#
+# WICHTIG: Dieser Workflow generiert NICHTS und committet NICHTS zurueck ins
+# Repo (Source Repo → CI liest → analyze/test/build → Artifact). Das
+# `android/`-Verzeichnis MUSS bereits im Repo vorhanden sein, bevor dieser
+# Workflow erfolgreich `flutter build apk` ausfuehren kann. Es wird einmalig
+# ueber den separaten Bootstrap-Workflow
+# `.github/workflows/flutter-poc-bootstrap.yml` erzeugt (Artifact-Download +
+# bewusster manueller Commit durch einen Menschen) - siehe dortiger
+# Kommentarkopf und mobile-flutter-poc/README.md.
+#
+# Bewusst NICHT enthalten:
+#   - kein `flutter create`, kein `git commit`/`git push` (siehe Bootstrap-Workflow).
+#   - kein iOS-Build/-Signing (nur Android-Debug-APK, analog zu
+#     build-android-apk.yml).
+#   - kein Deploy auf den VPS, keine Release-Signierung, kein Play-Store-Upload.
+#   - keine Aenderung an build-android-apk.yml / deploy.yml / deploy-frontend.yml
+#     (das bestehende Angular/Capacitor-Android-Projekt bleibt unberuehrt,
+#     dieser Workflow kennt nur mobile-flutter-poc/).
+#   - der echte Kamera-/Login-/Upload-Test bleibt auf einem realen Android-
+#     Geraet (siehe mobile-flutter-poc/README.md) – dieser Workflow prueft
+#     nur Compile/Analyze/Tests/APK-Erzeugung.
+# ──────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'mobile-flutter-poc/**'
+      - '.github/workflows/flutter-poc.yml'
+
+jobs:
+  build-flutter-poc:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-flutter-poc
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Flutter version info
+        run: flutter --version
+
+      - name: Verify android/ exists (bootstrapped beforehand)
+        run: |
+          if [ ! -d "android" ]; then
+            echo "❌ mobile-flutter-poc/android/ fehlt im Repo."
+            echo "   Bitte zuerst einmalig .github/workflows/flutter-poc-bootstrap.yml"
+            echo "   ausfuehren (Run workflow), das Artifact herunterladen und"
+            echo "   android/ bewusst manuell ins Repo committen. Siehe README.md."
+            exit 1
+          fi
+          echo "✅ android/ vorhanden."
+
+      - name: flutter pub get
+        run: flutter pub get
+
+      - name: flutter analyze
+        run: flutter analyze
+
+      - name: flutter test
+        run: flutter test
+
+      # Java 21 (Temurin) fuer den Gradle-Android-Build - identisch zur
+      # Java-Version im bestehenden Android-/Backend-Workflow.
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Verify APK exists
+        run: |
+          APK=build/app/outputs/flutter-apk/app-debug.apk
+          if [ ! -f "$APK" ]; then
+            echo "❌ $APK nicht gefunden!"
+            find build/app/outputs -type f || true
+            exit 1
+          fi
+          echo "✅ APK gefunden: $(du -h "$APK" | cut -f1)"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: markt-ma-flutter-poc
+          path: mobile-flutter-poc/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
