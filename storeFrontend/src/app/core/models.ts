@@ -40,7 +40,9 @@ export enum AppKey {
   DHL = 'DHL',
   LOYALTY = 'LOYALTY',
   MARITIME = 'MARITIME',
-  ISSUE_ANALYSIS = 'ISSUE_ANALYSIS'
+  ISSUE_ANALYSIS = 'ISSUE_ANALYSIS',
+  /** Persönlicher Dokumenten-Tresor, GLOBAL-Scope (kein storeId). Siehe ARCHITECTURE_APP_FACTORY.md. */
+  DOCUMENTS = 'DOCUMENTS'
 }
 
 /** Spiegelt storebackend.enums.AppAccessMode 1:1. */

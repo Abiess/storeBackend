@@ -533,6 +533,10 @@
       "issueAnalysis": {
         "title": "Issue-Analyse",
         "description": "Vorgangs- und Fehleranalyse"
+      },
+      "documents": {
+        "title": "Dokumente",
+        "description": "Dein persönlicher Dokumenten-Tresor"
       }
     }
   },
@@ -3531,6 +3535,87 @@
         "answer": "Nein. Das Dashboard dient der Übersicht über den Hafenbetrieb (Port Operations) und ersetzt keine offiziellen Navigations-, VTS- oder Sicherheitssysteme."
       }
     }
+  },
+  "documents": {
+    "title": "Meine Dokumente",
+    "subtitle": "Dein persönlicher Dokumenten-Tresor",
+    "nav": {
+      "overview": "Dokumente",
+      "account": "Konto"
+    },
+    "tabs": {
+      "mine": "Meine Dokumente",
+      "shared": "Mit mir geteilt"
+    },
+    "actions": {
+      "takePhoto": "Fotografieren",
+      "uploadFile": "Datei hochladen",
+      "createManual": "Manuell anlegen",
+      "view": "Anzeigen",
+      "edit": "Bearbeiten",
+      "share": "Teilen",
+      "delete": "Löschen",
+      "download": "Datei öffnen",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "close": "Schließen",
+      "removeShare": "Freigabe entfernen"
+    },
+    "searchPlaceholder": "Dokumente durchsuchen...",
+    "empty": {
+      "mine": "Noch keine Dokumente. Lege dein erstes Dokument an.",
+      "shared": "Es wurden noch keine Dokumente mit dir geteilt."
+    },
+    "form": {
+      "title": "Titel",
+      "category": "Kategorie",
+      "note": "Notiz",
+      "documentDate": "Dokumentdatum",
+      "expiryDate": "Ablaufdatum",
+      "chooseCategory": "Kategorie wählen"
+    },
+    "categories": {
+      "INSURANCE": "Versicherung",
+      "CONTRACT": "Vertrag",
+      "INVOICE": "Rechnung",
+      "WARRANTY": "Garantie",
+      "VEHICLE": "Fahrzeug",
+      "APARTMENT": "Wohnung",
+      "WORK": "Arbeit",
+      "ID": "Ausweis/Dokument",
+      "OTHER": "Sonstiges"
+    },
+    "table": {
+      "title": "Titel",
+      "category": "Kategorie",
+      "expiryDate": "Ablauf",
+      "documentDate": "Datum"
+    },
+    "share": {
+      "dialogTitle": "Dokument teilen",
+      "emailLabel": "E-Mail des markt.ma-Nutzers",
+      "permissionInfo": "Der Nutzer kann das Dokument ansehen, aber nicht löschen oder ändern.",
+      "shareButton": "Teilen",
+      "sharedWith": "Geteilt mit",
+      "noShares": "Noch mit niemandem geteilt.",
+      "ownerBadge": "Eigentümer"
+    },
+    "detail": {
+      "title": "Dokumentdetails",
+      "noFile": "Kein Foto/Datei hinterlegt",
+      "createdAt": "Angelegt am",
+      "updatedAt": "Zuletzt geändert"
+    },
+    "errors": {
+      "uploadFailed": "Upload fehlgeschlagen",
+      "notFound": "Dokument nicht gefunden",
+      "accessDenied": "Kein Zugriff auf dieses Dokument",
+      "shareFailed": "Teilen fehlgeschlagen",
+      "invalidEmail": "Bitte eine gültige E-Mail-Adresse eingeben",
+      "userNotFound": "Kein markt.ma-Nutzer mit dieser E-Mail gefunden",
+      "titleRequired": "Bitte einen Titel eingeben"
+    },
+    "confirmDelete": "Dieses Dokument wirklich löschen?"
   },
   "pos": {
     "noProducts": "Keine Produkte gefunden",

@@ -3138,3 +3138,279 @@ Volle Testsuite vor/nach Änderung verglichen (Baseline via
 `git stash`): identische 20 Failures/19 Errors in beiden Ständen (511 vs.
 537 Tests) – keine Regression durch diese Änderung.
 
+## 17. DOCUMENTS – erste persönliche GLOBAL-App (additiv, implementiert)
+
+### 17.1 Ziel und Einordnung
+
+DOCUMENTS ist ein persönlicher Dokumenten-Tresor (Fotos, PDFs, manuell
+angelegte Einträge mit Titel/Kategorie/Notiz/Datum/Ablaufdatum) und der
+**erste bewusst PERSONAL-first App-Factory-Consumer**: die App ist
+`AppScope.GLOBAL` (kein `storeId` in der App-Berechtigung), aber die
+Dokumente selbst sind strikt **user-privat** (`ownerUserId`), nicht
+plattform- oder store-weit sichtbar. Diese Unterscheidung ist absichtlich
+und an mehreren Stellen dieses Dokuments bereits vorbereitet (Abschnitt 4/13:
+"GLOBAL" ist eine reine Scope-Aussage der App-Berechtigung, keine Aussage
+über Datensichtbarkeit).
+
+**Explizit zu betonen (Auftragsvorgabe):**
+- **App ist GLOBAL** – `AppKey.DOCUMENTS.getScope() == AppScope.GLOBAL`,
+  keine `storeId`-Auflösung, kein `StoreAccessChecker`, kein
+  `@RequiresApp(scope = STORE_ID_PARAM)`.
+- **Daten sind trotzdem user-privat** – jedes `UserDocument` hat genau einen
+  `ownerUserId`; Zugriff ist serverseitig ausschließlich
+  Owner-or-Shared (siehe 17.4), unabhängig vom (GLOBAL-)App-Zugriff.
+- **Store bewusst nicht Teil von V1** – kein `storeId`-Feld auf
+  `UserDocument`/`DocumentShare`, keine Business-Kontext-Logik, kein
+  Team-/Rollen-Bezug.
+- **Business/Context-Dokumente nur Future Extension** – siehe 17.7.
+
+### 17.2 Vorheriges Audit (Wiederverwendung statt Neubau)
+
+Vor der Implementierung wurde bestehender Code geprüft (Media/MinIO/Upload/
+`SupplierInvoiceDocument`/`CameraAdapter`/Sharing/User-Lookup). Ergebnis:
+
+| Bereich | Status | Begründung |
+|---|---|---|
+| Auth/JWT, `@AuthenticationPrincipal User` | ✅ wiederverwendet | Keine neue Auth-Logik nötig, exakt wie in allen anderen Controllern. |
+| `AppKey`/`AppScope`/`@RequiresApp`/`AppAccessInterceptor`/`AppAccessChecker` | ✅ wiederverwendet | Nur ein neuer `AppKey.DOCUMENTS(AppScope.GLOBAL)`-Enum-Wert nötig, exakt wie `MARITIME`/`ISSUE_ANALYSIS`. Keine Änderung an der Zugriffslogik selbst. |
+| `MinioService` (privater Bucket, `uploadToPrivateBucket`/`getFileFromPrivateBucket`) | ✅ wiederverwendet | `SupplierInvoiceDocumentService` als direktes Vorbild für privaten Datei-Storage (sensible Dokumente, nicht öffentlich abrufbar). |
+| `UserRepository.findByEmail` | ✅ wiederverwendet | Sharing löst den Ziel-User über die bestehende E-Mail-Normalisierung/-Suche auf (Abschnitt 16) – **kein** neuer "alle User durchsuchen"-Endpunkt (Privacy). |
+| `AppProvisioningController`/`Service` (Platform Admin) | ✅ wiederverwendet, unverändert | Vollständig generisch über `AppKey`/`app.getScope()` – ein neuer `AppKey`-Wert erscheint automatisch in der Provisioning-UI/-API, keine Sonderlogik nötig (verifiziert, keine Code-Änderung in Abschnitt 15 nötig). |
+| `APP_REGISTRY`/`AppNavigationComponent`/`AppAccountComponent`/`AppSwitcherComponent` (Frontend) | ✅ wiederverwendet | Neuer `APP_REGISTRY`-Eintrag (`AppKey.DOCUMENTS`, `scope: 'GLOBAL'`) + eigene `DOCUMENTS_NAV_CONFIG` (Daten, keine Komponente) reichen – analog zu MARITIME/DHL. Keine `DocumentsNavComponent`/`DocumentsAccountComponent`/`DocumentsSwitcher`. |
+| `CameraAdapter` (`getUserMedia`, Barcode-Scanning) | ⚠️ nicht direkt wiederverwendbar, aber Muster übernommen | Ist speziell für Live-Barcode-Erkennung gebaut (kontinuierlicher `MediaStream`), nicht für "ein Foto aufnehmen und hochladen". Für DOCUMENTS genügt das bereits im Projekt etablierte, einfachere Muster `<input type="file" accept="image/*" capture="environment">` (siehe `SupplierInvoiceUploadDialogComponent`-Dropzone als Vorbild) – funktioniert nativ in Web **und** Capacitor-WebView, ohne einen weiteren, parallelen Kamera-Service einzuführen. |
+| `ResponsiveDataListComponent` | ✅ wiederverwendet | Liste "Meine Dokumente"/"Mit mir geteilt" nutzt die zentrale, projektweite Komponente (Karten-Ansicht auf Mobile, keine eigene Card-Grid-Implementierung). |
+| Neu gebaut (kein bestehendes Äquivalent) | – | `UserDocument`/`DocumentShare`-Entities, `DocumentService` (Owner-or-Shared-Zugriffsmodell), `DocumentController`, DTOs, Migration, sowie die Documents-Feature-Komponenten im Frontend. |
+
+### 17.3 Datenmodell (Backend)
+
+```
+UserDocument                          DocumentShare
+├── id                                ├── id
+├── ownerUserId (User, FK)            ├── document (UserDocument, FK)
+├── title                             ├── sharedWithUser (User, FK)
+├── category (freier String,          ├── permission (DocumentSharePermission: VIEW)
+│   Frontend zeigt feste Auswahl      └── createdAt
+│   INSURANCE/CONTRACT/INVOICE/
+│   WARRANTY/VEHICLE/APARTMENT/
+│   WORK/ID/OTHER, Backend erzwingt
+│   KEIN Enum – Erweiterbarkeit ohne
+│   Migration)
+├── note
+├── documentDate (optional)
+├── expiryDate (optional)
+├── objectKey (optional, MinIO Private Bucket)
+├── originalFilename (optional)
+├── mimeType (optional)
+├── size (optional)
+├── extractedText (optional, OCR/AI Extension Point – siehe 17.6)
+├── createdAt
+└── updatedAt
+```
+
+Bewusste Abweichung vom ursprünglichen Vorschlag: `DocumentShare` speichert
+**keine** redundante `ownerUserId`-Spalte (obwohl im Auftrag so aufgelistet)
+– der Owner ergibt sich immer aus `document.getOwner()`. Eine redundante
+Spalte hätte lediglich ein zusätzliches Inkonsistenzrisiko geschaffen (z.B.
+falls ein Dokument je den Owner wechseln würde), ohne einen Mehrwert zu
+bieten, da `DocumentShare` immer über sein `document` geladen wird.
+
+"Ein Dokument darf auch ohne Datei existieren" (manuell angelegt): alle
+Datei-Felder (`objectKey`, `originalFilename`, `mimeType`, `size`) sind
+nullable; `DocumentService.createManual()` erzeugt ein `UserDocument` ganz
+ohne diese Felder.
+
+### 17.4 Sicherheitsmodell
+
+Für **jeden** Dokumentzugriff (lesen, Datei herunterladen) gilt:
+
+```
+Zugriff erlaubt wenn:
+  currentUser.id == document.ownerUserId
+  ODER
+  ein DocumentShare für (document, currentUser) existiert
+```
+
+Für **ändernde** Operationen (Update, Delete, Share verwalten) gilt zusätzlich
+**immer** Owner-only – ein geteilter User (VIEW) kann weder Titel/Notiz
+ändern noch löschen noch die Freigabe selbst verwalten (403, verifiziert in
+`DocumentServiceTest`/`DocumentsAppEndToEndSmokeTest`).
+
+App-Zugriff (GLOBAL) wird davon unabhängig, **zusätzlich**, auf
+Controller-Ebene durchgesetzt: `@RequiresApp(value = AppKey.DOCUMENTS, scope
+= AppScopeSource.NONE)` (analog `MaritimeController`) – ein User ohne
+DOCUMENTS-Entitlement (MANAGED-Modus) bekommt bereits vor
+`DocumentService` ein 403 vom `AppAccessInterceptor`. Für **LEGACY**-User
+(keine Entitlement-Zeilen in der DB) gilt weiterhin die bestehende
+LEGACY-Semantik: voller Zugriff wie vor Einführung der App-Entitlements
+(kein Sonderfall für DOCUMENTS, siehe `AppAccessChecker`).
+
+**Kein `StoreAccessChecker`-Bezug in V1** – DOCUMENTS hat keine
+`storeId`-Dimension, die Owner-or-Shared-Prüfung ist vollständig
+eigenständig in `DocumentService`.
+
+### 17.5 Storage (MinIO)
+
+Datei-Uploads (Foto/PDF) werden über den bestehenden **privaten** MinIO-Bucket
+gespeichert (`MinioService.uploadToPrivateBucket`/`getFileFromPrivateBucket`),
+exakt nach dem Muster von `SupplierInvoiceDocumentService` – **kein**
+öffentlicher Bucket, **keine** dauerhaft gültige öffentliche URL. Der
+Download-Endpunkt (`GET /api/documents/{id}/download`) prüft zuerst die
+Owner-or-Shared-Berechtigung und streamt die Datei dann direkt vom Backend
+(kein Presigned-URL-Leak an nicht berechtigte Clients).
+
+### 17.6 OCR/AI Extension Point (nicht Teil des MVP)
+
+`UserDocument.extractedText` (nullable) ist der einzige für diesen Zweck
+vorbereitete Punkt – wird in V1 nirgends automatisch befüllt. Denkbare,
+spätere Erweiterungen (ausdrücklich **nicht** in V1 umgesetzt): OCR-Text,
+automatische Kategorie-Vorschläge, Versicherungsnummer-/Ablaufdatum-Erkennung,
+AI-Zusammenfassung, Volltextsuche über Dokumente. Die bestehende
+AI/OpenRouter-Infrastruktur (siehe `IssueAnalysisService`/-`Controller`) wäre
+der naheliegende Wiederverwendungs-Kandidat für eine künftige
+OCR/Kategorisierungs-Erweiterung, ist aber für V1 nicht angebunden.
+
+### 17.7 Future Extension: BUSINESS/CONTEXT-Dokumente (nicht implementiert)
+
+V1 ist bewusst PERSONAL-only. Das Datenmodell ist so geschnitten, dass eine
+spätere BUSINESS/CONTEXT-Variante **additiv** (keine Migration von V1-Daten,
+kein Breaking-Change) ergänzt werden könnte, z.B.:
+- Optionales `storeId` auf `UserDocument` (nullable, NULL = weiterhin
+  PERSONAL) statt eines komplett neuen Entity-Typs.
+- Eigene `AppScopeSource`-Variante bzw. ein zweiter `AppKey` (z.B.
+  `DOCUMENTS_BUSINESS`) mit `AppScope.STORE`, falls Business-Dokumente eine
+  eigene App-Berechtigung statt eines Feldes auf derselben App bekommen
+  sollen – abhängig von einer separaten Produktentscheidung.
+- `StoreAccessChecker`/`StoreRole` würden dann NUR für diese neue,
+  optionale Dimension greifen, ohne die bestehende PERSONAL-Owner-or-Shared-
+  Logik zu verändern.
+
+Diese Erweiterung ist **nicht Teil dieser Implementierung** und wurde
+bewusst nicht vorgezogen (Auftragsvorgabe: "Bitte jetzt aber keine Store-/
+Business-Unterstützung implementieren").
+
+### 17.8 Backend – was implementiert wurde
+
+- `AppKey.DOCUMENTS(AppScope.GLOBAL)` (neuer Enum-Wert).
+- `DocumentSharePermission` (Enum, MVP nur `VIEW`).
+- Entities: `UserDocument`, `DocumentShare`.
+- Repositories: `UserDocumentRepository`, `DocumentShareRepository`.
+- DTOs: `DocumentDTO`, `DocumentCreateRequest`, `DocumentUpdateRequest`,
+  `DocumentShareDTO`, `ShareDocumentRequest`.
+- `DocumentService`: `createManual`, `uploadNew`, `attachFile`, `listMine`,
+  `listSharedWithMe`, `getById`, `getContent` (Download), `update`, `delete`,
+  `share`, `listShares`, `unshare` – vollständig Owner-or-Shared/Owner-only
+  durchgesetzt.
+- `DocumentController` (`/api/documents/**`, `@RequiresApp(DOCUMENTS,
+  scope=NONE)`).
+- Migration `V027__create_documents_app_tables.sql` (erweitert die
+  `AppKey`-CHECK-Constraints der `user_app_entitlements`-Tabelle + legt
+  `user_documents`/`document_shares` an; wie bei allen Migrationen in diesem
+  Projekt nur die dokumentierte, manuell auszuführende SQL-Quelle – Flyway
+  ist deaktiviert, `ddl-auto=update` erzeugt das Schema für Tests/lokal
+  automatisch aus den Entities).
+
+**Nebenbei behobener, eng gekoppelter Bug:** `GlobalExceptionHandler` hatte
+bisher **keinen** spezifischen `@ExceptionHandler` für
+`ResponseStatusException` – der generische `Exception.class`-Fallback hat
+dadurch **jede** `ResponseStatusException` (egal welcher Status) als HTTP 500
+statt mit ihrem tatsächlichen Status (z.B. 403/404) beantwortet. Da
+`DocumentService` (wie zuvor bereits `TeamInvitationController`) für
+Fehlerfälle `ResponseStatusException` wirft, wurde ein spezifischer Handler
+ergänzt, der `ex.getStatusCode()`/`ex.getReason()` korrekt in die
+HTTP-Response überträgt. Volle Testsuite vor/nach dieser Änderung verglichen
+– identische, bereits vor dieser Session bestehende Baseline-Fehlschläge
+(nicht mit DOCUMENTS/`GlobalExceptionHandler` in Zusammenhang stehend, siehe
+17.10), keine neuen Regressionen.
+
+### 17.9 Frontend – was implementiert wurde
+
+`storeFrontend` (das reale, buildbare Angular-Projekt unter
+`storeBackend/storeFrontend` – **nicht** zu verwechseln mit dem
+gleichnamigen, nicht buildbaren losen Dateien-Ordner im Repo-Wurzelverzeichnis
+`Team2/storeFrontend`, siehe Hinweis unten) enthält bereits die vollständige
+App-Factory-Infrastruktur (`AppKey`, `APP_REGISTRY`, `AppAccessService`,
+`AppNavigationComponent`, `AppAccountComponent`, `AppSwitcherComponent`,
+`ResponsiveDataListComponent`). DOCUMENTS wurde als weiterer, minimal-invasiver
+Consumer ergänzt:
+
+- `AppKey.DOCUMENTS` (Frontend-Enum-Spiegel).
+- `APP_REGISTRY`-Eintrag (`icon: '📄'`, `baseRoute: '/apps/documents'`,
+  `scope: 'GLOBAL'`, kein `legacyBasePath` – komplett neue App ohne
+  Altlast).
+- `DOCUMENTS_NAV_CONFIG` (`scoped: false`) – **keine** eigene
+  `DocumentsNavComponent`.
+- `documents.component.ts/.html/.scss` – Startseite ("Meine Dokumente"):
+  Quick-Actions (Fotografieren/Datei hochladen/Manuell anlegen, große
+  Touch-Ziele), Tabs "Meine Dokumente"/"Mit mir geteilt",
+  `ResponsiveDataListComponent` für die Liste (Karten auf Mobile).
+- `documents-account.component.ts` – reine Verdrahtung aus
+  `AppNavigationComponent` + `AppAccountComponent` (analog
+  `MaritimeAccountComponent`), **keine** eigene `DocumentsAccountComponent`-
+  Logik.
+- Dialoge: `DocumentUploadDialogComponent` (Foto/Datei, nutzt
+  `<input type="file" capture="environment">` statt eines neuen
+  Kamera-Service), `DocumentFormDialogComponent` (Anlegen/Bearbeiten der
+  Metadaten), `DocumentDetailDialogComponent` (Anzeigen/Datei öffnen),
+  `DocumentShareDialogComponent` (Teilen per E-Mail, Freigaben verwalten).
+- `DocumentsService` (HTTP-Client, 1:1-Abbildung von `DocumentController`).
+- Routen `apps/documents` und `apps/documents/account` in `app.routes.ts`
+  (analog MARITIME).
+- i18n: neue `documents.*`-Keys + `apps.registry.documents.*` in `de.json`,
+  `en.json`, `ar.json` (RTL) und `fr.json`.
+
+**Wichtiger Hinweis zur Projektstruktur (Audit-Ergebnis):** Es existieren in
+diesem Repository **zwei** Ordner namens `storeFrontend`: der oberste,
+`Team2/storeFrontend`, enthält nur lose Einzeldateien/Integrations-Guides
+(kein `package.json`/`angular.json`, nicht buildbar) und ist **nicht** das
+reale Frontend-Projekt. Das tatsächliche, produktiv genutzte Angular-Projekt
+mit der vollständigen App-Factory-Infrastruktur liegt unter
+`storeBackend/storeFrontend` (Git-Root ist `storeBackend`) – dort wurde
+DOCUMENTS implementiert und erfolgreich production-gebaut (siehe 17.11).
+
+### 17.10 Tests
+
+Backend (`storeBackend`, alle neu, alle grün):
+- `DocumentServiceTest` (7 Tests): Create/List/Access-Denied/Share/Unshare/
+  Upload/Update.
+- `DocumentAppIsolationTest` (2 Tests): `@RequiresApp(DOCUMENTS,
+  scope=NONE)`-Annotation korrekt verdrahtet.
+- `DocumentsAppMigrationSqlTest` (5 Tests): Migration textuell gegen die
+  bestehenden `CHECK`-Constraint-Konventionen geprüft (wie bei allen anderen
+  Migrationstests in diesem Projekt – kein Flyway, keine echte
+  Migrations-Ausführung in CI).
+- `DocumentsAppEndToEndSmokeTest` (3 Tests, MockMvc mit echtem JWT):
+  - `legacyUser_hasFullDocumentsAccess` – LEGACY-User (keine Entitlement-
+    Zeilen) hat vollen DOCUMENTS-Zugriff (bestehende LEGACY-Semantik).
+  - `managedUserWithoutDocumentsEntitlement_isForbidden` – MANAGED-User ohne
+    DOCUMENTS-Entitlement bekommt 403 vom `AppAccessInterceptor`.
+  - `fullSharingLifecycle` – deckt exakt die im Auftrag geforderte
+    Test-Matrix ab: User A erstellt Dokument → A sieht es; User B sieht es
+    (noch) nicht (403); A teilt mit B → B sieht es unter "Mit mir geteilt";
+    B versucht zu löschen → 403; A entfernt die Freigabe → B verliert
+    Zugriff (403).
+
+Alle 17 neuen Tests grün. Volle Backend-Testsuite (`mvn test`, 561 Tests)
+vor/nach den Änderungen verglichen: identische, bereits vorher bestehende
+Baseline-Fehlschläge (u.a. `StoreAccessCheckerTest`,
+`HtmlToTextConverterTest`, `CaptchaServiceTest`,
+`OrderServiceB2BIntegrationTest`, `PayPalCaptureIntegrationTest` – alle
+unabhängig von DOCUMENTS/`AppKey`/`GlobalExceptionHandler`, verifiziert via
+`git stash` gegen den unveränderten `master`-Stand) – **keine** Regression
+durch diese Session.
+
+### 17.11 Production Build
+
+`ng build --configuration production` im echten Frontend-Projekt
+(`storeBackend/storeFrontend`) nach Integration von DOCUMENTS: erfolgreich
+(`Browser application bundle generation complete`), keine neuen Fehler.
+Bereits vor dieser Session bestehende Budget-/"unused file"-Warnungen
+unverändert (nicht durch DOCUMENTS verursacht).
+
+### 17.12 Bewusst nicht angefasst
+
+`StoreRole`, `StoreAccessChecker`, Tenant/Location-Modell, SHOP/DHL/
+LOYALTY/MARITIME-Fachlogik, JWT-Struktur, bestehende MinIO-Kernfunktionalität,
+Public Storefront. `AppProvisioningController`/`-Service` wurden nicht
+verändert (bereits generisch, siehe 17.2).
+
+

@@ -312,6 +312,25 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Behandelt ResponseStatusException (z.B. aus DocumentService/TeamInvitationController)
+     * mit dem darin gesetzten Status statt pauschal HTTP 500 (vorher fiel dies auf
+     * handleGeneralException zurück, da kein spezifischer Handler existierte).
+     * MUSS vor handleGeneralException stehen!
+     */
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> handleResponseStatusException(org.springframework.web.server.ResponseStatusException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", ex.getStatusCode().value());
+        errorResponse.put("error", ex.getStatusCode().toString());
+        errorResponse.put("message", ex.getReason());
+
+        return ResponseEntity
+            .status(ex.getStatusCode())
+            .body(errorResponse);
+    }
+
+    /**
      * Allgemeiner Exception Handler als Fallback → HTTP 500.
      */
     @ExceptionHandler(Exception.class)

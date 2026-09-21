@@ -416,6 +416,10 @@
       "issueAnalysis": {
         "title": "Issue Analysis",
         "description": "Case and issue analysis"
+      },
+      "documents": {
+        "title": "Documents",
+        "description": "Your personal document vault"
       }
     }
   },
@@ -1928,6 +1932,87 @@
         "answer": "No. This dashboard is intended for an overview of port operations and does not replace official navigation, VTS, or safety systems."
       }
     }
+  },
+  "documents": {
+    "title": "My Documents",
+    "subtitle": "Your personal document vault",
+    "nav": {
+      "overview": "Documents",
+      "account": "Account"
+    },
+    "tabs": {
+      "mine": "My Documents",
+      "shared": "Shared with me"
+    },
+    "actions": {
+      "takePhoto": "Take Photo",
+      "uploadFile": "Upload File",
+      "createManual": "Create Manually",
+      "view": "View",
+      "edit": "Edit",
+      "share": "Share",
+      "delete": "Delete",
+      "download": "Open File",
+      "save": "Save",
+      "cancel": "Cancel",
+      "close": "Close",
+      "removeShare": "Remove Share"
+    },
+    "searchPlaceholder": "Search documents...",
+    "empty": {
+      "mine": "No documents yet. Create your first document.",
+      "shared": "No documents have been shared with you yet."
+    },
+    "form": {
+      "title": "Title",
+      "category": "Category",
+      "note": "Note",
+      "documentDate": "Document Date",
+      "expiryDate": "Expiry Date",
+      "chooseCategory": "Choose category"
+    },
+    "categories": {
+      "INSURANCE": "Insurance",
+      "CONTRACT": "Contract",
+      "INVOICE": "Invoice",
+      "WARRANTY": "Warranty",
+      "VEHICLE": "Vehicle",
+      "APARTMENT": "Apartment",
+      "WORK": "Work",
+      "ID": "ID/Document",
+      "OTHER": "Other"
+    },
+    "table": {
+      "title": "Title",
+      "category": "Category",
+      "expiryDate": "Expiry",
+      "documentDate": "Date"
+    },
+    "share": {
+      "dialogTitle": "Share Document",
+      "emailLabel": "Email of the markt.ma user",
+      "permissionInfo": "The user can view the document but cannot delete or modify it.",
+      "shareButton": "Share",
+      "sharedWith": "Shared with",
+      "noShares": "Not shared with anyone yet.",
+      "ownerBadge": "Owner"
+    },
+    "detail": {
+      "title": "Document Details",
+      "noFile": "No photo/file attached",
+      "createdAt": "Created at",
+      "updatedAt": "Last updated"
+    },
+    "errors": {
+      "uploadFailed": "Upload failed",
+      "notFound": "Document not found",
+      "accessDenied": "No access to this document",
+      "shareFailed": "Sharing failed",
+      "invalidEmail": "Please enter a valid email address",
+      "userNotFound": "No markt.ma user found with this email",
+      "titleRequired": "Please enter a title"
+    },
+    "confirmDelete": "Really delete this document?"
   },
   "wizard": {
     "skip": "Skip",

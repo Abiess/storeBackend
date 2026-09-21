@@ -580,6 +580,23 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
+  // ==================== DOCUMENTS (persönlicher Dokumenten-Tresor, GLOBAL-App) ====================
+  // Faktortest App Factory: DOCUMENTS nutzt dieselben Shared-Bausteine wie DHL/MARITIME
+  // (AppNavigationComponent/AppAccountComponent/AppRegistry), nur eigene Konfiguration
+  // (DOCUMENTS_NAV_CONFIG). GLOBAL-Scope (kein storeId) -> keine Context-Auswahl-Route
+  // nötig. Erste rein PERSONAL-GLOBAL-App (Daten sind trotz GLOBAL-App-Scope user-privat,
+  // siehe ARCHITECTURE_APP_FACTORY.md).
+  {
+    path: 'apps/documents',
+    loadComponent: () => import('./features/documents/documents.component').then(m => m.DocumentsComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/documents/account',
+    loadComponent: () => import('./features/documents/documents-account.component').then(m => m.DocumentsAccountComponent),
+    canActivate: [authGuard]
+  },
+
   // ==================== SEO & Brand Management ====================
   {
     path: 'stores/:id/seo/redirects',

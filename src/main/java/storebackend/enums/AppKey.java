@@ -15,13 +15,17 @@ package storebackend.enums;
  * - MARITIME                -> GLOBAL (bereits heute nicht store-gebunden, siehe MaritimeController)
  * - ISSUE_ANALYSIS          -> GLOBAL (aktuell nur Feasibility-Spike ohne Store-Bezug,
  *                                      siehe IssueAnalysisTestController)
+ * - DOCUMENTS               -> GLOBAL (persönlicher Dokumenten-Tresor, rein user-privat,
+ *                                      bewusst OHNE storeId/Store-Bezug - siehe DocumentController
+ *                                      und ARCHITECTURE_APP_FACTORY.md Abschnitt "DOCUMENTS")
  */
 public enum AppKey {
     SHOP(AppScope.STORE),
     DHL(AppScope.STORE),
     LOYALTY(AppScope.STORE),
     MARITIME(AppScope.GLOBAL),
-    ISSUE_ANALYSIS(AppScope.GLOBAL);
+    ISSUE_ANALYSIS(AppScope.GLOBAL),
+    DOCUMENTS(AppScope.GLOBAL);
 
     private final AppScope scope;
 

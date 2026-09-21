@@ -1050,6 +1050,10 @@
       "issueAnalysis": {
         "title": "تحليل المشكلات",
         "description": "تحليل الحالات والمشكلات"
+      },
+      "documents": {
+        "title": "المستندات",
+        "description": "خزنة مستنداتك الشخصية"
       }
     }
   },
@@ -1540,6 +1544,87 @@
         "answer": "لا. تهدف هذه اللوحة إلى تقديم نظرة عامة على عمليات الميناء (Port Operations)، ولا تُعد بديلاً عن أنظمة الملاحة أو VTS أو الأنظمة الأمنية الرسمية."
       }
     }
+  },
+  "documents": {
+    "title": "مستنداتي",
+    "subtitle": "خزنة مستنداتك الشخصية",
+    "nav": {
+      "overview": "المستندات",
+      "account": "الحساب"
+    },
+    "tabs": {
+      "mine": "مستنداتي",
+      "shared": "التي شُوركت معي"
+    },
+    "actions": {
+      "takePhoto": "التقاط صورة",
+      "uploadFile": "رفع ملف",
+      "createManual": "إنشاء يدوي",
+      "view": "عرض",
+      "edit": "تعديل",
+      "share": "مشاركة",
+      "delete": "حذف",
+      "download": "فتح الملف",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "close": "إغلاق",
+      "removeShare": "إزالة المشاركة"
+    },
+    "searchPlaceholder": "البحث في المستندات...",
+    "empty": {
+      "mine": "لا توجد مستندات بعد. أنشئ مستندك الأول.",
+      "shared": "لم تتم مشاركة أي مستندات معك بعد."
+    },
+    "form": {
+      "title": "العنوان",
+      "category": "الفئة",
+      "note": "ملاحظة",
+      "documentDate": "تاريخ المستند",
+      "expiryDate": "تاريخ الانتهاء",
+      "chooseCategory": "اختر الفئة"
+    },
+    "categories": {
+      "INSURANCE": "تأمين",
+      "CONTRACT": "عقد",
+      "INVOICE": "فاتورة",
+      "WARRANTY": "ضمان",
+      "VEHICLE": "مركبة",
+      "APARTMENT": "سكن",
+      "WORK": "عمل",
+      "ID": "بطاقة/وثيقة هوية",
+      "OTHER": "أخرى"
+    },
+    "table": {
+      "title": "العنوان",
+      "category": "الفئة",
+      "expiryDate": "الانتهاء",
+      "documentDate": "التاريخ"
+    },
+    "share": {
+      "dialogTitle": "مشاركة المستند",
+      "emailLabel": "البريد الإلكتروني لمستخدم markt.ma",
+      "permissionInfo": "يمكن للمستخدم عرض المستند لكن لا يمكنه حذفه أو تعديله.",
+      "shareButton": "مشاركة",
+      "sharedWith": "تمت المشاركة مع",
+      "noShares": "لم تتم المشاركة مع أي شخص بعد.",
+      "ownerBadge": "المالك"
+    },
+    "detail": {
+      "title": "تفاصيل المستند",
+      "noFile": "لا توجد صورة/ملف مرفق",
+      "createdAt": "أُنشئ في",
+      "updatedAt": "آخر تحديث"
+    },
+    "errors": {
+      "uploadFailed": "فشل الرفع",
+      "notFound": "المستند غير موجود",
+      "accessDenied": "لا يوجد وصول لهذا المستند",
+      "shareFailed": "فشلت المشاركة",
+      "invalidEmail": "الرجاء إدخال بريد إلكتروني صالح",
+      "userNotFound": "لم يتم العثور على مستخدم markt.ma بهذا البريد الإلكتروني",
+      "titleRequired": "الرجاء إدخال عنوان"
+    },
+    "confirmDelete": "هل تريد فعلاً حذف هذا المستند؟"
   },
   "wizard": {
     "skip": "تخطي",

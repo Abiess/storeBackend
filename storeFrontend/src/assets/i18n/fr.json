@@ -1803,6 +1803,87 @@
       }
     }
   },
+  "documents": {
+    "title": "Mes documents",
+    "subtitle": "Votre coffre-fort de documents personnels",
+    "nav": {
+      "overview": "Documents",
+      "account": "Compte"
+    },
+    "tabs": {
+      "mine": "Mes documents",
+      "shared": "Partagés avec moi"
+    },
+    "actions": {
+      "takePhoto": "Prendre une photo",
+      "uploadFile": "Téléverser un fichier",
+      "createManual": "Créer manuellement",
+      "view": "Voir",
+      "edit": "Modifier",
+      "share": "Partager",
+      "delete": "Supprimer",
+      "download": "Ouvrir le fichier",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "close": "Fermer",
+      "removeShare": "Retirer le partage"
+    },
+    "searchPlaceholder": "Rechercher des documents...",
+    "empty": {
+      "mine": "Pas encore de documents. Créez votre premier document.",
+      "shared": "Aucun document n'a encore été partagé avec vous."
+    },
+    "form": {
+      "title": "Titre",
+      "category": "Catégorie",
+      "note": "Note",
+      "documentDate": "Date du document",
+      "expiryDate": "Date d'expiration",
+      "chooseCategory": "Choisir une catégorie"
+    },
+    "categories": {
+      "INSURANCE": "Assurance",
+      "CONTRACT": "Contrat",
+      "INVOICE": "Facture",
+      "WARRANTY": "Garantie",
+      "VEHICLE": "Véhicule",
+      "APARTMENT": "Logement",
+      "WORK": "Travail",
+      "ID": "Pièce d'identité",
+      "OTHER": "Autre"
+    },
+    "table": {
+      "title": "Titre",
+      "category": "Catégorie",
+      "expiryDate": "Expiration",
+      "documentDate": "Date"
+    },
+    "share": {
+      "dialogTitle": "Partager le document",
+      "emailLabel": "E-mail de l'utilisateur markt.ma",
+      "permissionInfo": "L'utilisateur peut consulter le document mais ne peut pas le supprimer ni le modifier.",
+      "shareButton": "Partager",
+      "sharedWith": "Partagé avec",
+      "noShares": "Pas encore partagé avec quelqu'un.",
+      "ownerBadge": "Propriétaire"
+    },
+    "detail": {
+      "title": "Détails du document",
+      "noFile": "Aucune photo/fichier joint",
+      "createdAt": "Créé le",
+      "updatedAt": "Dernière modification"
+    },
+    "errors": {
+      "uploadFailed": "Échec du téléversement",
+      "notFound": "Document introuvable",
+      "accessDenied": "Aucun accès à ce document",
+      "shareFailed": "Échec du partage",
+      "invalidEmail": "Veuillez saisir une adresse e-mail valide",
+      "userNotFound": "Aucun utilisateur markt.ma trouvé avec cet e-mail",
+      "titleRequired": "Veuillez saisir un titre"
+    },
+    "confirmDelete": "Vraiment supprimer ce document ?"
+  },
   "wizard": {
     "skip": "Ignorer",
     "createStore": "Créer une boutique",

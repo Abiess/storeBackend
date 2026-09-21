@@ -97,6 +97,14 @@ export const APP_REGISTRY: Record<AppKey, AppRegistryEntry> = {
     icon: '🛠️',
     baseRoute: '/tools/issue-analysis',
     scope: 'GLOBAL'
+  },
+  [AppKey.DOCUMENTS]: {
+    key: AppKey.DOCUMENTS,
+    titleKey: 'apps.registry.documents.title',
+    descriptionKey: 'apps.registry.documents.description',
+    icon: '📄',
+    baseRoute: '/apps/documents',
+    scope: 'GLOBAL'
   }
 };
 
@@ -106,7 +114,8 @@ export const APP_REGISTRY_ORDER: AppKey[] = [
   AppKey.LOYALTY,
   AppKey.SHOP,
   AppKey.MARITIME,
-  AppKey.ISSUE_ANALYSIS
+  AppKey.ISSUE_ANALYSIS,
+  AppKey.DOCUMENTS
 ];
 
 export function getAppRegistryEntry(app: AppKey): AppRegistryEntry {
