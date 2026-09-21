@@ -90,12 +90,20 @@ flutter pub get
 
 ### Backend-URL
 
-Default ist `http://10.0.2.2:8080` (Android-Emulator -> Host-Localhost). Fuer
-physisches Geraet/iOS-Simulator im selben Netz oder Produktion:
+Default ist `https://api.markt.ma/api` (Produktion) - das funktioniert direkt
+auf einem echten Android-/iOS-Geraet. `10.0.2.2` ist eine Alias-IP, die
+**ausschliesslich im Android-Emulator** auf den Localhost des Host-Rechners
+zeigt; auf einem physischen Geraet fuehrt sie zu
+`SocketException: Connection timed out`. Fuer lokale Entwicklung im
+Android-Emulator gegen ein lokal laufendes Backend deshalb explizit
+ueberschreiben:
 
 ```powershell
-flutter run --dart-define=MARKT_MA_API_BASE_URL=https://api.markt.ma
+flutter run --dart-define=MARKT_MA_API_BASE_URL=http://10.0.2.2:8080/api
 ```
+
+`baseUrl` enthaelt bereits das `/api`-Praefix; alle Pfade in `ApiConfig`
+(`loginPath`, `documentsUploadPath`, ...) sind relativ dazu.
 
 ## 5. Was aus markt.ma direkt wiederverwendet wurde
 
