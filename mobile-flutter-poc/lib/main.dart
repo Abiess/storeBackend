@@ -1,26 +1,13 @@
-import 'package:flutter/material.dart';
+import 'entrypoints/main_documents.dart' as documents_entrypoint;
 
-import 'screens/login_screen.dart';
-import 'theme/markt_theme.dart';
+/// Bestehende CI-/lokale Kommandos (`flutter run`, `flutter build ...` ohne
+/// `-t`) erwarten weiterhin `lib/main.dart` als Default-Entrypoint (siehe
+/// Multi-App-Audit vom 22.09.) - dieser startet deshalb unveraendert die
+/// Documents-App, delegiert dafuer aber vollstaendig an den eigenstaendigen
+/// `lib/entrypoints/main_documents.dart`, statt die Konfiguration hier ein
+/// zweites Mal zu duplizieren. Kuenftige Apps werden NICHT hierueber
+/// gestartet, sondern ausschliesslich ueber ihren eigenen
+/// `lib/entrypoints/main_<app>.dart` (z.B. via `flutter build web -t
+/// lib/entrypoints/main_maritime.dart`).
+void main() => documents_entrypoint.main();
 
-void main() {
-  runApp(const MarktMaDocumentsPocApp());
-}
-
-class MarktMaDocumentsPocApp extends StatelessWidget {
-  const MarktMaDocumentsPocApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'markt.ma Documents PoC',
-      // Zentrales markt.ma Theme (siehe lib/theme/markt_theme.dart) statt
-      // Inline-ThemeData - einziger Ort fuer Farben/Card-/AppBar-Stil,
-      // wiederverwendbar fuer alle zukuenftigen App-Factory-Screens.
-      theme: MarktTheme.light(),
-      darkTheme: MarktTheme.dark(),
-      themeMode: ThemeMode.system,
-      home: const AuthGate(),
-    );
-  }
-}

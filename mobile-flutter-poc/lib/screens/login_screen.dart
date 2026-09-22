@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
-import '../services/token_storage.dart';
 import '../widgets/shared/markt_login_screen.dart';
 import 'documents_screen.dart';
 
@@ -35,27 +34,6 @@ class LoginScreen extends StatelessWidget {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const DocumentsScreen()),
         );
-      },
-    );
-  }
-}
-
-/// Prueft beim Start, ob bereits ein JWT gespeichert ist, und ueberspringt
-/// den Login-Screen in dem Fall (einfache Persistenz-Demo, kein
-/// vollstaendiges Session-Management/Refresh).
-class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<String?>(
-      future: TokenStorage.instance.readToken(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
-        }
-        final hasToken = snapshot.data != null && snapshot.data!.isNotEmpty;
-        return hasToken ? const DocumentsScreen() : const LoginScreen();
       },
     );
   }
