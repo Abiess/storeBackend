@@ -8,6 +8,22 @@ import 'package:markt_ma_documents_poc/widgets/shared/markt_app_shell.dart';
 import 'package:markt_ma_documents_poc/widgets/shared/markt_side_nav.dart';
 
 void main() {
+  // `MediaQuery`/`SizedBox` allein reichen nicht aus, um Breiten > 800px zu
+  // erzwingen: Der Standard-Testviewport von `flutter_test` ist 800x600 und
+  // ein SizedBox kann seine Kind-Constraints nicht ueber die tatsaechliche
+  // Fenstergroesse hinaus vergroessern (`BoxConstraints.enforce` clamped auf
+  // das Maximum des Vorfahren). Deshalb muss fuer Desktop-Breiten (>= 1024)
+  // zusaetzlich `tester.view` direkt vergroessert werden - siehe
+  // https://api.flutter.dev/flutter/flutter_test/TestFlutterView-class.html.
+  Future<void> setSurfaceSize(WidgetTester tester, Size size) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+  }
+
   Widget wrap(
     Widget child, {
     Size size = const Size(1400, 900),
@@ -35,6 +51,7 @@ void main() {
   testWidgets('Desktop (>= 1024px): permanente Sidebar sichtbar, kein Drawer/Hamburger', (
     tester,
   ) async {
+    await setSurfaceSize(tester, const Size(1400, 900));
     await tester.pumpWidget(wrap(buildShell(), size: const Size(1400, 900)));
     await tester.pumpAndSettle();
 
@@ -49,6 +66,7 @@ void main() {
   testWidgets('Mobile (< 1024px): Hamburger vorhanden, Drawer oeffnet MarktSideNav', (
     tester,
   ) async {
+    await setSurfaceSize(tester, const Size(400, 800));
     await tester.pumpWidget(wrap(buildShell(), size: const Size(400, 800)));
     await tester.pumpAndSettle();
 
@@ -63,6 +81,7 @@ void main() {
   });
 
   testWidgets('rendert fehlerfrei unter Light- und Dark-Theme', (tester) async {
+    await setSurfaceSize(tester, const Size(1400, 900));
     await tester.pumpWidget(wrap(buildShell(), theme: MarktTheme.light()));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
@@ -73,6 +92,7 @@ void main() {
   });
 
   testWidgets('floatingActionButton wird durchgereicht', (tester) async {
+    await setSurfaceSize(tester, const Size(1400, 900));
     await tester.pumpWidget(
       wrap(
         MarktAppShell(
