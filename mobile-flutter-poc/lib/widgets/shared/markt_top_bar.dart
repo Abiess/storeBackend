@@ -4,10 +4,12 @@ import '../../theme/markt_theme.dart';
 
 /// Zentrale, generische Topbar (Shared UI Primitive).
 ///
-/// Vorher ein privates `_MarktTopBar` innerhalb von `markt_app_shell.dart` -
-/// als eigene, oeffentliche Komponente extrahiert (Visual Pass Phase 1),
-/// damit sie unabhaengig von [MarktAppShell] wiederverwendet/getestet
-/// werden kann, ohne den Shell-Vertrag selbst zu vergroessern.
+/// Visual Pass Phase 2 (22.09., konkrete visuelle Referenz: `ColorlibHQ/
+/// kite-flutter-admin-dashboard`, `_TopBar` in `app_shell.dart`): feste,
+/// kompakte Bar-Hoehe (60px, vorher variabel ~76-84px durch `lg`-Padding)
+/// und ein moderaterer, weniger "fetter" Seitentitel (`titleLarge`/w600
+/// statt `headlineSmall`/w700) - beides direkt sichtbar im Screenshot-
+/// Vergleich, ohne den Vertrag zu aendern.
 ///
 /// Bewusst kein `AppBar`/`Scaffold.appBar`, sondern ein eigenstaendiges
 /// Widget innerhalb des Content-Bereichs - dadurch spannt die Topbar auf
@@ -25,6 +27,9 @@ class MarktTopBar extends StatelessWidget {
     this.actions,
     this.profile,
   });
+
+  /// Feste Hoehe der Bar (Kite-Referenzwert: 60px).
+  static const double height = 60;
 
   final String title;
 
@@ -50,30 +55,29 @@ class MarktTopBar extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
+      height: height,
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.xl, vertical: MarktSpacing.lg),
+      padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.xl),
       child: Row(
         children: [
           if (showMenuButton) ...[
-            Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-              child: IconButton(
-                icon: const Icon(Icons.menu),
-                tooltip: 'Menu',
-                onPressed: onMenuTap ?? () => Scaffold.of(context).openDrawer(),
-              ),
+            IconButton(
+              icon: const Icon(Icons.menu),
+              iconSize: 20,
+              color: colorScheme.onSurfaceVariant,
+              tooltip: 'Menu',
+              onPressed: onMenuTap ?? () => Scaffold.of(context).openDrawer(),
             ),
-            const SizedBox(width: MarktSpacing.sm),
+            const SizedBox(width: MarktSpacing.xs),
           ],
           Expanded(
             child: Text(
               title,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           ...?actions,

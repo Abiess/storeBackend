@@ -75,7 +75,10 @@ void main() {
     expect(find.byType(DocumentsScreen), findsNothing);
 
     // MarktAppShell-Titel + generische Shared Widgets (MarktCard/
-    // MarktIconBadge) werden wiederverwendet, keine Fake-Fachdaten.
-    expect(find.text('Maritime (PoC)'), findsOneWidget);
+    // MarktIconBadge) werden wiederverwendet, keine Fake-Fachdaten. Der
+    // Titel "Maritime" taucht bewusst mehrfach auf (Topbar-Titel,
+    // Nav-Item, Body-Ueberschrift) - relevant ist nur, dass er ueberhaupt
+    // sichtbar ist, nicht mehr "(PoC)" heisst.
+    expect(find.text('Maritime'), findsWidgets);
   });
 }

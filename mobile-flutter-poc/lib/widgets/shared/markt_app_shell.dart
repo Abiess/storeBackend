@@ -92,7 +92,7 @@ class MarktAppShell extends StatelessWidget {
           // setzen sich bewusst mit eigenen, davon abgesetzten
           // Oberflaechen ab (siehe [MarktSideNav] und [MarktTopBar]).
           backgroundColor: colorScheme.surfaceContainerLowest,
-          drawer: showDrawer ? Drawer(width: 300, child: sideNav) : null,
+          drawer: showDrawer ? Drawer(width: 264, child: sideNav) : null,
           floatingActionButton: floatingActionButton,
           bottomNavigationBar: showBottomNav ? _buildBottomNav(context) : null,
           body: SafeArea(
@@ -101,7 +101,12 @@ class MarktAppShell extends StatelessWidget {
               children: [
                 if (isDesktop)
                   Container(
-                    width: 280,
+                    // Kite-Referenzbreite (248px) statt der breiteren
+                    // Phase-1-Sidebar (280px) - zusammen mit den flachen,
+                    // kompakten Nav-Tiles wirkt die Sidebar dadurch als
+                    // schlanke, professionelle Navigationsspalte statt als
+                    // breiter Block.
+                    width: 248,
                     decoration: BoxDecoration(
                       border: Border(right: BorderSide(color: colorScheme.outlineVariant)),
                     ),
@@ -122,8 +127,10 @@ class MarktAppShell extends StatelessWidget {
                           // beginnt nicht direkt unter der Topbar, sondern
                           // in einem konsistenten Innenabstand - unabhaengig
                           // davon, was `body` konkret zeigt (Liste, Grid,
-                          // Error-Banner, ...).
-                          padding: const EdgeInsets.all(MarktSpacing.lg),
+                          // Error-Banner, ...). Grosszuegigerer Abstand
+                          // (`xl` statt `lg`, Phase 2) fuer den luftigeren
+                          // Kite-Dashboard-Rhythmus.
+                          padding: const EdgeInsets.all(MarktSpacing.xl),
                           child: body,
                         ),
                       ),

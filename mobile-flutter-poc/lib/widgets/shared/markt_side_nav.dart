@@ -34,33 +34,44 @@ class MarktNavItem {
 ///
 /// Wird von [MarktAppShell] sowohl als permanente Desktop-Sidebar als auch
 /// unveraendert als Inhalt eines mobilen `Drawer` verwendet - dieselbe
-/// Widget-Struktur fuer beide Faelle. Inspiriert vom `SideMenu`-Pattern aus
-/// `abuanwar072/Flutter-Responsive-Admin-Panel-or-Dashboard` (MIT), aber
-/// komplett neu geschrieben: keine hartcodierten Farben (nur
-/// `Theme.of(context).colorScheme`/`textTheme`), keine SVG-Icons/Assets,
-/// keine fachlichen Nav-Eintraege.
+/// Widget-Struktur fuer beide Faelle.
 ///
-/// Visual Pass (22.09.): Die Sidebar bekommt bewusst eine eigene, vom
-/// restlichen Workspace abgesetzte Oberflaeche (`surfaceContainerHigh`
-/// statt `surface`) sowie deutlich praesentere Nav-Tiles (groessere
-/// Touch-/Textflaeche, linker Akzentbalken im Selected-State), damit sie
-/// wie ein echter Navigationsbereich wirkt statt wie schmaler Fuelltext.
+/// Visual Pass Phase 2 (22.09., konkrete visuelle Referenz statt nur
+/// Architektur-Inspiration: `ColorlibHQ/kite-flutter-admin-dashboard`,
+/// `lib/shared/layout/app_shell.dart` - Look 1:1 uebernommen, KEINE
+/// Dependencies/Architektur davon: kompakte, FLACHE Nav-Tiles (kleine
+/// Icons, kleine Schrift, dichte 2px-Abstaende) statt grosser
+/// "Card"-Tiles mit Akzentbalken/Elevation aus Phase 1 - genau das war der
+/// in Phase 1 zu wenig sichtbare Unterschied. Zusaetzlich eine dezente,
+/// generische Gruppen-Ueberschrift ([sectionLabel], GROSSGESCHRIEBEN,
+/// klein, ausgegraut) oberhalb der Liste, analog zu Kites Nav-Group-Labels
+/// - ohne jede Fachlichkeit, da der Text vollstaendig ueberschreibbar ist.
 ///
 /// [header] ist ein optionaler Slot fuer Branding (z.B. "markt.ma"-Titel)
 /// oberhalb der Liste, [footer] ein optionaler Slot unterhalb (z.B.
-/// spaeter Account/Settings) - beide werden vollstaendig vom Aufrufer
-/// befuellt, diese Komponente kennt selbst keine Marke/Farbe/Fachlichkeit
-/// dafuer.
+/// Account-Kachel) - beide werden vollstaendig vom Aufrufer befuellt,
+/// diese Komponente kennt selbst keine Marke/Farbe/Fachlichkeit dafuer.
 class MarktSideNav extends StatelessWidget {
-  const MarktSideNav({super.key, required this.items, this.header, this.footer});
+  const MarktSideNav({
+    super.key,
+    required this.items,
+    this.header,
+    this.footer,
+    this.sectionLabel = 'Menu',
+  });
 
   final List<MarktNavItem> items;
   final Widget? header;
   final Widget? footer;
 
+  /// Generische Gruppen-Ueberschrift oberhalb der Nav-Liste (z.B. "Menu").
+  /// Bewusst ohne Fachlichkeit - `null` blendet sie aus.
+  final String? sectionLabel;
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Material(
       color: colorScheme.surfaceContainerHigh,
@@ -74,8 +85,30 @@ class MarktSideNav extends StatelessWidget {
             ],
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: MarktSpacing.md, horizontal: MarktSpacing.sm),
-                children: [for (final item in items) _MarktNavTile(item: item)],
+                // Deutlich dichter als Phase 1 (war `md`/`sm`) - Kite
+                // fuehrt die Nav-Liste direkt an den Raendern der Sidebar,
+                // nicht als abgesetzten Innenblock.
+                padding: const EdgeInsets.symmetric(vertical: MarktSpacing.sm, horizontal: MarktSpacing.sm),
+                children: [
+                  if (sectionLabel != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        MarktSpacing.md,
+                        MarktSpacing.sm,
+                        MarktSpacing.md,
+                        MarktSpacing.xs,
+                      ),
+                      child: Text(
+                        sectionLabel!.toUpperCase(),
+                        style: textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                  for (final item in items) _MarktNavTile(item: item),
+                ],
               ),
             ),
             if (footer != null) ...[
@@ -100,57 +133,38 @@ class _MarktNavTile extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final foreground = item.selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
 
+    // Flache, kompakte Kite-Kachel statt der grossen "Card"-Kachel aus
+    // Phase 1 (kein Akzentbalken, keine Elevation, kein 24px-Icon/
+    // bodyLarge-Text) - kleiner Radius, dichte 2px-Vertikalabstaende,
+    // vollflaechig eingefaerbt statt nur angedeutet.
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.sm, vertical: MarktSpacing.xs / 2),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Material(
-        // Etwas praesenterer Selected-Zustand (Kite-Richtung): kraeftigerer
-        // Tint statt nur `withValues(alpha: 0.55)` plus dezente Elevation,
-        // damit sich der aktive Eintrag klarer vom Rest abhebt.
-        color: item.selected ? colorScheme.primaryContainer.withValues(alpha: 0.7) : Colors.transparent,
-        elevation: item.selected ? 1 : 0,
-        shadowColor: colorScheme.shadow.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(16),
+        color: item.selected ? colorScheme.primary.withValues(alpha: 0.14) : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          hoverColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(8),
+          hoverColor: colorScheme.onSurface.withValues(alpha: 0.06),
           onTap: item.onTap,
-          child: Row(
-            children: [
-              // Linker Akzentbalken im Selected-State - gibt der Navigation
-              // mehr visuelle Praesenz, statt nur eine dezent getoente
-              // Hintergrundflaeche zu zeigen.
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                width: 4,
-                height: 32,
-                margin: const EdgeInsets.only(left: MarktSpacing.xs),
-                decoration: BoxDecoration(
-                  color: item.selected ? colorScheme.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.md, vertical: MarktSpacing.md),
-                  child: Row(
-                    children: [
-                      Icon(item.icon, color: foreground, size: 24),
-                      const SizedBox(width: MarktSpacing.md),
-                      Expanded(
-                        child: Text(
-                          item.label,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.bodyLarge?.copyWith(
-                            color: foreground,
-                            fontWeight: item.selected ? FontWeight.w700 : FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.md, vertical: 10),
+            child: Row(
+              children: [
+                Icon(item.icon, color: foreground, size: 18),
+                const SizedBox(width: MarktSpacing.md),
+                Expanded(
+                  child: Text(
+                    item.label,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: foreground,
+                      fontSize: 13.5,
+                      fontWeight: item.selected ? FontWeight.w600 : FontWeight.w500,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

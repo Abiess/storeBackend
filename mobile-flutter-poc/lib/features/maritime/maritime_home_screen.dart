@@ -32,7 +32,7 @@ class MaritimeHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MarktAppShell(
-      title: 'Maritime (PoC)',
+      title: 'Maritime',
       sideNavHeader: _buildBrandHeader(context),
       navItems: const [
         MarktNavItem(icon: Icons.directions_boat, label: 'Maritime', selected: true),

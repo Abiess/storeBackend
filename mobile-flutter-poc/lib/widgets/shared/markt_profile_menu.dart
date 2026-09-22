@@ -3,20 +3,26 @@ import 'package:flutter/material.dart';
 import '../../theme/markt_theme.dart';
 
 /// Zentraler, generischer Profil-/Logout-Menuepunkt fuer die Topbar
-/// (Shared UI Primitive, Phase 1).
+/// (Shared UI Primitive).
 ///
-/// Ersetzt den bisherigen einfachen `IconButton(Icons.logout)` in
-/// `DocumentsScreen`/`MaritimeHomeScreen` durch ein kleines, wiederverwend-
-/// bares Popup-Menu im Kite-Stil (Avatar/Initialen-Chip + Dropdown mit
-/// optionalem Nutzer-Label und "Abmelden"). Kennt bewusst KEINE
-/// Fachlichkeit und KEINEN Auth-Zustand selbst - [onLogout] fuehrt den
-/// tatsaechlichen Logout durch (bestehender `AuthService.logout`), diese
-/// Komponente ruft ihn nur auf.
+/// Ersetzt den bisherigen einfachen `IconButton(Icons.logout)` durch ein
+/// kleines, wiederverwendbares Popup-Menu. Kennt bewusst KEINE Fachlichkeit
+/// und KEINEN Auth-Zustand selbst - [onLogout] fuehrt den tatsaechlichen
+/// Logout durch (bestehender `AuthService.logout`), diese Komponente ruft
+/// ihn nur auf.
+///
+/// Visual Pass Phase 2 (22.09., konkrete visuelle Referenz: `ColorlibHQ/
+/// kite-flutter-admin-dashboard` Account-Menu): Trigger ist jetzt Avatar
+/// **plus** kleiner Dropdown-Chevron (vorher nur ein nackter Avatar-Chip
+/// ohne Oeffnungs-Affordanz) und der Popup-Header zeigt eine echte
+/// zweizeilige Kopfzeile (Avatar + Name/Label als fette erste Zeile,
+/// generische zweite Zeile) statt nur eines einzelnen grauen Text-Items.
 class MarktProfileMenu extends StatelessWidget {
   const MarktProfileMenu({
     super.key,
     required this.onLogout,
     this.userLabel,
+    this.userSubLabel,
     this.logoutLabel = 'Abmelden',
   });
 
@@ -24,9 +30,12 @@ class MarktProfileMenu extends StatelessWidget {
   /// Aufgabe dieser Komponente.
   final VoidCallback onLogout;
 
-  /// Optionaler Anzeigename/E-Mail des angemeldeten Users, z.B. im
-  /// Menue-Header gezeigt. Ohne Angabe wird kein Header gerendert.
+  /// Optionaler Anzeigename des angemeldeten Users fuer den Menue-Header.
+  /// Ohne Angabe wird ein generisches Label ("Konto") gezeigt.
   final String? userLabel;
+
+  /// Optionale zweite, dezentere Kopfzeile (z.B. E-Mail/Rolle).
+  final String? userSubLabel;
 
   /// Beschriftung des Logout-Eintrags, ueberschreibbar fuer i18n.
   final String logoutLabel;
@@ -35,28 +44,49 @@ class MarktProfileMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final label = userLabel ?? 'Konto';
 
     return PopupMenuButton<_MarktProfileMenuAction>(
       tooltip: 'Konto',
-      offset: const Offset(0, 48),
+      offset: const Offset(0, 44),
+      position: PopupMenuPosition.under,
       onSelected: (action) {
         if (action == _MarktProfileMenuAction.logout) onLogout();
       },
       itemBuilder: (context) => [
-        if (userLabel != null) ...[
-          PopupMenuItem<_MarktProfileMenuAction>(
-            enabled: false,
-            child: Text(
-              userLabel!,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
+        PopupMenuItem<_MarktProfileMenuAction>(
+          enabled: false,
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: colorScheme.primaryContainer,
+                child: Icon(Icons.person_outline, color: colorScheme.onPrimaryContainer, size: 18),
               ),
-            ),
+              const SizedBox(width: MarktSpacing.sm),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    if (userSubLabel != null)
+                      Text(
+                        userSubLabel!,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const PopupMenuDivider(),
-        ],
+        ),
+        const PopupMenuDivider(),
         PopupMenuItem<_MarktProfileMenuAction>(
           value: _MarktProfileMenuAction.logout,
           child: Row(
@@ -70,10 +100,17 @@ class MarktProfileMenu extends StatelessWidget {
       ],
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.xs),
-        child: CircleAvatar(
-          radius: 18,
-          backgroundColor: colorScheme.primaryContainer,
-          child: Icon(Icons.person_outline, color: colorScheme.onPrimaryContainer, size: 20),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: colorScheme.primaryContainer,
+              child: Icon(Icons.person_outline, color: colorScheme.onPrimaryContainer, size: 18),
+            ),
+            const SizedBox(width: 2),
+            Icon(Icons.keyboard_arrow_down, size: 18, color: colorScheme.onSurfaceVariant),
+          ],
         ),
       ),
     );

@@ -134,7 +134,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
     // - kein App-Launcher, keine hartcodierte App-Liste, keine
     // Entitlement-Logik (siehe Audit vom 22.09.).
     return MarktAppShell(
-      title: 'Documents (PoC)',
+      title: 'Documents',
       sideNavHeader: _buildBrandHeader(context),
       navItems: const [
         MarktNavItem(icon: Icons.description, label: 'Documents', selected: true),
