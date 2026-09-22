@@ -34,6 +34,7 @@ class MarktResponsiveDataList<T> extends StatelessWidget {
     this.emptyWidget,
     this.loadingWidget,
     this.errorBuilder,
+    this.gridItemHeight = 88,
   });
 
   /// Anzuzeigende Elemente. Fachlicher Typ, der Component unbekannt.
@@ -58,6 +59,27 @@ class MarktResponsiveDataList<T> extends StatelessWidget {
   final Widget? emptyWidget;
   final Widget? loadingWidget;
   final Widget Function(BuildContext context, Object error)? errorBuilder;
+
+  /// Feste Zeilenhoehe (in logischen Pixeln) einer Grid-Zelle
+  /// (Tablet/Large, ab 2 Spalten).
+  ///
+  /// Bewusst eine feste Hoehe statt `childAspectRatio`: Ein Aspect-Ratio
+  /// leitet die Zellhoehe aus der Spaltenbreite ab - bei 3 Spalten auf
+  /// grossen Desktop-Bildschirmen wird die Zelle dadurch sehr breit UND
+  /// (proportional) sehr hoch, obwohl kompakte Row-Cards (Icon + 1-2
+  /// Textzeilen, z.B. `DocumentCard`) diese Hoehe gar nicht ausfuellen -
+  /// das erzeugt genau den grossen Leerraum, den `childAspectRatio` bei
+  /// breiten Spalten verursacht. Eine feste, von der Spaltenbreite
+  /// unabhaengige Hoehe verhindert das grundsaetzlich, unabhaengig davon,
+  /// wie breit eine einzelne Spalte gerade ist.
+  ///
+  /// Der Default (88) passt zur aktuellen `DocumentCard` (48px Icon-Badge +
+  /// Padding/Margin + zwei kurze Textzeilen). Zukuenftige Feature-Cards mit
+  /// abweichendem Platzbedarf (z.B. `DhlParcelCard`, `LoyaltyAccountCard`)
+  /// koennen diesen Wert pro Aufruf ueberschreiben, ohne dass diese
+  /// Shared-Komponente selbst irgendetwas ueber die jeweilige Fachlichkeit
+  /// wissen muss.
+  final double gridItemHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +159,7 @@ class MarktResponsiveDataList<T> extends StatelessWidget {
             crossAxisCount: columns,
             mainAxisSpacing: 8,
             crossAxisSpacing: 8,
-            childAspectRatio: 2.4,
+            mainAxisExtent: gridItemHeight,
           ),
           itemCount: items.length,
           itemBuilder: (context, index) => itemBuilder(context, items[index]),

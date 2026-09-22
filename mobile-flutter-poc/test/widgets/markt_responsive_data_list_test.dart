@@ -144,6 +144,38 @@ void main() {
     expect(find.text('Custom: Netzwerkfehler'), findsOneWidget);
   });
 
+  testWidgets('Grid-Zellhoehe ist fix (mainAxisExtent), nicht von der Spaltenbreite abgeleitet', (
+    tester,
+  ) async {
+    // Regressionstest fuer den Desktop-Bug: `childAspectRatio` haette die
+    // Zellhoehe aus der (bei 3 Spalten sehr grossen) Spaltenbreite
+    // abgeleitet und dadurch viel zu hohe Cards mit Leerraum erzeugt.
+    // `mainAxisExtent` muss stattdessen unabhaengig von der verfuegbaren
+    // Breite konstant bleiben.
+    Future<double> gridCellHeight(Size size) async {
+      await tester.pumpWidget(
+        wrap(
+          MarktResponsiveDataList<String>(
+            items: const ['Alpha', 'Beta', 'Gamma'],
+            itemBuilder: (context, item) => Text(item),
+          ),
+          size: size,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final delegate =
+          tester.widget<GridView>(find.byType(GridView)).gridDelegate
+              as SliverGridDelegateWithFixedCrossAxisCount;
+      return delegate.mainAxisExtent!;
+    }
+
+    final tabletHeight = await gridCellHeight(const Size(800, 800)); // 2 Spalten
+    final desktopHeight = await gridCellHeight(const Size(1600, 800)); // 3 Spalten, sehr breit
+
+    expect(tabletHeight, desktopHeight);
+  });
+
   testWidgets('Pull-to-Refresh funktioniert auch im Empty-State', (tester) async {
     var refreshCalled = false;
 
