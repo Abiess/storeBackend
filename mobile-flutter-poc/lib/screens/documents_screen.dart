@@ -8,7 +8,9 @@ import '../services/auth_service.dart';
 import '../services/documents_service.dart';
 import '../theme/markt_theme.dart';
 import '../widgets/documents/document_card.dart';
+import '../widgets/shared/markt_app_shell.dart';
 import '../widgets/shared/markt_responsive_data_list.dart';
+import '../widgets/shared/markt_side_nav.dart';
 import 'login_screen.dart';
 
 /// Kleine DOCUMENTS-Seite fuer den PoC: Liste bestehender Dokumente
@@ -125,21 +127,51 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Documents (PoC)'),
-        actions: [
-          IconButton(onPressed: _loadDocuments, icon: const Icon(Icons.refresh)),
-          IconButton(onPressed: _logout, icon: const Icon(Icons.logout)),
-        ],
-      ),
-      body: _buildBody(),
+    // MarktAppShell/MarktSideNav sind bewusst generisch (siehe dortige
+    // Doku) und kennen kein "Documents". Dieser Screen ist aktuell der
+    // einzige Consumer und definiert deshalb selbst genau EINEN Nav-Eintrag
+    // - kein App-Launcher, keine hartcodierte App-Liste, keine
+    // Entitlement-Logik (siehe Audit vom 22.09.).
+    return MarktAppShell(
+      title: 'Documents (PoC)',
+      sideNavHeader: _buildBrandHeader(context),
+      navItems: const [
+        MarktNavItem(icon: Icons.description, label: 'Documents', selected: true),
+      ],
+      actions: [
+        IconButton(onPressed: _loading ? null : _loadDocuments, icon: const Icon(Icons.refresh)),
+      ],
+      profile: IconButton(onPressed: _logout, icon: const Icon(Icons.logout), tooltip: 'Logout'),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _uploading ? null : _takePhotoAndUpload,
         icon: _uploading
             ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
             : const Icon(Icons.photo_camera),
         label: const Text('Fotografieren'),
+      ),
+      body: _buildBody(),
+    );
+  }
+
+  /// Kleiner Branding-Slot oberhalb der Sidebar/des Drawers. Lebt bewusst
+  /// hier (Consumer), nicht in `MarktSideNav`/`MarktAppShell` selbst - die
+  /// Shared-Shell kennt keine markt.ma-spezifische Darstellung dafuer.
+  Widget _buildBrandHeader(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.all(MarktSpacing.lg),
+      child: Row(
+        children: [
+          Icon(Icons.apps, color: colorScheme.primary),
+          const SizedBox(width: MarktSpacing.sm),
+          Text(
+            'markt.ma',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.w700),
+          ),
+        ],
       ),
     );
   }

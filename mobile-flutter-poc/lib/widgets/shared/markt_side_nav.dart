@@ -1,0 +1,118 @@
+import 'package:flutter/material.dart';
+
+import '../../theme/markt_theme.dart';
+
+/// Generisches Datenmodell fuer einen Eintrag in [MarktSideNav].
+///
+/// Bewusst ohne jede Fachlichkeit (kein `DocumentsNavItem`, kein
+/// App-Registry-/Entitlement-Konzept) - analog zur Trennung, die
+/// `MarktResponsiveDataList<T>` schon fuer Listen/Grids durchsetzt: Diese
+/// Klasse kennt nur Icon/Label/Auswahlzustand/Tap-Handler. Welche
+/// konkreten Eintraege (Documents, spaeter DHL/Loyalty/...) existieren,
+/// entscheidet ausschliesslich der Aufrufer (`MarktAppShell`-Consumer).
+@immutable
+class MarktNavItem {
+  const MarktNavItem({
+    required this.icon,
+    required this.label,
+    this.selected = false,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+
+  /// Ob dieser Eintrag aktuell als "aktiv" hervorgehoben werden soll.
+  final bool selected;
+
+  /// Optionaler Tap-Handler. `null`, wenn der Eintrag (noch) nicht
+  /// navigierbar ist (z.B. aktuell einziger Consumer "Documents").
+  final VoidCallback? onTap;
+}
+
+/// Zentrale, generische Navigations-Liste (Shared Layout).
+///
+/// Wird von [MarktAppShell] sowohl als permanente Desktop-Sidebar als auch
+/// unveraendert als Inhalt eines mobilen `Drawer` verwendet - dieselbe
+/// Widget-Struktur fuer beide Faelle. Inspiriert vom `SideMenu`-Pattern aus
+/// `abuanwar072/Flutter-Responsive-Admin-Panel-or-Dashboard` (MIT), aber
+/// komplett neu geschrieben: keine hartcodierten Farben (nur
+/// `Theme.of(context).colorScheme`/`textTheme`), keine SVG-Icons/Assets,
+/// keine fachlichen Nav-Eintraege.
+///
+/// [header] ist ein optionaler Slot fuer Branding (z.B. "markt.ma"-Titel)
+/// oberhalb der Liste - vom Aufrufer befuellt, diese Komponente selbst
+/// kennt keine Marke/Farbe dafuer.
+class MarktSideNav extends StatelessWidget {
+  const MarktSideNav({super.key, required this.items, this.header});
+
+  final List<MarktNavItem> items;
+  final Widget? header;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colorScheme.surface,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (header != null) header!,
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: MarktSpacing.sm),
+                children: [for (final item in items) _MarktNavTile(item: item)],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MarktNavTile extends StatelessWidget {
+  const _MarktNavTile({required this.item});
+
+  final MarktNavItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final foreground = item.selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.sm, vertical: MarktSpacing.xs / 2),
+      child: Material(
+        color: item.selected ? colorScheme.primaryContainer.withValues(alpha: 0.5) : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: item.onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.md, vertical: MarktSpacing.sm),
+            child: Row(
+              children: [
+                Icon(item.icon, color: foreground, size: 22),
+                const SizedBox(width: MarktSpacing.md),
+                Expanded(
+                  child: Text(
+                    item.label,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: foreground,
+                      fontWeight: item.selected ? FontWeight.w600 : FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

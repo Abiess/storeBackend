@@ -21,4 +21,11 @@ class MarktBreakpoints {
     if (width >= tabletMin) return 2;
     return 1;
   }
+
+  /// Liefert `true`, wenn eine gegebene verfuegbare Breite als "Desktop"
+  /// gilt. Nutzt denselben [largeMin]-Schwellwert wie [columnsForWidth] -
+  /// KEIN neuer/zusaetzlicher Breakpoint, nur eine semantische Abfrage
+  /// darauf. Wird von [MarktAppShell] genutzt, um zwischen permanenter
+  /// Sidebar (Desktop) und Drawer (Mobile/Tablet) umzuschalten.
+  static bool isDesktop(double width) => width >= largeMin;
 }
