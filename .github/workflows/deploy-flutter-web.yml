@@ -1,0 +1,146 @@
+name: Deploy Flutter Web Preview to VPS (flutter-dev.markt.ma)
+
+# ──────────────────────────────────────────────────────────────────────────
+# Phase 2 – Flutter Web Preview Deployment.
+#
+# Deployt AUSSCHLIESSLICH den statischen `flutter build web --release`
+# Output nach /var/www/flutter-dev.markt.ma/current auf dem bestehenden
+# markt.ma VPS. Spiegelt bewusst das Backup-/Rollback-Muster aus
+# deploy-frontend.yml (separates Zielverzeichnis, KEIN Flutter-SDK auf dem
+# VPS, Build ausschliesslich hier in GitHub Actions).
+#
+# Bewusst NICHT enthalten (siehe Aufgabenstellung, "noch kein automatischer
+# Trigger" / "kein Nginx/DNS/Certbot"):
+#   - kein automatischer push-Trigger (nur workflow_dispatch, manuell).
+#   - keine Nginx-Installation/-Reload, kein Certbot, keine DNS-Aenderung
+#     (siehe mobile-flutter-poc/nginx-flutter-dev-markt-ma.conf – nur
+#     eingecheckt, noch nicht auf dem VPS aktiviert).
+#   - keine Aenderung an /var/www/markt.ma/current (Angular bleibt unberuehrt).
+#   - keine Aenderung an deploy.yml / deploy-frontend.yml.
+#   - keine Backend-/CORS-Aenderung (https://*.markt.ma Wildcard-CORS deckt
+#     flutter-dev.markt.ma bereits ab, siehe WebConfig.java).
+#   - kein Android-/iOS-Build (nur Web, siehe flutter-poc.yml fuer APK/Web-CI).
+# ──────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-flutter-poc
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Flutter version info
+        run: flutter --version
+
+      - name: Verify web/ exists (bootstrapped beforehand)
+        run: |
+          if [ ! -d "web" ]; then
+            echo "❌ mobile-flutter-poc/web/ fehlt im Repo."
+            echo "   Web-Platform muss zuerst einmalig via 'flutter create --platforms=web' bootstrapped werden."
+            exit 1
+          fi
+          echo "✅ web/ vorhanden."
+
+      - name: flutter pub get
+        run: flutter pub get
+
+      - name: Build web (release)
+        run: flutter build web --release
+
+      - name: Verify web build exists
+        run: |
+          if [ ! -f "build/web/index.html" ]; then
+            echo "❌ build/web/index.html nicht gefunden!"
+            find build/web -type f || true
+            exit 1
+          fi
+          echo "✅ Web-Build gefunden: $(du -sh build/web | cut -f1)"
+
+      - name: Create deployment package
+        run: |
+          cd build/web
+          tar -czf ../../flutter-web-dist.tar.gz *
+
+      - name: Deploy to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "mobile-flutter-poc/flutter-web-dist.tar.gz"
+          target: "/tmp/"
+          strip_components: 1
+
+      - name: Extract and setup on VPS
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            echo "🚀 Deploying Flutter Web Preview to flutter-dev.markt.ma..."
+            echo "ℹ️  /var/www/markt.ma/current (Angular) wird NICHT beruehrt."
+
+            # Create target directory if not exists (separates Verzeichnis!)
+            sudo mkdir -p /var/www/flutter-dev.markt.ma
+
+            # Backup old version
+            if [ -d "/var/www/flutter-dev.markt.ma/current" ]; then
+              echo "📦 Backing up old version..."
+              sudo mv /var/www/flutter-dev.markt.ma/current /var/www/flutter-dev.markt.ma/backup-$(date +%Y%m%d-%H%M%S) || true
+            fi
+
+            # Create new directory
+            sudo mkdir -p /var/www/flutter-dev.markt.ma/current
+
+            # Extract new build
+            echo "📂 Extracting new build..."
+            sudo tar -xzf /tmp/flutter-web-dist.tar.gz -C /var/www/flutter-dev.markt.ma/current
+
+            # Set permissions
+            echo "🔒 Setting permissions..."
+            sudo chown -R www-data:www-data /var/www/flutter-dev.markt.ma/current
+            sudo chmod -R 755 /var/www/flutter-dev.markt.ma/current
+
+            # Cleanup
+            rm /tmp/flutter-web-dist.tar.gz
+
+            # Keep only last 3 backups
+            cd /var/www/flutter-dev.markt.ma
+            sudo ls -t | grep backup | tail -n +4 | xargs -r sudo rm -rf || true
+
+            echo "✅ Flutter Web Preview deployment complete!"
+            echo "📍 Location: /var/www/flutter-dev.markt.ma/current"
+            echo "⚠️  Nginx/DNS/Certbot sind NICHT Teil dieses Workflows -"
+            echo "    siehe mobile-flutter-poc/nginx-flutter-dev-markt-ma.conf"
+            echo "    fuer die noch manuell zu aktivierende Nginx-Konfiguration."
+
+      - name: Deployment summary
+        run: |
+          echo "## 🎉 Flutter Web Preview Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Flutter Web (release) gebaut und auf VPS deployt" >> $GITHUB_STEP_SUMMARY
+          echo "- 📍 Location: /var/www/flutter-dev.markt.ma/current" >> $GITHUB_STEP_SUMMARY
+          echo "- 🌐 Ziel-Domain (noch NICHT live): https://flutter-dev.markt.ma" >> $GITHUB_STEP_SUMMARY
+          echo "- ℹ️  /var/www/markt.ma/current (Angular) wurde NICHT veraendert" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Noch manuell erforderlich (NICHT Teil dieses Workflows):" >> $GITHUB_STEP_SUMMARY
+          echo "1. DNS A-Record fuer flutter-dev.markt.ma → VPS-IP anlegen" >> $GITHUB_STEP_SUMMARY
+          echo "2. mobile-flutter-poc/nginx-flutter-dev-markt-ma.conf auf dem VPS installieren (sites-available/sites-enabled)" >> $GITHUB_STEP_SUMMARY
+          echo "3. SSL-Zertifikat erzeugen: sudo certbot --nginx -d flutter-dev.markt.ma" >> $GITHUB_STEP_SUMMARY
+          echo "4. sudo nginx -t && sudo systemctl reload nginx" >> $GITHUB_STEP_SUMMARY
