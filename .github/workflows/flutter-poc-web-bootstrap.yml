@@ -70,6 +70,18 @@ jobs:
       - name: Generate Web platform files
         run: flutter create --platforms=web --org ma.markt --project-name markt_ma_documents_poc .
 
+      - name: Remove Flutter template default widget test
+        run: |
+          # `flutter create` regenerates test/widget_test.dart referencing the
+          # template's default `MyApp` widget, exactly as observed during the
+          # Android bootstrap. This project already has its own real test
+          # suite and root widget class, so the generated template test is
+          # removed instead of being artificially adapted just to pass.
+          if [ -f "test/widget_test.dart" ]; then
+            echo "Removing generated Flutter template test/widget_test.dart"
+            rm test/widget_test.dart
+          fi
+
       - name: Sanity-check generated project (pub get + analyze + test)
         run: |
           flutter pub get
