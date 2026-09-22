@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'screens/login_screen.dart';
+import 'theme/markt_theme.dart';
 
 void main() {
   runApp(const MarktMaDocumentsPocApp());
@@ -13,10 +14,12 @@ class MarktMaDocumentsPocApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'markt.ma Documents PoC',
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF667EEA), // gleicher Lila-Ton wie Angular-Design-Token
-        useMaterial3: true,
-      ),
+      // Zentrales markt.ma Theme (siehe lib/theme/markt_theme.dart) statt
+      // Inline-ThemeData - einziger Ort fuer Farben/Card-/AppBar-Stil,
+      // wiederverwendbar fuer alle zukuenftigen App-Factory-Screens.
+      theme: MarktTheme.light(),
+      darkTheme: MarktTheme.dark(),
+      themeMode: ThemeMode.system,
       home: const AuthGate(),
     );
   }

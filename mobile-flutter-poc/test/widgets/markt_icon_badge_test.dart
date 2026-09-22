@@ -19,6 +19,19 @@ void main() {
     expect(find.byIcon(Icons.description), findsOneWidget);
   });
 
+  testWidgets('nutzt den zentralen MarktBadgeTheme-Default (48) ohne eigenes Theme', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: MarktIconBadge(icon: Icon(Icons.description), accentColor: Colors.blue),
+        ),
+      ),
+    );
+
+    final container = tester.widget<Container>(find.byType(Container));
+    expect(container.constraints?.maxWidth ?? 48, 48);
+  });
+
   testWidgets('respektiert die uebergebene Groesse', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(

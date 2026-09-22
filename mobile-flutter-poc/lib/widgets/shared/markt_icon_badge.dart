@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/markt_theme.dart';
+
 /// Zentrales markt.ma Icon-Badge-Primitiv (Shared UI Primitive).
 ///
 /// Abgerundeter Container fuer ein Icon mit halbtransparentem
@@ -14,28 +16,38 @@ import 'package:flutter/material.dart';
 ///
 /// [accentColor] wird vom Aufrufer i.d.R. aus `Theme.of(context).colorScheme`
 /// befuellt - diese Komponente selbst enthaelt keine hartcodierten Farben.
+///
+/// [size]/[borderRadius] werden, sofern nicht explizit gesetzt, aus der
+/// zentralen [MarktBadgeTheme]-Extension gelesen (`lib/theme/markt_theme.dart`)
+/// - Flutter besitzt keine eingebaute `ThemeData`-Struktur, die zu diesem
+/// Widget passt (siehe Doku dort), daher diese eine kleine `ThemeExtension`
+/// statt hartcodierter Konstanten in diesem Widget.
 class MarktIconBadge extends StatelessWidget {
   const MarktIconBadge({
     super.key,
     required this.icon,
     required this.accentColor,
-    this.size = 48,
-    this.borderRadius = 14,
+    this.size,
+    this.borderRadius,
   });
 
   final Widget icon;
   final Color accentColor;
-  final double size;
-  final double borderRadius;
+  final double? size;
+  final double? borderRadius;
 
   @override
   Widget build(BuildContext context) {
+    final badgeTheme = Theme.of(context).extension<MarktBadgeTheme>() ?? MarktBadgeTheme.standard;
+    final resolvedSize = size ?? badgeTheme.size;
+    final resolvedRadius = borderRadius ?? badgeTheme.borderRadius;
+
     return Container(
-      width: size,
-      height: size,
+      width: resolvedSize,
+      height: resolvedSize,
       decoration: BoxDecoration(
         color: accentColor.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(borderRadius),
+        borderRadius: BorderRadius.circular(resolvedRadius),
         border: Border.all(color: accentColor.withValues(alpha: 0.22)),
       ),
       alignment: Alignment.center,

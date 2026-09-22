@@ -16,14 +16,23 @@ import 'package:flutter/material.dart';
 /// Verwendet ausschliesslich `Theme.of(context)` fuer Farben/Elevation-
 /// Defaults - keine hartcodierten markt.ma-Farben in dieser oder in
 /// Feature-Widgets, die `MarktCard` nutzen.
+///
+/// Die visuellen Defaults (Radius/Elevation/Farbe/Margin/Clip) werden NICHT
+/// mehr literal in diesem Widget festgelegt, sondern - sofern der Aufrufer
+/// sie nicht explizit ueberschreibt - aus dem zentralen
+/// `Theme.of(context).cardTheme` (`CardThemeData`, gesetzt in
+/// `lib/theme/markt_theme.dart`) gelesen. Ein einziger Ort steuert damit das
+/// Karten-Design app-weit; die oeffentliche API bleibt dabei unveraendert
+/// nutzbar (alle Parameter weiterhin optional, bestehende Aufrufstellen wie
+/// `DocumentCard` benoetigen keine Anpassung).
 class MarktCard extends StatelessWidget {
   const MarktCard({
     super.key,
     required this.child,
     this.color,
-    this.borderRadius = 16,
-    this.elevation = 1,
-    this.clipBehavior = Clip.antiAlias,
+    this.borderRadius,
+    this.elevation,
+    this.clipBehavior,
     this.margin,
     this.padding,
     this.onTap,
@@ -32,17 +41,22 @@ class MarktCard extends StatelessWidget {
   /// Inhalt der Karte.
   final Widget child;
 
-  /// Optionale Hintergrundfarbe. Default: Theme-Kartenfarbe
-  /// (`Theme.of(context).cardColor` ueber das zugrunde liegende `Card`).
+  /// Optionale Hintergrundfarbe. Default: `Theme.of(context).cardTheme.color`.
   final Color? color;
 
-  /// Eckenradius. Zentral definiert, damit Feature-Cards ihn nicht
-  /// wiederholen muessen.
-  final double borderRadius;
+  /// Eckenradius. Default: aus `Theme.of(context).cardTheme.shape`
+  /// (Fallback 16), damit Feature-Cards ihn nicht wiederholen muessen.
+  final double? borderRadius;
 
-  final double elevation;
-  final Clip clipBehavior;
+  /// Default: `Theme.of(context).cardTheme.elevation` (Fallback 1).
+  final double? elevation;
+
+  /// Default: `Theme.of(context).cardTheme.clipBehavior` (Fallback antiAlias).
+  final Clip? clipBehavior;
+
+  /// Default: `Theme.of(context).cardTheme.margin`.
   final EdgeInsetsGeometry? margin;
+
   final EdgeInsetsGeometry? padding;
 
   /// Optionaler Tap-Handler. Wenn gesetzt, wird die Karte per `InkWell`
@@ -51,14 +65,20 @@ class MarktCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cardTheme = Theme.of(context).cardTheme;
     final content = padding == null ? child : Padding(padding: padding!, child: child);
 
+    final resolvedShape = borderRadius != null
+        ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius!))
+        : cardTheme.shape ??
+            const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16)));
+
     return Card(
-      margin: margin ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      color: color,
-      elevation: elevation,
-      clipBehavior: clipBehavior,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius)),
+      margin: margin ?? cardTheme.margin ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      color: color ?? cardTheme.color,
+      elevation: elevation ?? cardTheme.elevation ?? 1,
+      clipBehavior: clipBehavior ?? cardTheme.clipBehavior ?? Clip.antiAlias,
+      shape: resolvedShape,
       child: onTap == null ? content : InkWell(onTap: onTap, child: content),
     );
   }

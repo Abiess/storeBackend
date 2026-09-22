@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/document_dto.dart';
+import '../../theme/markt_theme.dart';
 import '../shared/markt_card.dart';
 import '../shared/markt_icon_badge.dart';
 
@@ -32,7 +33,7 @@ class DocumentCard extends StatelessWidget {
     final accentColor = document.hasFile ? colorScheme.primary : colorScheme.outline;
 
     return MarktCard(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.md, vertical: MarktSpacing.sm),
       child: Row(
         children: [
           MarktIconBadge(
@@ -42,7 +43,7 @@ class DocumentCard extends StatelessWidget {
             ),
             accentColor: accentColor,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: MarktSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,7 +54,7 @@ class DocumentCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: MarktSpacing.xs),
                 Text(
                   document.originalFilename ?? document.category ?? '-',
                   maxLines: 1,

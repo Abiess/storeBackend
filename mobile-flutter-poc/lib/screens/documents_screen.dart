@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/document_dto.dart';
 import '../services/auth_service.dart';
 import '../services/documents_service.dart';
+import '../theme/markt_theme.dart';
 import '../widgets/documents/document_card.dart';
 import '../widgets/shared/markt_responsive_data_list.dart';
 import 'login_screen.dart';
@@ -148,14 +149,18 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
     // (z.B. wenn ein Upload fehlschlaegt, aber vorher geladene Dokumente
     // trotzdem sichtbar bleiben sollen). Der reine Lade-/Leer-/Fehlerfall
     // beim initialen Laden wird an `MarktResponsiveDataList` delegiert.
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       children: [
         if (_error != null && !_loading)
           Container(
             width: double.infinity,
-            color: Colors.red.shade50,
-            padding: const EdgeInsets.all(12),
-            child: Text(_error!, style: TextStyle(color: Colors.red.shade900)),
+            // Zentrales Fehler-Farbschema statt hartcodierter Colors.red.* -
+            // passt automatisch zu Light/Dark-Theme (siehe markt_theme.dart).
+            color: colorScheme.errorContainer,
+            padding: const EdgeInsets.all(MarktSpacing.md),
+            child: Text(_error!, style: TextStyle(color: colorScheme.onErrorContainer)),
           ),
         Expanded(
           child: MarktResponsiveDataList<DocumentDto>(
