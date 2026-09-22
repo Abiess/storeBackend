@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
 
 import '../../models/document_dto.dart';
+import '../shared/markt_card.dart';
+import '../shared/markt_icon_badge.dart';
 
 /// Fachliche Darstellung eines einzelnen [DocumentDto].
 ///
-/// Bewusst kein Redesign: extrahiert 1:1 die Informationen, die vorher
+/// Bewusst kein Eigen-Design: liefert dieselben Informationen, die vorher
 /// direkt als `ListTile` in `documents_screen.dart` gerendert wurden
-/// (Icon je nach `hasFile`, Titel, Dateiname/Kategorie als Subtitle).
+/// (Icon je nach `hasFile`, Titel, Dateiname/Kategorie als Subtitle),
+/// baut sie aber ausschliesslich aus den zentralen markt.ma Shared-
+/// Primitives `MarktCard` + `MarktIconBadge` zusammen. Diese Card definiert
+/// daher selbst KEINEN Radius, Standard-Padding, Standard-Card-Farbe oder
+/// Elevation - das ist Aufgabe von `MarktCard`.
+///
 /// Diese Card ist app-spezifisch (Documents) und lebt bewusst NICHT unter
-/// `widgets/shared/`, da `MarktResponsiveDataList` nichts von `DocumentDto`
-/// wissen soll.
+/// `widgets/shared/`, da `MarktResponsiveDataList`/`MarktCard` nichts von
+/// `DocumentDto` wissen sollen. Analog dazu werden spaeter
+/// `DhlParcelCard`, `LoyaltyAccountCard`, `AppCard` ebenfalls auf
+/// `MarktCard` + `MarktIconBadge` aufbauen, ohne deren Code zu duplizieren.
 class DocumentCard extends StatelessWidget {
   const DocumentCard({super.key, required this.document});
 
@@ -17,14 +26,44 @@ class DocumentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: ListTile(
-        leading: Icon(
-          document.hasFile ? Icons.description : Icons.article_outlined,
-        ),
-        title: Text(document.title),
-        subtitle: Text(document.originalFilename ?? document.category ?? '-'),
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    // Keine hartcodierte markt.ma-Farbe: Akzent kommt aus dem Theme.
+    final accentColor = document.hasFile ? colorScheme.primary : colorScheme.outline;
+
+    return MarktCard(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          MarktIconBadge(
+            icon: Icon(
+              document.hasFile ? Icons.description : Icons.article_outlined,
+              color: accentColor,
+            ),
+            accentColor: accentColor,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  document.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  document.originalFilename ?? document.category ?? '-',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
