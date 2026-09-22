@@ -32,9 +32,12 @@ class DocumentCard extends StatelessWidget {
     // Keine hartcodierte markt.ma-Farbe: Akzent kommt aus dem Theme.
     final accentColor = document.hasFile ? colorScheme.primary : colorScheme.outline;
 
+    final subtitle = document.originalFilename ?? document.category ?? '-';
+
     return MarktCard(
-      padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.md, vertical: MarktSpacing.sm),
+      padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.lg, vertical: MarktSpacing.lg),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           MarktIconBadge(
             icon: Icon(
@@ -42,6 +45,10 @@ class DocumentCard extends StatelessWidget {
               color: accentColor,
             ),
             accentColor: accentColor,
+            // Groessere Badge-Variante als Standard-Default: gibt der Card
+            // mehr visuelle Praesenz statt wie eine reine Tabellenzeile zu
+            // wirken (Visual Pass, siehe Klassendoku).
+            size: 48,
           ),
           const SizedBox(width: MarktSpacing.md),
           Expanded(
@@ -52,14 +59,24 @@ class DocumentCard extends StatelessWidget {
                   document.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: MarktSpacing.xs),
-                Text(
-                  document.originalFilename ?? document.category ?? '-',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                // Dateiname/Kategorie als kleiner, dezent getoenter "Chip"
+                // statt reinem Fliesstext - liest sich als Metadaten-Badge,
+                // nicht als zweite Tabellenspalte.
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.sm, vertical: MarktSpacing.xs / 2),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
                 ),
               ],
             ),

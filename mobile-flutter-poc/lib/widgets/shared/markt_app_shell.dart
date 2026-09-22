@@ -69,14 +69,26 @@ class MarktAppShell extends StatelessWidget {
         final colorScheme = Theme.of(context).colorScheme;
 
         return Scaffold(
-          drawer: isDesktop ? null : Drawer(child: sideNav),
+          // Eigener Seiten-Canvas (surfaceContainerLowest, siehe
+          // `MarktTheme`) statt einer einzigen grossen weissen/hellen
+          // Flaeche ueber Sidebar+Content hinweg - Sidebar und Topbar
+          // setzen sich bewusst mit eigenen, davon abgesetzten
+          // Oberflaechen ab (siehe [MarktSideNav] und [_MarktTopBar]).
+          backgroundColor: colorScheme.surfaceContainerLowest,
+          drawer: isDesktop ? null : Drawer(width: 300, child: sideNav),
           floatingActionButton: floatingActionButton,
           body: SafeArea(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (isDesktop) SizedBox(width: 260, child: sideNav),
-                if (isDesktop) VerticalDivider(width: 1, color: colorScheme.outlineVariant),
+                if (isDesktop)
+                  Container(
+                    width: 280,
+                    decoration: BoxDecoration(
+                      border: Border(right: BorderSide(color: colorScheme.outlineVariant)),
+                    ),
+                    child: sideNav,
+                  ),
                 Expanded(
                   child: Column(
                     children: [
@@ -86,8 +98,17 @@ class MarktAppShell extends StatelessWidget {
                         profile: profile,
                         showMenuButton: !isDesktop,
                       ),
-                      Divider(height: 1, color: colorScheme.outlineVariant),
-                      Expanded(child: body),
+                      Expanded(
+                        child: Padding(
+                          // Dashboard-Rhythmus: der fachliche Inhalt
+                          // beginnt nicht direkt unter der Topbar, sondern
+                          // in einem konsistenten Innenabstand - unabhaengig
+                          // davon, was `body` konkret zeigt (Liste, Grid,
+                          // Error-Banner, ...).
+                          padding: const EdgeInsets.all(MarktSpacing.lg),
+                          child: body,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -104,6 +125,11 @@ class MarktAppShell extends StatelessWidget {
 /// ein eigenstaendiges Widget innerhalb des Content-Bereichs - dadurch
 /// spannt die Topbar auf Desktop NUR ueber dem Content, nicht ueber der
 /// Sidebar (siehe Layout-Skizze in der Klassendoku von [MarktAppShell]).
+///
+/// Visual Pass (22.09.): bewusst NICHT wie eine Standard-`AppBar` gestaltet
+/// (kein `appBarTheme.titleTextStyle`/Elevation-Look), sondern als Teil des
+/// Workspace: groesserer, fetter Seitentitel, grosszuegigere Innenabstaende,
+/// dezente Trennlinie statt vollflaechigem Schatten.
 class _MarktTopBar extends StatelessWidget {
   const _MarktTopBar({
     required this.title,
@@ -120,36 +146,37 @@ class _MarktTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final appBarTheme = theme.appBarTheme;
+    final colorScheme = theme.colorScheme;
 
-    return Material(
-      color: appBarTheme.backgroundColor ?? theme.colorScheme.surface,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.lg, vertical: MarktSpacing.md),
-        child: Row(
-          children: [
-            if (showMenuButton) ...[
-              IconButton(
-                icon: const Icon(Icons.menu),
-                tooltip: 'Menu',
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
-              const SizedBox(width: MarktSpacing.sm),
-            ],
-            Expanded(
-              child: Text(
-                title,
-                overflow: TextOverflow.ellipsis,
-                style: appBarTheme.titleTextStyle ?? theme.textTheme.titleLarge,
-              ),
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.xl, vertical: MarktSpacing.lg),
+      child: Row(
+        children: [
+          if (showMenuButton) ...[
+            IconButton(
+              icon: const Icon(Icons.menu),
+              tooltip: 'Menu',
+              onPressed: () => Scaffold.of(context).openDrawer(),
             ),
-            ...?actions,
-            if (profile != null) ...[
-              const SizedBox(width: MarktSpacing.sm),
-              profile!,
-            ],
+            const SizedBox(width: MarktSpacing.sm),
           ],
-        ),
+          Expanded(
+            child: Text(
+              title,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+          ...?actions,
+          if (profile != null) ...[
+            const SizedBox(width: MarktSpacing.sm),
+            profile!,
+          ],
+        ],
       ),
     );
   }

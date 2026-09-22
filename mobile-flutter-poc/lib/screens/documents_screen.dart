@@ -162,14 +162,26 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       padding: const EdgeInsets.all(MarktSpacing.lg),
       child: Row(
         children: [
-          Icon(Icons.apps, color: colorScheme.primary),
-          const SizedBox(width: MarktSpacing.sm),
+          // Praesenter Icon-Container statt reinem Icon-Glyph - liest sich
+          // als App-/Produktbereich, nicht als einfacher Fliesstext (siehe
+          // Visual-Pass-Feedback).
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            alignment: Alignment.center,
+            child: Icon(Icons.apps, color: colorScheme.onPrimary, size: 22),
+          ),
+          const SizedBox(width: MarktSpacing.md),
           Text(
             'markt.ma',
             style: Theme.of(context)
                 .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700),
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w800),
           ),
         ],
       ),
@@ -200,6 +212,11 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             loading: _loading,
             onRefresh: _loadDocuments,
             emptyWidget: const Text('Noch keine Dokumente'),
+            // Groessere Karten (siehe restyled DocumentCard) brauchen mehr
+            // vertikalen Platz im Grid als der generische Default (88) -
+            // bewusst hier am Consumer ueberschrieben statt den Shared-
+            // Default in `MarktResponsiveDataList` selbst zu aendern.
+            gridItemHeight: 108,
             itemBuilder: (context, doc) => DocumentCard(document: doc),
           ),
         ),

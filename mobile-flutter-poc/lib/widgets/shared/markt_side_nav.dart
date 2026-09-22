@@ -40,32 +40,48 @@ class MarktNavItem {
 /// `Theme.of(context).colorScheme`/`textTheme`), keine SVG-Icons/Assets,
 /// keine fachlichen Nav-Eintraege.
 ///
+/// Visual Pass (22.09.): Die Sidebar bekommt bewusst eine eigene, vom
+/// restlichen Workspace abgesetzte Oberflaeche (`surfaceContainerHigh`
+/// statt `surface`) sowie deutlich praesentere Nav-Tiles (groessere
+/// Touch-/Textflaeche, linker Akzentbalken im Selected-State), damit sie
+/// wie ein echter Navigationsbereich wirkt statt wie schmaler Fuelltext.
+///
 /// [header] ist ein optionaler Slot fuer Branding (z.B. "markt.ma"-Titel)
-/// oberhalb der Liste - vom Aufrufer befuellt, diese Komponente selbst
-/// kennt keine Marke/Farbe dafuer.
+/// oberhalb der Liste, [footer] ein optionaler Slot unterhalb (z.B.
+/// spaeter Account/Settings) - beide werden vollstaendig vom Aufrufer
+/// befuellt, diese Komponente kennt selbst keine Marke/Farbe/Fachlichkeit
+/// dafuer.
 class MarktSideNav extends StatelessWidget {
-  const MarktSideNav({super.key, required this.items, this.header});
+  const MarktSideNav({super.key, required this.items, this.header, this.footer});
 
   final List<MarktNavItem> items;
   final Widget? header;
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Material(
-      color: colorScheme.surface,
+      color: colorScheme.surfaceContainerHigh,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (header != null) header!,
+            if (header != null) ...[
+              header!,
+              Divider(height: 1, thickness: 1, color: colorScheme.outlineVariant),
+            ],
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: MarktSpacing.sm),
+                padding: const EdgeInsets.symmetric(vertical: MarktSpacing.md, horizontal: MarktSpacing.sm),
                 children: [for (final item in items) _MarktNavTile(item: item)],
               ),
             ),
+            if (footer != null) ...[
+              Divider(height: 1, thickness: 1, color: colorScheme.outlineVariant),
+              footer!,
+            ],
           ],
         ),
       ),
@@ -85,31 +101,50 @@ class _MarktNavTile extends StatelessWidget {
     final foreground = item.selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.sm, vertical: MarktSpacing.xs / 2),
+      padding: const EdgeInsets.symmetric(vertical: MarktSpacing.xs / 2),
       child: Material(
-        color: item.selected ? colorScheme.primaryContainer.withValues(alpha: 0.5) : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
+        color: item.selected ? colorScheme.primaryContainer.withValues(alpha: 0.55) : Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           onTap: item.onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.md, vertical: MarktSpacing.sm),
-            child: Row(
-              children: [
-                Icon(item.icon, color: foreground, size: 22),
-                const SizedBox(width: MarktSpacing.md),
-                Expanded(
-                  child: Text(
-                    item.label,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: foreground,
-                      fontWeight: item.selected ? FontWeight.w600 : FontWeight.w500,
-                    ),
+          child: Row(
+            children: [
+              // Linker Akzentbalken im Selected-State - gibt der Navigation
+              // mehr visuelle Praesenz, statt nur eine dezent getoente
+              // Hintergrundflaeche zu zeigen.
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 4,
+                height: 28,
+                margin: const EdgeInsets.only(left: MarktSpacing.xs),
+                decoration: BoxDecoration(
+                  color: item.selected ? colorScheme.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.md, vertical: MarktSpacing.md),
+                  child: Row(
+                    children: [
+                      Icon(item.icon, color: foreground, size: 24),
+                      const SizedBox(width: MarktSpacing.md),
+                      Expanded(
+                        child: Text(
+                          item.label,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.bodyLarge?.copyWith(
+                            color: foreground,
+                            fontWeight: item.selected ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
