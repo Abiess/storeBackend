@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import '../models/document_dto.dart';
 import '../services/auth_service.dart';
 import '../services/documents_service.dart';
+import '../widgets/documents/document_card.dart';
+import '../widgets/shared/markt_responsive_data_list.dart';
 import 'login_screen.dart';
 
 /// Kleine DOCUMENTS-Seite fuer den PoC: Liste bestehender Dokumente
@@ -142,11 +144,13 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   }
 
   Widget _buildBody() {
-    if (_loading) return const Center(child: CircularProgressIndicator());
-
+    // Fehler wird weiterhin zusaetzlich als Banner ueber der Liste gezeigt
+    // (z.B. wenn ein Upload fehlschlaegt, aber vorher geladene Dokumente
+    // trotzdem sichtbar bleiben sollen). Der reine Lade-/Leer-/Fehlerfall
+    // beim initialen Laden wird an `MarktResponsiveDataList` delegiert.
     return Column(
       children: [
-        if (_error != null)
+        if (_error != null && !_loading)
           Container(
             width: double.infinity,
             color: Colors.red.shade50,
@@ -154,19 +158,13 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             child: Text(_error!, style: TextStyle(color: Colors.red.shade900)),
           ),
         Expanded(
-          child: _documents.isEmpty
-              ? const Center(child: Text('Noch keine Dokumente'))
-              : ListView.builder(
-                  itemCount: _documents.length,
-                  itemBuilder: (context, index) {
-                    final doc = _documents[index];
-                    return ListTile(
-                      leading: Icon(doc.hasFile ? Icons.description : Icons.article_outlined),
-                      title: Text(doc.title),
-                      subtitle: Text(doc.originalFilename ?? doc.category ?? '-'),
-                    );
-                  },
-                ),
+          child: MarktResponsiveDataList<DocumentDto>(
+            items: _documents,
+            loading: _loading,
+            onRefresh: _loadDocuments,
+            emptyWidget: const Text('Noch keine Dokumente'),
+            itemBuilder: (context, doc) => DocumentCard(document: doc),
+          ),
         ),
       ],
     );
