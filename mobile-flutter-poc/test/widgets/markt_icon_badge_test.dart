@@ -6,10 +6,10 @@ import 'package:markt_ma_documents_poc/widgets/shared/markt_icon_badge.dart';
 void main() {
   testWidgets('rendert das uebergebene Icon', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         home: Scaffold(
           body: MarktIconBadge(
-            icon: const Icon(Icons.description),
+            icon: Icon(Icons.description),
             accentColor: Colors.blue,
           ),
         ),
@@ -21,10 +21,10 @@ void main() {
 
   testWidgets('respektiert die uebergebene Groesse', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         home: Scaffold(
           body: MarktIconBadge(
-            icon: const Icon(Icons.description),
+            icon: Icon(Icons.description),
             accentColor: Colors.blue,
             size: 64,
           ),
