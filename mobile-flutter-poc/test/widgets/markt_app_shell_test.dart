@@ -1,10 +1,12 @@
 // Widget-Tests fuer die generische Dashboard-Shell (`MarktAppShell` +
-// `MarktSideNav`). Bewusst ohne Fachlichkeit (keine `DocumentDto`), um zu
-// zeigen, dass die Shell wirklich generisch und wiederverwendbar ist.
+// `MarktSideNav` + `MarktTopBar` + `MarktFooter`). Bewusst ohne
+// Fachlichkeit (keine `DocumentDto`), um zu zeigen, dass die Shell wirklich
+// generisch und wiederverwendbar ist.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:markt_ma_documents_poc/theme/markt_theme.dart';
 import 'package:markt_ma_documents_poc/widgets/shared/markt_app_shell.dart';
+import 'package:markt_ma_documents_poc/widgets/shared/markt_footer.dart';
 import 'package:markt_ma_documents_poc/widgets/shared/markt_side_nav.dart';
 
 void main() {
@@ -61,17 +63,20 @@ void main() {
     expect(find.text('Documents'), findsOneWidget);
     expect(find.byType(Drawer), findsNothing);
     expect(find.byIcon(Icons.menu), findsNothing);
+    // Footer auf Desktop sichtbar (siehe Klassendoku von MarktAppShell).
+    expect(find.byType(MarktFooter), findsOneWidget);
   });
 
-  testWidgets('Mobile (< 1024px): Hamburger vorhanden, Drawer oeffnet MarktSideNav', (
+  testWidgets('Tablet (600-1023px): Hamburger vorhanden, Drawer oeffnet MarktSideNav, Footer sichtbar', (
     tester,
   ) async {
-    await setSurfaceSize(tester, const Size(400, 800));
-    await tester.pumpWidget(wrap(buildShell(), size: const Size(400, 800)));
+    await setSurfaceSize(tester, const Size(800, 900));
+    await tester.pumpWidget(wrap(buildShell(), size: const Size(800, 900)));
     await tester.pumpAndSettle();
 
     expect(find.text('Documents-Inhalt'), findsOneWidget);
     expect(find.byIcon(Icons.menu), findsOneWidget);
+    expect(find.byType(MarktFooter), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.menu));
     await tester.pumpAndSettle();
@@ -79,6 +84,47 @@ void main() {
     expect(find.byType(Drawer), findsOneWidget);
     expect(find.byType(MarktSideNav), findsOneWidget);
   });
+
+  testWidgets(
+    'Phone (< 600px) mit genau einem NavItem: kein Hamburger/Drawer, keine BottomNav, kein Footer',
+    (tester) async {
+      await setSurfaceSize(tester, const Size(400, 800));
+      await tester.pumpWidget(wrap(buildShell(), size: const Size(400, 800)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Documents-Inhalt'), findsOneWidget);
+      expect(find.byIcon(Icons.menu), findsNothing);
+      expect(find.byType(Drawer), findsNothing);
+      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(MarktFooter), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'Phone (< 600px) mit mehreren NavItems: kompakte NavigationBar statt Drawer/Hamburger',
+    (tester) async {
+      await setSurfaceSize(tester, const Size(400, 800));
+      await tester.pumpWidget(
+        wrap(
+          const MarktAppShell(
+            title: 'Documents Dashboard',
+            navItems: [
+              MarktNavItem(icon: Icons.description, label: 'Documents', selected: true),
+              MarktNavItem(icon: Icons.settings, label: 'Settings'),
+            ],
+            body: Center(child: Text('Documents-Inhalt')),
+          ),
+          size: const Size(400, 800),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.menu), findsNothing);
+      expect(find.byType(Drawer), findsNothing);
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.text('Settings'), findsOneWidget);
+    },
+  );
 
   testWidgets('rendert fehlerfrei unter Light- und Dark-Theme', (tester) async {
     await setSurfaceSize(tester, const Size(1400, 900));

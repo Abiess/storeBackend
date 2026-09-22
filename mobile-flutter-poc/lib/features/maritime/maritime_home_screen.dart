@@ -5,6 +5,7 @@ import '../../theme/markt_theme.dart';
 import '../../widgets/shared/markt_app_shell.dart';
 import '../../widgets/shared/markt_card.dart';
 import '../../widgets/shared/markt_icon_badge.dart';
+import '../../widgets/shared/markt_profile_menu.dart';
 import '../../widgets/shared/markt_side_nav.dart';
 import 'maritime_login_screen.dart';
 
@@ -36,11 +37,7 @@ class MaritimeHomeScreen extends StatelessWidget {
       navItems: const [
         MarktNavItem(icon: Icons.directions_boat, label: 'Maritime', selected: true),
       ],
-      profile: IconButton(
-        onPressed: () => _logout(context),
-        icon: const Icon(Icons.logout),
-        tooltip: 'Logout',
-      ),
+      profile: MarktProfileMenu(onLogout: () => _logout(context)),
       body: _buildBody(context),
     );
   }

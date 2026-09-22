@@ -9,6 +9,7 @@ import '../services/documents_service.dart';
 import '../theme/markt_theme.dart';
 import '../widgets/documents/document_card.dart';
 import '../widgets/shared/markt_app_shell.dart';
+import '../widgets/shared/markt_profile_menu.dart';
 import '../widgets/shared/markt_responsive_data_list.dart';
 import '../widgets/shared/markt_side_nav.dart';
 import 'login_screen.dart';
@@ -141,7 +142,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       actions: [
         IconButton(onPressed: _loading ? null : _loadDocuments, icon: const Icon(Icons.refresh)),
       ],
-      profile: IconButton(onPressed: _logout, icon: const Icon(Icons.logout), tooltip: 'Logout'),
+      profile: MarktProfileMenu(onLogout: _logout),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _uploading ? null : _takePhotoAndUpload,
         icon: _uploading

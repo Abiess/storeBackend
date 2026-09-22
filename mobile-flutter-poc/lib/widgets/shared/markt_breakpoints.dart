@@ -26,6 +26,16 @@ class MarktBreakpoints {
   /// gilt. Nutzt denselben [largeMin]-Schwellwert wie [columnsForWidth] -
   /// KEIN neuer/zusaetzlicher Breakpoint, nur eine semantische Abfrage
   /// darauf. Wird von [MarktAppShell] genutzt, um zwischen permanenter
-  /// Sidebar (Desktop) und Drawer (Mobile/Tablet) umzuschalten.
+  /// Sidebar (Desktop) und Drawer/Bottom-Navigation (Tablet/Phone)
+  /// umzuschalten.
   static bool isDesktop(double width) => width >= largeMin;
+
+  /// Liefert `true`, wenn eine gegebene verfuegbare Breite als "Phone"
+  /// gilt (< [tabletMin]). Nutzt denselben Schwellwert wie
+  /// [columnsForWidth] fuer die 1-Spalten-Liste. Wird von [MarktAppShell]
+  /// genutzt, um auf echten Telefonbreiten KEINE zusammengedrueckte
+  /// Desktop-Sidebar (als Drawer) zu zeigen, sondern - sofern mehrere
+  /// [MarktNavItem]s existieren - eine Flutter-native kompakte
+  /// `NavigationBar` am unteren Rand.
+  static bool isPhone(double width) => width < tabletMin;
 }

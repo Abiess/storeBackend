@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../theme/markt_theme.dart';
 import 'markt_breakpoints.dart';
+import 'markt_footer.dart';
 import 'markt_side_nav.dart';
+import 'markt_top_bar.dart';
 
 /// Zentrale, generische Dashboard-Shell (Shared Layout) fuer die gesamte
 /// zukuenftige markt.ma Flutter App Factory.
@@ -10,14 +12,23 @@ import 'markt_side_nav.dart';
 /// Setzt das bewaehrte Layout-Pattern aus
 /// `abuanwar072/Flutter-Responsive-Admin-Panel-or-Dashboard` (MIT) um - als
 /// eigene, komplett neu geschriebene Komponente auf Basis von [MarktTheme]/
-/// [MarktSideNav]/[MarktBreakpoints], siehe Audit vom 22.09.:
+/// [MarktSideNav]/[MarktBreakpoints], mit Visual-Pass Phase 1 (22.09.,
+/// inspiriert von der App-Shell-UX aus `ColorlibHQ/kite-flutter-admin-
+/// dashboard` und dem Responsive-Verhalten aus `mitchkoko/
+/// responsivedashboard` - beides nur als visuelle/Verhaltens-Referenz,
+/// keine Architektur/Dependency davon uebernommen):
 ///
 ///  - Desktop (`MarktBreakpoints.isDesktop`, >= 1024px): permanente Sidebar
-///    links ([MarktSideNav], volle Hoehe) + Topbar NUR ueber dem
-///    Content-Bereich (nicht ueber der Sidebar) + Content darunter.
-///  - Mobile/Tablet (< 1024px): dieselbe [MarktSideNav]-Struktur als
-///    `Scaffold.drawer`, Topbar spannt die volle Breite und zeigt einen
-///    Hamburger-Button, der den Drawer oeffnet.
+///    links ([MarktSideNav], volle Hoehe) + [MarktTopBar] NUR ueber dem
+///    Content-Bereich (nicht ueber der Sidebar) + Content + [MarktFooter].
+///  - Tablet (600-1023px): dieselbe [MarktSideNav]-Struktur als
+///    `Scaffold.drawer`, [MarktTopBar] mit Hamburger-Button + Content +
+///    [MarktFooter].
+///  - Phone (< 600px): KEINE zusammengedrueckte Desktop-Sidebar als Drawer.
+///    Stattdessen eine Flutter-native kompakte `NavigationBar` am unteren
+///    Rand (nur sichtbar, wenn [navItems] mehr als einen Eintrag enthaelt -
+///    bei genau einem Eintrag gibt es nichts zu navigieren). Der Footer
+///    entfaellt auf Phone-Breiten, um vertikalen Platz zu sparen.
 ///
 /// Kennt bewusst KEINE Fachlichkeit (kein "Documents"/"DHL"/"Loyalty"/...)
 /// und KEINEN App-Registry-/Entitlement-Mechanismus - `title`, `navItems`,
@@ -64,7 +75,13 @@ class MarktAppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isDesktop = MarktBreakpoints.isDesktop(constraints.maxWidth);
+        final width = constraints.maxWidth;
+        final isDesktop = MarktBreakpoints.isDesktop(width);
+        final isPhone = MarktBreakpoints.isPhone(width);
+        // Tablet: weder Desktop noch Phone (600-1023px) - nutzt wie bisher
+        // den Drawer, siehe Klassendoku.
+        final showDrawer = !isDesktop && !isPhone;
+        final showBottomNav = isPhone && navItems.length > 1;
         final sideNav = MarktSideNav(items: navItems, header: sideNavHeader);
         final colorScheme = Theme.of(context).colorScheme;
 
@@ -73,10 +90,11 @@ class MarktAppShell extends StatelessWidget {
           // `MarktTheme`) statt einer einzigen grossen weissen/hellen
           // Flaeche ueber Sidebar+Content hinweg - Sidebar und Topbar
           // setzen sich bewusst mit eigenen, davon abgesetzten
-          // Oberflaechen ab (siehe [MarktSideNav] und [_MarktTopBar]).
+          // Oberflaechen ab (siehe [MarktSideNav] und [MarktTopBar]).
           backgroundColor: colorScheme.surfaceContainerLowest,
-          drawer: isDesktop ? null : Drawer(width: 300, child: sideNav),
+          drawer: showDrawer ? Drawer(width: 300, child: sideNav) : null,
           floatingActionButton: floatingActionButton,
+          bottomNavigationBar: showBottomNav ? _buildBottomNav(context) : null,
           body: SafeArea(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -92,11 +110,11 @@ class MarktAppShell extends StatelessWidget {
                 Expanded(
                   child: Column(
                     children: [
-                      _MarktTopBar(
+                      MarktTopBar(
                         title: title,
                         actions: actions,
                         profile: profile,
-                        showMenuButton: !isDesktop,
+                        showMenuButton: showDrawer,
                       ),
                       Expanded(
                         child: Padding(
@@ -109,6 +127,9 @@ class MarktAppShell extends StatelessWidget {
                           child: body,
                         ),
                       ),
+                      // Footer nur auf Desktop/Tablet - auf Phone-Breiten
+                      // ist vertikaler Platz knapp (siehe Klassendoku).
+                      if (!isPhone) const MarktFooter(),
                     ],
                   ),
                 ),
@@ -119,65 +140,23 @@ class MarktAppShell extends StatelessWidget {
       },
     );
   }
-}
 
-/// Topbar-Inhalt der Shell. Bewusst kein `AppBar`/`Scaffold.appBar`, sondern
-/// ein eigenstaendiges Widget innerhalb des Content-Bereichs - dadurch
-/// spannt die Topbar auf Desktop NUR ueber dem Content, nicht ueber der
-/// Sidebar (siehe Layout-Skizze in der Klassendoku von [MarktAppShell]).
-///
-/// Visual Pass (22.09.): bewusst NICHT wie eine Standard-`AppBar` gestaltet
-/// (kein `appBarTheme.titleTextStyle`/Elevation-Look), sondern als Teil des
-/// Workspace: groesserer, fetter Seitentitel, grosszuegigere Innenabstaende,
-/// dezente Trennlinie statt vollflaechigem Schatten.
-class _MarktTopBar extends StatelessWidget {
-  const _MarktTopBar({
-    required this.title,
-    required this.showMenuButton,
-    this.actions,
-    this.profile,
-  });
-
-  final String title;
-  final bool showMenuButton;
-  final List<Widget>? actions;
-  final Widget? profile;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.xl, vertical: MarktSpacing.lg),
-      child: Row(
-        children: [
-          if (showMenuButton) ...[
-            IconButton(
-              icon: const Icon(Icons.menu),
-              tooltip: 'Menu',
-              onPressed: () => Scaffold.of(context).openDrawer(),
-            ),
-            const SizedBox(width: MarktSpacing.sm),
-          ],
-          Expanded(
-            child: Text(
-              title,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
-          ),
-          ...?actions,
-          if (profile != null) ...[
-            const SizedBox(width: MarktSpacing.sm),
-            profile!,
-          ],
-        ],
-      ),
+  /// Flutter-native kompakte Navigation fuer Phone-Breiten (< 600px) -
+  /// ersetzt bewusst NICHT dieselbe Sidebar/denselben Drawer in
+  /// zusammengedruecktem Format, sondern nutzt Materials eigenes
+  /// `NavigationBar`-Widget (siehe Klassendoku, Referenz:
+  /// `mitchkoko/responsivedashboard`-Verhalten). Wird nur gerufen, wenn
+  /// [navItems] mehr als einen Eintrag enthaelt.
+  Widget _buildBottomNav(BuildContext context) {
+    final selectedIndex = navItems.indexWhere((item) => item.selected);
+    return NavigationBar(
+      selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
+      onDestinationSelected: (index) => navItems[index].onTap?.call(),
+      destinations: [
+        for (final item in navItems)
+          NavigationDestination(icon: Icon(item.icon), label: item.label),
+      ],
     );
   }
 }
+

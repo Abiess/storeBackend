@@ -101,12 +101,18 @@ class _MarktNavTile extends StatelessWidget {
     final foreground = item.selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: MarktSpacing.xs / 2),
+      padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.sm, vertical: MarktSpacing.xs / 2),
       child: Material(
-        color: item.selected ? colorScheme.primaryContainer.withValues(alpha: 0.55) : Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
+        // Etwas praesenterer Selected-Zustand (Kite-Richtung): kraeftigerer
+        // Tint statt nur `withValues(alpha: 0.55)` plus dezente Elevation,
+        // damit sich der aktive Eintrag klarer vom Rest abhebt.
+        color: item.selected ? colorScheme.primaryContainer.withValues(alpha: 0.7) : Colors.transparent,
+        elevation: item.selected ? 1 : 0,
+        shadowColor: colorScheme.shadow.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
+          hoverColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
           onTap: item.onTap,
           child: Row(
             children: [
@@ -116,7 +122,7 @@ class _MarktNavTile extends StatelessWidget {
               AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
                 width: 4,
-                height: 28,
+                height: 32,
                 margin: const EdgeInsets.only(left: MarktSpacing.xs),
                 decoration: BoxDecoration(
                   color: item.selected ? colorScheme.primary : Colors.transparent,
