@@ -353,7 +353,11 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
           color: colorScheme.error,
           icon: Icon(Icons.error_outline, color: colorScheme.error, size: 20),
           title: 'Keine gueltige DHL-Sendung gefunden',
-          subtitle: 'Bitte Trackingnummer pruefen oder erneut scannen.',
+          // Roher DHL-Backend-Text (siehe [_validationMessage]-Doku), falls
+          // vorhanden - sonst generischer Hinweistext.
+          subtitle: (_validationMessage != null && _validationMessage!.isNotEmpty)
+              ? _validationMessage
+              : 'Bitte Trackingnummer pruefen oder erneut scannen.',
         );
       case TrackingValidationState.technicalError:
         return _statusBox(
@@ -361,7 +365,9 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
           color: colorScheme.error,
           icon: Icon(Icons.wifi_off, color: colorScheme.error, size: 20),
           title: 'DHL-Dienst aktuell nicht erreichbar',
-          subtitle: 'Bitte kurz warten und erneut versuchen.',
+          subtitle: (_validationMessage != null && _validationMessage!.isNotEmpty)
+              ? _validationMessage
+              : 'Bitte kurz warten und erneut versuchen.',
         );
     }
   }
