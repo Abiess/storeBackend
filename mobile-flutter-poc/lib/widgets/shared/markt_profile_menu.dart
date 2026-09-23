@@ -27,12 +27,36 @@ import 'markt_breakpoints.dart';
 /// (nur Avatar/Icon + Chevron), Name/E-Mail erscheinen dort weiterhin erst
 /// im geoeffneten Menue - Platzgruende, KEINE App-spezifische Sonderloesung
 /// (identische Logik fuer Documents/DHL/Maritime).
+///
+/// App-/Store-Kontext (23.09. Folgeanpassung): [contextLabel] ist ein
+/// optionaler, rein darstellender zweiter String (z.B. "DHL Paketshop ·
+/// Store 121"), den EINZELNE Consumer (aktuell nur DHL, siehe
+/// `DhlHomeScreen`) aus bereits vorhandenen Daten ableiten (App-Name +
+/// `AuthUser.storeIdForApp('DHL')`) - KEINE neue Backend-/DTO-Architektur,
+/// kein separates Store-Context-Konzept. Ist [contextLabel] gesetzt, zeigt
+/// der Desktop-Trigger ihn als zweite Zeile ANSTELLE der E-Mail (die
+/// E-Mail bleibt vollstaendig im geoeffneten Popup sichtbar, siehe unten -
+/// sie verschwindet also nicht, sondern wechselt nur die Sichtbarkeits-
+/// Ebene). Ohne [contextLabel] (Documents/Maritime aktuell) bleibt das
+/// bisherige Verhalten (E-Mail als zweite Zeile im Trigger) unveraendert -
+/// kein Bruch fuer bestehende Consumer.
+///
+/// Das geoeffnete Popup zeigt zusaetzlich zur bisherigen Kopfzeile
+/// (Avatar + Name + E-Mail) optionale, klar beschriftete Zeilen fuer
+/// [roleLabel] ("Rolle") und [contextLabel] ("Kontext") - jeweils NUR,
+/// wenn die zugehoerigen Daten tatsaechlich vorhanden sind (kein Erfinden
+/// von Platzhaltern). Eine "Sprache"-Zeile ist bewusst NICHT enthalten:
+/// weder `AuthUser` (Backend-`UserDTO`) noch Flutter kennen aktuell eine
+/// bevorzugte Sprache des Users - das haette ein neues Backend-Feld
+/// erfordert, was explizit nicht gewuenscht ist.
 class MarktProfileMenu extends StatelessWidget {
   const MarktProfileMenu({
     super.key,
     required this.onLogout,
     this.userLabel,
     this.userSubLabel,
+    this.roleLabel,
+    this.contextLabel,
     this.logoutLabel = 'Abmelden',
   });
 
@@ -45,8 +69,22 @@ class MarktProfileMenu extends StatelessWidget {
   /// generisches Label ("Konto") gezeigt.
   final String? userLabel;
 
-  /// Optionale zweite, dezentere Kopfzeile (z.B. E-Mail/Rolle).
+  /// Optionale zweite, dezentere Kopfzeile im Popup-Header (i.d.R.
+  /// E-Mail). Erscheint zusaetzlich auf Desktop-Breiten direkt im Trigger,
+  /// ABER NUR, wenn kein [contextLabel] gesetzt ist (siehe dortige Doku).
   final String? userSubLabel;
+
+  /// Optionale Rolle des Users (z.B. `AuthUser.role`) - wird im geoeffneten
+  /// Popup als eigene, beschriftete Zeile ("Rolle") angezeigt, sofern
+  /// vorhanden. Kein Einfluss auf den Trigger.
+  final String? roleLabel;
+
+  /// Optionaler, aktueller App-/Store-Kontext (z.B. "DHL Paketshop ·
+  /// Store 121"), aus bereits vorhandenen Consumer-Daten abgeleitet (siehe
+  /// Klassendoku). Wird auf Desktop-Breiten anstelle der E-Mail direkt im
+  /// Trigger gezeigt UND zusaetzlich als eigene, beschriftete Zeile
+  /// ("Kontext") im geoeffneten Popup.
+  final String? contextLabel;
 
   /// Beschriftung des Logout-Eintrags, ueberschreibbar fuer i18n.
   final String logoutLabel;
@@ -58,6 +96,10 @@ class MarktProfileMenu extends StatelessWidget {
     final label = userLabel ?? 'Konto';
     final initials = _initialsFor(userLabel: userLabel, userSubLabel: userSubLabel);
     final isDesktop = MarktBreakpoints.isDesktop(MediaQuery.sizeOf(context).width);
+    // Zweite Zeile im Trigger: Kontext hat Vorrang vor E-Mail (siehe
+    // Klassendoku zu [contextLabel]) - ohne Kontext bisheriges Verhalten
+    // (E-Mail) unveraendert.
+    final triggerSecondLine = contextLabel ?? userSubLabel;
 
     return PopupMenuButton<_MarktProfileMenuAction>(
       tooltip: 'Konto',
@@ -95,6 +137,25 @@ class MarktProfileMenu extends StatelessWidget {
             ],
           ),
         ),
+        // Zusaetzliche, klar beschriftete Zeilen - nur wenn die jeweiligen
+        // Daten tatsaechlich vorhanden sind (kein Erfinden von
+        // Platzhaltern, siehe Klassendoku). Kein "Sprache"-Eintrag: dafuer
+        // fehlt aktuell sowohl im Backend-`UserDTO` als auch in Flutter
+        // ein Datenfeld.
+        if (roleLabel != null || contextLabel != null)
+          PopupMenuItem<_MarktProfileMenuAction>(
+            enabled: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (roleLabel != null)
+                  _ProfileInfoRow(icon: Icons.badge_outlined, label: 'Rolle', value: roleLabel!),
+                if (contextLabel != null)
+                  _ProfileInfoRow(icon: Icons.storefront_outlined, label: 'Kontext', value: contextLabel!),
+              ],
+            ),
+          ),
         const PopupMenuDivider(),
         PopupMenuItem<_MarktProfileMenuAction>(
           value: _MarktProfileMenuAction.logout,
@@ -113,9 +174,10 @@ class MarktProfileMenu extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             _Avatar(colorScheme: colorScheme, initials: initials),
-            // Name/E-Mail direkt im Trigger nur auf Desktop-Breiten (siehe
-            // Klassendoku) - auf Tablet/Phone bleibt der Trigger kompakt,
-            // die Werte erscheinen dort erst im geoeffneten Popup oben.
+            // Name/Kontext-oder-E-Mail direkt im Trigger nur auf Desktop-
+            // Breiten (siehe Klassendoku) - auf Tablet/Phone bleibt der
+            // Trigger kompakt, die Werte erscheinen dort erst im
+            // geoeffneten Popup oben.
             if (isDesktop && userLabel != null) ...[
               const SizedBox(width: MarktSpacing.sm),
               ConstrainedBox(
@@ -129,9 +191,9 @@ class MarktProfileMenu extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
                     ),
-                    if (userSubLabel != null)
+                    if (triggerSecondLine != null)
                       Text(
-                        userSubLabel!,
+                        triggerSecondLine,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant, fontSize: 11),
                       ),
@@ -194,6 +256,53 @@ class _Avatar extends StatelessWidget {
               ),
             )
           : Icon(Icons.person_outline, color: colorScheme.onPrimaryContainer, size: 18),
+    );
+  }
+}
+
+/// Eine einzelne, klar beschriftete Zeile im Popup-Header (z.B. "Rolle:
+/// Store Manager") - kleine Caption-Zeile ueber dem eigentlichen Wert,
+/// analog zu uebrigen Shared-Detail-Darstellungen (siehe `MarktCard`).
+/// Bewusst kein eigenes generisches "Detail-Row"-Widget in einer neuen
+/// Shared-Datei - dieser Baustein ist ausschliesslich fuer den
+/// Profil-Popup-Kontext gedacht.
+class _ProfileInfoRow extends StatelessWidget {
+  const _ProfileInfoRow({required this.icon, required this.label, required this.value});
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: MarktSpacing.xs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: colorScheme.onSurfaceVariant),
+          const SizedBox(width: MarktSpacing.xs),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+                Text(
+                  value,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

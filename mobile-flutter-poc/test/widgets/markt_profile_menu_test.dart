@@ -91,4 +91,41 @@ void main() {
     expect(find.text('essoudati'), findsOneWidget);
     expect(find.text('essoudati@hotmail.de'), findsOneWidget);
   });
+
+  testWidgets(
+      'contextLabel ersetzt userSubLabel im Desktop-Trigger, waehrend E-Mail weiterhin im Popup bleibt; '
+      'roleLabel erscheint nur im Popup', (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      wrap(MarktProfileMenu(
+        userLabel: 'essoudati',
+        userSubLabel: 'essoudati@hotmail.de',
+        roleLabel: 'STORE_MANAGER',
+        contextLabel: 'DHL Paketshop · Store 121',
+        onLogout: () {},
+      )),
+    );
+    await tester.pumpAndSettle();
+
+    // Trigger: Name + Kontext (nicht E-Mail).
+    expect(find.text('essoudati'), findsOneWidget);
+    expect(find.text('DHL Paketshop · Store 121'), findsOneWidget);
+    expect(find.text('essoudati@hotmail.de'), findsNothing);
+    expect(find.text('STORE_MANAGER'), findsNothing);
+
+    await tester.tap(find.byType(CircleAvatar));
+    await tester.pumpAndSettle();
+
+    // Popup: E-Mail weiterhin sichtbar, zusaetzlich beschriftete Rolle-/
+    // Kontext-Zeilen.
+    expect(find.text('essoudati@hotmail.de'), findsOneWidget);
+    expect(find.text('Rolle'), findsOneWidget);
+    expect(find.text('STORE_MANAGER'), findsOneWidget);
+    expect(find.text('Kontext'), findsOneWidget);
+    expect(find.text('DHL Paketshop · Store 121'), findsNWidgets(2));
+  });
 }

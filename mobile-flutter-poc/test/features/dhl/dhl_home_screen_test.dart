@@ -13,8 +13,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:markt_ma_documents_poc/features/dhl/dhl_home_screen.dart';
+import 'package:markt_ma_documents_poc/models/auth_response.dart';
 import 'package:markt_ma_documents_poc/services/dhl_service.dart';
 import 'package:markt_ma_documents_poc/widgets/dhl/dhl_parcel_card.dart';
+import 'package:markt_ma_documents_poc/widgets/shared/markt_profile_menu.dart';
 
 void main() {
   const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
@@ -67,6 +69,51 @@ void main() {
     expect(find.byType(DhlParcelCard), findsNWidgets(2));
     expect(find.text('T1'), findsOneWidget);
     expect(find.text('T2'), findsOneWidget);
+  });
+
+  testWidgets(
+      'MarktProfileMenu zeigt "DHL Paketshop · Store <id>" als Kontext (statt E-Mail) im Desktop-Trigger '
+      'und Rolle/Kontext als eigene Zeilen im geoeffneten Popup - E-Mail bleibt dort weiterhin sichtbar',
+      (tester) async {
+    // Desktop-Breite (>= 1024px), damit der Trigger selbst geprueft werden
+    // kann (siehe `MarktProfileMenu`-Desktop/Kompakt-Unterscheidung).
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final mockClient = MockClient((request) async => http.Response('[]', 200));
+    final user = AuthUser(
+      id: 1,
+      email: 'dhl-user@example.com',
+      name: 'DHL User',
+      role: 'STORE_MANAGER',
+      apps: [AppEntitlement(app: 'DHL', storeId: 121, enabled: true)],
+    );
+
+    await tester.pumpWidget(
+      wrap(DhlHomeScreen(storeId: 121, dhlService: DhlService(client: mockClient), user: user)),
+    );
+    await tester.pumpAndSettle();
+
+    // Trigger zeigt Kontext ANSTELLE der E-Mail - E-Mail erscheint hier
+    // (noch) NICHT.
+    expect(find.text('DHL Paketshop · Store 121'), findsOneWidget);
+    expect(find.text('dhl-user@example.com'), findsNothing);
+
+    await tester.tap(find.byType(MarktProfileMenu));
+    await tester.pumpAndSettle();
+
+    // Im geoeffneten Popup: E-Mail weiterhin in der Kopfzeile sichtbar,
+    // zusaetzlich beschriftete Rolle- und Kontext-Zeilen - "Sprache" ist
+    // bewusst NICHT enthalten (keine entsprechenden Daten vorhanden).
+    expect(find.text('dhl-user@example.com'), findsOneWidget);
+    expect(find.text('Rolle'), findsOneWidget);
+    expect(find.text('STORE_MANAGER'), findsOneWidget);
+    expect(find.text('Kontext'), findsOneWidget);
+    // Kontext erscheint jetzt zweimal (Trigger + Popup-Zeile).
+    expect(find.text('DHL Paketshop · Store 121'), findsNWidgets(2));
+    expect(find.text('Sprache'), findsNothing);
   });
 
   testWidgets('mit storeId aber leerer Liste wird der Empty-State angezeigt', (tester) async {

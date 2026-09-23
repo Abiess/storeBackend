@@ -195,9 +195,21 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
           icon: const Icon(Icons.refresh),
         ),
       ],
+      // Kontext-Zeile (23.09. Folgeanpassung, siehe `MarktProfileMenu.
+      // contextLabel`): "DHL Paketshop · Store <storeId>" - ausschliesslich
+      // aus bereits vorhandenen Daten abgeleitet (App-Name + der ueber
+      // `AuthUser.storeIdForApp('DHL')` bereits aufgeloesten `storeId`).
+      // KEIN Store-Name (z.B. "Marrakech market"): der ist aktuell weder in
+      // `AuthUser` noch im DHL-Parcel-Endpoint enthalten - das wuerde ein
+      // neues Backend-Feld erfordern, was hier explizit nicht gewuenscht
+      // ist. Ohne aufgeloeste `storeId` (fail-closed-Fall) bleibt der
+      // Kontext `null` - der Trigger zeigt dann weiterhin die E-Mail
+      // (bisheriges Verhalten).
       profile: MarktProfileMenu(
         userLabel: widget.user?.name,
         userSubLabel: widget.user?.email,
+        roleLabel: widget.user?.role,
+        contextLabel: widget.storeId == null ? null : 'DHL Paketshop · Store ${widget.storeId}',
         onLogout: _logout,
       ),
       // Prominente Einlagerungs-Aktion (siehe Aufgabenstellung "+ Paket
