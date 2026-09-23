@@ -81,21 +81,6 @@ jobs:
       - name: flutter test
         run: flutter test
 
-      # TEMPORAERES Diagnose-Hilfsmittel (23.09., wird nach Abschluss der
-      # DHL-"Pakete im Laden"-Fehlersuche wieder entfernt): da diese
-      # Umgebung ohne GitHub-Auth-Token nur auf oeffentliche Check-Run-
-      # Annotations zugreifen kann (nicht auf Job-Logs), werden hier bei
-      # einem fehlgeschlagenen `flutter test` die tatsaechlichen
-      # Fehlerdetails als `::error::`-Annotations sichtbar gemacht.
-      - name: flutter test (Diagnose bei Fehlschlag)
-        if: failure()
-        run: |
-          flutter test --reporter expanded > test_output.txt 2>&1 || true
-          awk '/\[E\]/{print; c=40; next} c>0{print; c--}' test_output.txt | head -n 200 | while IFS= read -r line; do
-            escaped=$(echo "$line" | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
-            echo "::error::${escaped}"
-          done
-
       # Java 21 (Temurin) fuer den Gradle-Android-Build - identisch zur
       # Java-Version im bestehenden Android-/Backend-Workflow.
       - name: Set up JDK 21
