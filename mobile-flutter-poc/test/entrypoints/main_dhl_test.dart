@@ -20,6 +20,7 @@ import 'package:markt_ma_documents_poc/screens/documents_screen.dart';
 import 'package:markt_ma_documents_poc/screens/login_screen.dart';
 import 'package:markt_ma_documents_poc/services/auth_service.dart';
 import 'package:markt_ma_documents_poc/services/dhl_service.dart';
+import 'package:markt_ma_documents_poc/widgets/shared/markt_profile_menu.dart';
 
 void main() {
   const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
@@ -76,7 +77,7 @@ void main() {
     storedToken = 'dummy-jwt-token';
     final authClient = MockClient((request) async {
       return http.Response(
-        '{"id":1,"email":"dhl-user@example.com","roles":["USER"],'
+        '{"id":1,"email":"dhl-user@example.com","name":"DHL User","roles":["USER"],'
         '"appAccessMode":"MANAGED",'
         '"apps":[{"app":"DHL","storeId":7,"enabled":true}]}',
         200,
@@ -88,8 +89,11 @@ void main() {
       MaterialApp(
         home: AuthGate(
           loginBuilder: (context) => const DhlLoginScreen(),
-          homeBuilder: (context, user) =>
-              DhlHomeScreen(storeId: user?.storeIdForApp('DHL'), dhlService: DhlService(client: dhlClient)),
+          homeBuilder: (context, user) => DhlHomeScreen(
+            storeId: user?.storeIdForApp('DHL'),
+            dhlService: DhlService(client: dhlClient),
+            user: user,
+          ),
           authService: AuthService(client: authClient),
         ),
       ),
@@ -108,5 +112,14 @@ void main() {
     // MarktAppShell-Titel + generische Shared Widgets (MarktCard/
     // MarktIconBadge) werden wiederverwendet, keine Fake-Fachdaten.
     expect(find.text('DHL Paketshop'), findsWidgets);
+
+    // MarktProfileMenu-Kopfzeile zeigt Name + E-Mail des geladenen Users,
+    // ohne die bestehende storeId-Aufloesung zu beeintraechtigen - Inhalt
+    // erscheint erst nach dem Oeffnen des Popup-Menues.
+    await tester.tap(find.byType(MarktProfileMenu));
+    await tester.pumpAndSettle();
+
+    expect(find.text('DHL User'), findsOneWidget);
+    expect(find.text('dhl-user@example.com'), findsOneWidget);
   });
 }

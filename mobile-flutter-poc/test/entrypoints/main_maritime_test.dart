@@ -16,6 +16,7 @@ import 'package:markt_ma_documents_poc/features/maritime/maritime_login_screen.d
 import 'package:markt_ma_documents_poc/screens/documents_screen.dart';
 import 'package:markt_ma_documents_poc/screens/login_screen.dart';
 import 'package:markt_ma_documents_poc/services/auth_service.dart';
+import 'package:markt_ma_documents_poc/widgets/shared/markt_profile_menu.dart';
 
 void main() {
   const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
@@ -63,18 +64,22 @@ void main() {
     // Seit der Auth-Persistenz-Korrektur vom 23.09. ruft `AuthGate` bei
     // vorhandenem Token `GET /auth/me` auf - hier ueber einen injizierten
     // `MockClient` simuliert (kein echter Netzwerk-Request im Test).
-    // Maritime wertet den geladenen User bewusst nicht aus, der konkrete
-    // Inhalt der Response ist daher fuer diesen Test irrelevant.
+    // Maritime wertet den geladenen User fuer die Store-/Entitlement-Logik
+    // bewusst nicht aus, reicht ihn aber seit der zentralen Current-User-
+    // Anzeige an `MaritimeHomeScreen`/`MarktProfileMenu` durch.
     storedToken = 'dummy-jwt-token';
     final mockClient = MockClient((request) async {
-      return http.Response('{"id":1,"email":"user@example.com","roles":["USER"]}', 200);
+      return http.Response(
+        '{"id":1,"email":"user@example.com","name":"Maritime User","roles":["USER"]}',
+        200,
+      );
     });
 
     await tester.pumpWidget(
       MaterialApp(
         home: AuthGate(
           loginBuilder: (context) => const MaritimeLoginScreen(),
-          homeBuilder: (context, user) => const MaritimeHomeScreen(),
+          homeBuilder: (context, user) => MaritimeHomeScreen(user: user),
           authService: AuthService(client: mockClient),
         ),
       ),
@@ -93,5 +98,13 @@ void main() {
     // Nav-Item, Body-Ueberschrift) - relevant ist nur, dass er ueberhaupt
     // sichtbar ist, nicht mehr "(PoC)" heisst.
     expect(find.text('Maritime'), findsWidgets);
+
+    // MarktProfileMenu-Kopfzeile zeigt Name + E-Mail des geladenen Users -
+    // Inhalt erscheint erst nach dem Oeffnen des Popup-Menues.
+    await tester.tap(find.byType(MarktProfileMenu));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Maritime User'), findsOneWidget);
+    expect(find.text('user@example.com'), findsOneWidget);
   });
 }

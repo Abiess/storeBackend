@@ -28,6 +28,9 @@ void main() {
 
 Widget _buildLogin(BuildContext context) => const MaritimeLoginScreen();
 
-/// [AuthUser] wird bewusst ignoriert (`_`) - Maritime hat noch keine eigene
-/// Entitlement-Aufloesung, siehe Auth-Persistenz-Korrektur vom 23.09.
-Widget _buildHome(BuildContext context, AuthUser? _) => const MaritimeHomeScreen();
+/// Reicht den ueber `AuthGate`/`GET /auth/me` geladenen [AuthUser] an
+/// [MaritimeHomeScreen] durch (siehe Auth-Persistenz-Korrektur vom 23.09.) -
+/// AUSSCHLIESSLICH fuer die zentrale, app-uebergreifende Current-User-
+/// Anzeige im `MarktProfileMenu` (Name/E-Mail). Maritime hat weiterhin
+/// keine eigene Entitlement-/Store-Aufloesung.
+Widget _buildHome(BuildContext context, AuthUser? user) => MaritimeHomeScreen(user: user);

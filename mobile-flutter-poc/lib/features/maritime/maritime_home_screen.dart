@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../models/auth_response.dart';
 import '../../services/auth_service.dart';
 import '../../theme/markt_theme.dart';
 import '../../widgets/shared/markt_app_shell.dart';
@@ -19,7 +20,14 @@ import 'maritime_login_screen.dart';
 /// Maritime-Fachlichkeit (aus Angular) wird bewusst in einem spaeteren,
 /// separaten Schritt portiert.
 class MaritimeHomeScreen extends StatelessWidget {
-  const MaritimeHomeScreen({super.key});
+  const MaritimeHomeScreen({super.key, this.user});
+
+  /// Ueber `AuthGate`/`GET /auth/me` geladener aktueller User (siehe
+  /// Auth-Persistenz-Korrektur vom 23.09.) - hier AUSSCHLIESSLICH fuer die
+  /// zentrale Current-User-Anzeige im [MarktProfileMenu] genutzt (Name/
+  /// E-Mail), keine eigene Entitlement-/Store-Logik (Maritime hat noch
+  /// keine eigene Entitlement-Aufloesung).
+  final AuthUser? user;
 
   Future<void> _logout(BuildContext context) async {
     await AuthService().logout();
@@ -37,7 +45,11 @@ class MaritimeHomeScreen extends StatelessWidget {
       navItems: const [
         MarktNavItem(icon: Icons.directions_boat, label: 'Maritime', selected: true),
       ],
-      profile: MarktProfileMenu(onLogout: () => _logout(context)),
+      profile: MarktProfileMenu(
+        userLabel: user?.name,
+        userSubLabel: user?.email,
+        onLogout: () => _logout(context),
+      ),
       body: _buildBody(context),
     );
   }

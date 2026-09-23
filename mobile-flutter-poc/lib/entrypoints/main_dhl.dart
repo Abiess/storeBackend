@@ -36,5 +36,10 @@ Widget _buildLogin(BuildContext context) => const DhlLoginScreen();
 /// closed: ist `user` `null` (z.B. `/me`-Fehler wird bereits von `AuthGate`
 /// separat behandelt) oder kein aktiviertes DHL-Entitlement vorhanden, ist
 /// `storeId` `null` und `DhlHomeScreen` zeigt selbst den Kein-Zugriff-Zustand.
+///
+/// Zusaetzlich wird [user] selbst (nicht nur die daraus abgeleitete
+/// `storeId`) durchgereicht, damit `DhlHomeScreen` Name/E-Mail in der
+/// zentralen, app-uebergreifenden Current-User-Anzeige (`MarktProfileMenu`)
+/// zeigen kann - ohne die bestehende Store-Aufloesung zu veraendern.
 Widget _buildHome(BuildContext context, AuthUser? user) =>
-    DhlHomeScreen(storeId: user?.storeIdForApp('DHL'));
+    DhlHomeScreen(storeId: user?.storeIdForApp('DHL'), user: user);

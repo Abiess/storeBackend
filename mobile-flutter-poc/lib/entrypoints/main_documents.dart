@@ -32,8 +32,9 @@ void main() {
 
 Widget _buildLogin(BuildContext context) => const LoginScreen();
 
-/// [AuthUser] wird bewusst ignoriert (`_`) - Documents hat noch keine
-/// eigene Entitlement-Aufloesung, siehe Auth-Persistenz-Korrektur vom
-/// 23.09. (`AuthGate` laedt den User nun app-uebergreifend via `/auth/me`,
-/// nur DHL wertet ihn aktuell aus).
-Widget _buildHome(BuildContext context, AuthUser? _) => const DocumentsScreen();
+/// Reicht den ueber `AuthGate`/`GET /auth/me` geladenen [AuthUser] an
+/// [DocumentsScreen] durch (siehe Auth-Persistenz-Korrektur vom 23.09.) -
+/// AUSSCHLIESSLICH fuer die zentrale, app-uebergreifende Current-User-
+/// Anzeige im `MarktProfileMenu` (Name/E-Mail). Documents hat weiterhin
+/// keine eigene Entitlement-/Store-Aufloesung.
+Widget _buildHome(BuildContext context, AuthUser? user) => DocumentsScreen(user: user);

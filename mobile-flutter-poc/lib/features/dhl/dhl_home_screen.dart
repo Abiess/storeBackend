@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../models/auth_response.dart';
 import '../../models/dhl_parcel_dto.dart';
 import '../../services/auth_service.dart';
 import '../../services/dhl_service.dart';
@@ -52,7 +53,7 @@ import 'dhl_store_parcel_screen.dart';
 /// aufloest - kein separates storeId-Caching, keine neue Store-Context-
 /// Architektur.
 class DhlHomeScreen extends StatefulWidget {
-  const DhlHomeScreen({super.key, this.storeId, this.dhlService});
+  const DhlHomeScreen({super.key, this.storeId, this.dhlService, this.user});
 
   final int? storeId;
 
@@ -61,6 +62,14 @@ class DhlHomeScreen extends StatefulWidget {
   /// `AuthService`/`DocumentsService`), ohne dass Consumer-Code diesen
   /// Parameter im Normalbetrieb setzen muss.
   final DhlService? dhlService;
+
+  /// Ueber `AuthGate`/`GET /auth/me` geladener aktueller User (siehe
+  /// Auth-Persistenz-Korrektur vom 23.09.) - hier ZUSAETZLICH zur
+  /// bestehenden `storeId`-Aufloesung (siehe `main_dhl.dart`) fuer die
+  /// zentrale Current-User-Anzeige im [MarktProfileMenu] genutzt (Name/
+  /// E-Mail). Aendert NICHTS an der bestehenden `storeIdForApp('DHL')`-
+  /// Logik im Entrypoint.
+  final AuthUser? user;
 
   @override
   State<DhlHomeScreen> createState() => _DhlHomeScreenState();
@@ -186,7 +195,11 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
           icon: const Icon(Icons.refresh),
         ),
       ],
-      profile: MarktProfileMenu(onLogout: _logout),
+      profile: MarktProfileMenu(
+        userLabel: widget.user?.name,
+        userSubLabel: widget.user?.email,
+        onLogout: _logout,
+      ),
       // Prominente Einlagerungs-Aktion (siehe Aufgabenstellung "+ Paket
       // einlagern") - nur sichtbar/aktiv, wenn ueberhaupt eine storeId
       // aufgeloest werden konnte (fail closed, kein Aufruf ohne storeId).

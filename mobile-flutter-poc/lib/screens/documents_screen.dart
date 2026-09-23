@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../models/auth_response.dart';
 import '../models/document_dto.dart';
 import '../services/auth_service.dart';
 import '../services/documents_service.dart';
@@ -20,14 +21,27 @@ import 'login_screen.dart';
 /// das ist genau der Punkt, den der PoC fuer Flutter beantworten soll) und
 /// direkt an `POST /api/documents/upload` sendet.
 class DocumentsScreen extends StatefulWidget {
-  const DocumentsScreen({super.key});
+  const DocumentsScreen({super.key, this.user, this.documentsService});
+
+  /// Ueber `AuthGate`/`GET /auth/me` geladener aktueller User (siehe
+  /// Auth-Persistenz-Korrektur vom 23.09.) - hier AUSSCHLIESSLICH fuer die
+  /// zentrale Current-User-Anzeige im [MarktProfileMenu] genutzt (Name/
+  /// E-Mail), keine eigene Entitlement-/Store-Logik (Documents kennt keine
+  /// Store-Zuordnung).
+  final AuthUser? user;
+
+  /// Nur fuer Tests: erlaubt das Einschleusen eines Fake-`DocumentsService`
+  /// (analog zum bestehenden `dhlService`-Injection-Muster in
+  /// `DhlHomeScreen`), ohne dass Consumer-Code diesen Parameter im
+  /// Normalbetrieb setzen muss.
+  final DocumentsService? documentsService;
 
   @override
   State<DocumentsScreen> createState() => _DocumentsScreenState();
 }
 
 class _DocumentsScreenState extends State<DocumentsScreen> {
-  final _documentsService = DocumentsService();
+  late final DocumentsService _documentsService = widget.documentsService ?? DocumentsService();
   final _authService = AuthService();
   final _picker = ImagePicker();
 
@@ -142,7 +156,11 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       actions: [
         IconButton(onPressed: _loading ? null : _loadDocuments, icon: const Icon(Icons.refresh)),
       ],
-      profile: MarktProfileMenu(onLogout: _logout),
+      profile: MarktProfileMenu(
+        userLabel: widget.user?.name,
+        userSubLabel: widget.user?.email,
+        onLogout: _logout,
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _uploading ? null : _takePhotoAndUpload,
         icon: _uploading
