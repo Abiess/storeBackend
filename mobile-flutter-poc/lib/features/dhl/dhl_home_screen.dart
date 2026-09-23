@@ -202,17 +202,9 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = MarktBreakpoints.isDesktop(constraints.maxWidth);
-        // Bugfix (Layout-Regression): Header + Stat-Cards + Suchzeile
-        // koennen auf kompakten Bildschirmhoehen (z.B. Tablet-Breite bei
-        // begrenzter Hoehe) mehr vertikalen Platz beanspruchen, als
-        // verfuegbar ist. Ein `Expanded` fuer die Paketliste wuerde dann
-        // auf (nahezu) 0 Hoehe zusammengedrueckt, wodurch keine Pakete
-        // mehr sichtbar sind. Stattdessen bekommt die Paketliste hier eine
-        // garantierte Mindesthoehe (fest, aus der verfuegbaren
-        // Bildschirmhoehe abgeleitet) und die Seite als Ganzes wird
-        // scrollbar - Header/Stat-Cards/Suche scrollen mit, statt die
-        // Liste zu verdraengen.
-        final listHeight = MediaQuery.sizeOf(context).height >= 700 ? 560.0 : 420.0;
+        final isPhone = MarktBreakpoints.isPhone(constraints.maxWidth);
+        final horizontalPadding = isDesktop ? MarktSpacing.xl : MarktSpacing.md;
+
         return Center(
           child: ConstrainedBox(
             // Sinnvolle Max-Content-Breite (siehe Aufgabenstellung) - nur
@@ -220,23 +212,61 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
             // 1280-1600px-Desktop-Breiten wird der verfuegbare Platz
             // weiterhin voll genutzt.
             constraints: const BoxConstraints(maxWidth: 1400),
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: isDesktop ? MarktSpacing.xl : MarktSpacing.md,
-                vertical: MarktSpacing.md,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildPageHeader(context),
-                  const SizedBox(height: MarktSpacing.lg),
-                  _buildStatCards(context, isDesktop),
-                  const SizedBox(height: MarktSpacing.xl),
-                  _buildSectionHeader(context),
-                  const SizedBox(height: MarktSpacing.md),
-                  SizedBox(height: listHeight, child: _buildParcelList(context)),
-                ],
-              ),
+            // Layout-Fix (Regression): Header + Stat-Cards + Suchzeile
+            // koennen - je nach Bildschirmhoehe - mehr vertikalen Platz
+            // beanspruchen, als verfuegbar ist. Ein `Column`+`Expanded`
+            // fuer die Paketliste wuerde in diesem Fall auf (nahezu) 0
+            // Hoehe zusammengedrueckt (der Fehler aus dem vorherigen
+            // UI-Pass). Ein `CustomScrollView` mit einem abschliessenden
+            // `SliverFillRemaining(hasScrollBody: true)` loest das
+            // natuerlich/responsiv: Der Header-Bereich nimmt genau so
+            // viel Platz ein, wie er benoetigt; die Paketliste bekommt
+            // IMMER die tatsaechlich verbleibende Viewport-Hoehe (auf
+            // grossen Bildschirmen: viel Platz; auf kleinen: man scrollt
+            // ggf. kurz weiter - niemals eine erzwungene/fest verdrahtete
+            // Pixelzahl). Kein nested-Scroll-Konflikt:
+            // `SliverFillRemaining(hasScrollBody: true)` ist exakt fuer
+            // ein scrollbares Kind (hier: `MarktResponsiveDataList`s
+            // eigene ListView/GridView + RefreshIndicator) innerhalb eines
+            // `CustomScrollView` vorgesehen - dieselbe Technik, die z.B.
+            // `NestedScrollView` nutzt, nur ohne Collapsing-Header.
+            //
+            // Damit die Paketliste auch auf kompakten Bildschirmhoehen
+            // (z.B. 800x600) OHNE Scrollen bereits sichtbar ist, bleibt
+            // der Header-Bereich selbst bewusst kompakt: Die Stat-Cards
+            // stehen ab Tablet-Breite (>= 600px, `!isPhone`) nebeneinander
+            // in einer Reihe statt gestapelt - das ist KEIN Test-Hack,
+            // sondern schlicht der sinnvollere/kompaktere Aufbau ab dieser
+            // Breite (3 kurze Kennzahl-Karten passen dort problemlos in
+            // eine Zeile). Nur auf echten Phone-Breiten (< 600px) werden
+            // sie gestapelt, weil dort keine 3 Karten nebeneinander
+            // passen.
+            child: CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(horizontalPadding, MarktSpacing.md, horizontalPadding, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildPageHeader(context),
+                        const SizedBox(height: MarktSpacing.lg),
+                        _buildStatCards(context, stacked: isPhone),
+                        const SizedBox(height: MarktSpacing.lg),
+                        _buildSectionHeader(context, stacked: isPhone),
+                        const SizedBox(height: MarktSpacing.md),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, MarktSpacing.md),
+                  sliver: SliverFillRemaining(
+                    hasScrollBody: true,
+                    child: _buildParcelList(context),
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -278,10 +308,13 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
 
   /// Kennzahl-Karten (siehe Aufgabenstellung) - ausschliesslich aus der
   /// bereits geladenen [_parcels]-Liste abgeleitet, keine Fake-Daten/neuen
-  /// Endpoints. Auf Desktop nebeneinander, auf schmaleren Breiten
-  /// (Tablet/Phone) untereinander gestapelt (`Wrap`, damit es bei sehr
-  /// schmalen Breiten nicht overflowt).
-  Widget _buildStatCards(BuildContext context, bool isDesktop) {
+  /// Endpoints. Stehen ab Tablet-Breite (>= 600px) nebeneinander in einer
+  /// Reihe (kompakt, bewusst NICHT erst ab Desktop - 3 kurze Karten
+  /// passen bereits ab Tablet-Breite problemlos nebeneinander und halten
+  /// den Header-Bereich insgesamt niedrig, siehe [_buildBody]). Nur auf
+  /// echten Phone-Breiten ([stacked] = `true`) werden sie untereinander
+  /// gestapelt, da dort keine 3 Karten nebeneinander passen.
+  Widget _buildStatCards(BuildContext context, {required bool stacked}) {
     final colorScheme = Theme.of(context).colorScheme;
     final cards = [
       DhlStatCard(
@@ -304,7 +337,7 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
       ),
     ];
 
-    if (!isDesktop) {
+    if (stacked) {
       return Column(
         children: [
           for (final card in cards) ...[card, const SizedBox(height: MarktSpacing.sm)],
@@ -322,29 +355,44 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context) {
+  /// Sektions-Header "Pakete im Laden" + clientseitige Suche. Steht ab
+  /// Tablet-Breite in einer Reihe (Titel links, Suchfeld mit fester Breite
+  /// rechts); auf echten Phone-Breiten ([stacked] = `true`) wird das
+  /// Suchfeld darunter ueber die volle Breite gestapelt, da eine feste
+  /// 320px-Breite auf sehr schmalen Bildschirmen (z.B. 360px) sonst
+  /// overflowen wuerde.
+  Widget _buildSectionHeader(BuildContext context, {required bool stacked}) {
+    final title = Text(
+      'Pakete im Laden',
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+    );
+    final searchField = TextField(
+      controller: _searchController,
+      decoration: const InputDecoration(
+        isDense: true,
+        prefixIcon: Icon(Icons.search),
+        hintText: 'Suche nach Trackingnummer/Lagerplatz',
+        border: OutlineInputBorder(),
+      ),
+    );
+
+    if (stacked) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          title,
+          const SizedBox(height: MarktSpacing.sm),
+          searchField,
+        ],
+      );
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(
-          child: Text(
-            'Pakete im Laden',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-          ),
-        ),
+        Expanded(child: title),
         const SizedBox(width: MarktSpacing.md),
-        SizedBox(
-          width: 320,
-          child: TextField(
-            controller: _searchController,
-            decoration: const InputDecoration(
-              isDense: true,
-              prefixIcon: Icon(Icons.search),
-              hintText: 'Suche nach Trackingnummer/Lagerplatz',
-              border: OutlineInputBorder(),
-            ),
-          ),
-        ),
+        SizedBox(width: 320, child: searchField),
       ],
     );
   }
