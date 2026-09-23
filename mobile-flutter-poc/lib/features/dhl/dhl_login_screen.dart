@@ -11,9 +11,16 @@ import 'dhl_home_screen.dart';
 /// DHL-Branding (appName/headline/description/icon) + der bestehende
 /// `AuthService.login`.
 ///
-/// Nach erfolgreichem Login navigiert dieser Consumer zu [DhlHomeScreen] -
-/// `MarktLoginScreen` selbst kennt weder "DHL" noch den Navigator (siehe
-/// Doku in `markt_login_screen.dart`).
+/// Nach erfolgreichem Login wird die `storeId` fuer das DHL-Entitlement
+/// FAIL CLOSED aus der bestehenden Login-Response aufgeloest (siehe
+/// DHL-Audit vom 23.09.: `AuthResponse.user.apps[]` = `AppEntitlementDTO`
+/// mit `{app, storeId, enabled}`, keine neue Store-Context-Architektur,
+/// kein neuer Endpoint) und an [DhlHomeScreen] weitergereicht. Ist kein
+/// aktiviertes DHL-Entitlement vorhanden, ist `storeId` `null` -
+/// `DhlHomeScreen` zeigt in diesem Fall selbst einen expliziten
+/// Kein-Zugriff-Zustand (siehe dort), statt dass dieser Login-Screen den
+/// Login selbst blockiert (Login bleibt generisch, Entitlement-Pruefung
+/// bleibt Sache der jeweiligen App - identisch zum Backend-Modell).
 class DhlLoginScreen extends StatelessWidget {
   const DhlLoginScreen({super.key});
 
@@ -27,10 +34,11 @@ class DhlLoginScreen extends StatelessWidget {
       description: 'Pakete und Sendungen im Blick',
       icon: Icons.local_shipping,
       onLogin: (email, password) async {
-        await authService.login(email: email, password: password);
+        final authResponse = await authService.login(email: email, password: password);
         if (!context.mounted) return;
+        final storeId = authResponse.user.storeIdForApp('DHL');
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const DhlHomeScreen()),
+          MaterialPageRoute(builder: (_) => DhlHomeScreen(storeId: storeId)),
         );
       },
     );

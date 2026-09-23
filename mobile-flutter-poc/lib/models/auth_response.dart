@@ -27,6 +27,14 @@ class AuthUser {
   final List<String> roles;
   final String? appAccessMode;
 
+  /// Spiegelt `UserDTO.apps` (`List<AppEntitlementDTO>`, siehe DHL-Audit vom
+  /// 23.09.) - die rohe Liste der EXPLIZITEN App-Entitlement-Eintraege
+  /// (`{app, storeId, enabled}`). Bewusst keine implizite Auffuellung: fehlt
+  /// ein Eintrag fuer eine App, ist das NICHT gleichbedeutend mit "enabled:
+  /// false" fuer diese App, sondern schlicht "keine Aussage" - identisch zur
+  /// Backend-Semantik.
+  final List<AppEntitlement> apps;
+
   AuthUser({
     required this.id,
     required this.email,
@@ -34,6 +42,7 @@ class AuthUser {
     this.role,
     this.roles = const [],
     this.appAccessMode,
+    this.apps = const [],
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
@@ -44,6 +53,50 @@ class AuthUser {
       role: json['role'] as String?,
       roles: (json['roles'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
       appAccessMode: json['appAccessMode'] as String?,
+      apps: (json['apps'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(AppEntitlement.fromJson)
+              .toList() ??
+          const [],
+    );
+  }
+
+  /// Loest die `storeId` fuer eine store-gebundene App auf (z.B. `"DHL"`,
+  /// vergleiche `AppKey.DHL` im Backend) - FAIL CLOSED:
+  ///
+  /// Gibt `null` zurueck, wenn kein passender, EXPLIZIT aktivierter
+  /// Entitlement-Eintrag existiert (App fehlt komplett in `apps`, ist
+  /// vorhanden aber `enabled: false`, oder hat aus irgendeinem Grund keine
+  /// `storeId`). Es wird NIE geraten/der erstbeste Store genommen - ein
+  /// Consumer (z.B. `DhlHomeScreen`) MUSS mit `null` einen
+  /// Kein-Zugriff-Zustand zeigen statt eine Fachlichkeit ohne gesicherten
+  /// Store-Kontext zu laden.
+  int? storeIdForApp(String appKey) {
+    for (final entitlement in apps) {
+      if (entitlement.app == appKey && entitlement.enabled) {
+        return entitlement.storeId;
+      }
+    }
+    return null;
+  }
+}
+
+/// Spiegelt `AppEntitlementDTO.java` (storebackend.dto) 1:1 - keine eigenen,
+/// zusaetzlichen Felder. `app` bleibt bewusst ein roher `String` (nicht ein
+/// Dart-`enum`), damit neue Backend-`AppKey`-Werte (siehe `AppKey.java`)
+/// nicht zu einem Parse-Fehler in bestehenden Flutter-Apps fuehren.
+class AppEntitlement {
+  final String app;
+  final int? storeId;
+  final bool enabled;
+
+  AppEntitlement({required this.app, this.storeId, required this.enabled});
+
+  factory AppEntitlement.fromJson(Map<String, dynamic> json) {
+    return AppEntitlement(
+      app: json['app'] as String? ?? '',
+      storeId: (json['storeId'] as num?)?.toInt(),
+      enabled: json['enabled'] as bool? ?? false,
     );
   }
 }

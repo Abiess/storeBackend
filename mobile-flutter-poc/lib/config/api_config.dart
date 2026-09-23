@@ -40,4 +40,9 @@ class ApiConfig {
   static const String loginPath = '/auth/login';
   static const String documentsUploadPath = '/documents/upload';
   static const String documentsListPath = '/documents';
+
+  /// Bestehender, unveraenderter Endpoint `GET /api/stores/{storeId}/dhl/parcels/stored`
+  /// (siehe DHL-Audit vom 23.09., `DhlController.listStoredParcels`). Liest
+  /// ausschliesslich bereits in der DB gespeicherte Pakete - kein DHL-API-Call.
+  static String dhlStoredParcelsPath(int storeId) => '/stores/$storeId/dhl/parcels/stored';
 }

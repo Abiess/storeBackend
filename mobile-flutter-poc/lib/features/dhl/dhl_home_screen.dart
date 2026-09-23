@@ -1,29 +1,98 @@
 import 'package:flutter/material.dart';
 
+import '../../models/dhl_parcel_dto.dart';
 import '../../services/auth_service.dart';
+import '../../services/dhl_service.dart';
 import '../../theme/markt_theme.dart';
+import '../../widgets/dhl/dhl_parcel_card.dart';
 import '../../widgets/shared/markt_app_shell.dart';
 import '../../widgets/shared/markt_card.dart';
 import '../../widgets/shared/markt_icon_badge.dart';
 import '../../widgets/shared/markt_profile_menu.dart';
+import '../../widgets/shared/markt_responsive_data_list.dart';
 import '../../widgets/shared/markt_side_nav.dart';
 import 'dhl_login_screen.dart';
 
-/// Minimaler DHL/Paketshop-Home-Screen - dritte App aus derselben
-/// Codebasis (siehe Multi-App-Beweis vom 22.09.), analog zu
-/// `features/maritime/maritime_home_screen.dart`. Verwendet dieselbe
-/// [MarktAppShell]/[MarktSideNav], OHNE Documents/Maritime anzufassen.
+/// DHL/Paketshop-Home-Screen - erster echter End-to-End-Flow
+/// "Pakete im Laden" (siehe DHL-Audit vom 23.09. + Umsetzung danach).
 ///
-/// Bewusst KEINE Fachlichkeit: keine Paket-/Sendungs-/Tracking-Logik,
-/// keine erfundenen APIs/Fake-Daten - nur ein Platzhalter-Inhalt, der klar
-/// als "DHL Paketshop" erkennbar ist. Die eigentliche DHL-Fachlichkeit
-/// wird bewusst in einem spaeteren, separaten Schritt portiert.
-class DhlHomeScreen extends StatelessWidget {
-  const DhlHomeScreen({super.key});
+/// Ruft ausschliesslich den bestehenden, lesenden Endpoint
+/// `GET /api/stores/{storeId}/dhl/parcels/stored` ueber [DhlService] auf -
+/// KEIN Scanner, KEIN Einlagern/Abholen/Stornieren, KEIN Aufruf der
+/// externen DHL-Tracking-API aus Flutter (das Backend liest hier nur
+/// bereits gespeicherte DB-Daten, siehe `DhlParcelService.listStoredParcels`).
+///
+/// [storeId] wird vom Aufrufer (i.d.R. `DhlLoginScreen` direkt nach
+/// erfolgreichem Login, siehe dort) aus `AuthUser.storeIdForApp('DHL')`
+/// aufgeloest und hier lediglich entgegengenommen - dieser Screen kennt
+/// selbst keine Login-/Entitlement-Logik.
+///
+/// WICHTIG (fail-closed, siehe Audit-Abschnitt "kein DHL entitlement / kein
+/// storeId / DHL disabled"): Ist [storeId] `null` (z.B. kein aktiviertes
+/// DHL-Entitlement, oder Cold-Start ueber `AuthGate` mit bereits
+/// gespeichertem Token, siehe `entrypoints/main_dhl.dart` - dort ist zur
+/// Laufzeit keine `AuthResponse`/kein `user.apps` mehr verfuegbar, da nur
+/// das JWT persistiert wird, siehe `TokenStorage`), wird NIE versucht, eine
+/// storeId zu raten oder den Endpoint ohne storeId aufzurufen. Stattdessen
+/// zeigt dieser Screen einen expliziten Kein-Zugriff-Zustand. Ein
+/// vollstaendiges "nach App-Neustart automatisch wieder storeId auflösen"
+/// wuerde eine Erweiterung von `/api/auth/me` (aktuell ohne `apps`, siehe
+/// `AuthController.getCurrentUser`) oder einen neuen Endpoint benoetigen -
+/// beides ist bewusst NICHT Teil dieses ersten Schritts.
+class DhlHomeScreen extends StatefulWidget {
+  const DhlHomeScreen({super.key, this.storeId, this.dhlService});
 
-  Future<void> _logout(BuildContext context) async {
-    await AuthService().logout();
-    if (!context.mounted) return;
+  final int? storeId;
+
+  /// Nur fuer Tests: erlaubt das Einschleusen eines Fake-`DhlService`
+  /// (analog zum bestehenden `client`-Injection-Muster in
+  /// `AuthService`/`DocumentsService`), ohne dass Consumer-Code diesen
+  /// Parameter im Normalbetrieb setzen muss.
+  final DhlService? dhlService;
+
+  @override
+  State<DhlHomeScreen> createState() => _DhlHomeScreenState();
+}
+
+class _DhlHomeScreenState extends State<DhlHomeScreen> {
+  late final DhlService _dhlService = widget.dhlService ?? DhlService();
+  final _authService = AuthService();
+
+  List<DhlParcelDto> _parcels = [];
+  bool _loading = false;
+  Object? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.storeId != null) {
+      _loadParcels();
+    }
+  }
+
+  Future<void> _loadParcels() async {
+    final storeId = widget.storeId;
+    if (storeId == null) return; // fail closed: kein Aufruf ohne gesicherte storeId
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final parcels = await _dhlService.listStoredParcels(storeId);
+      if (!mounted) return;
+      setState(() => _parcels = parcels);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _logout() async {
+    await _authService.logout();
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const DhlLoginScreen()),
     );
@@ -37,14 +106,19 @@ class DhlHomeScreen extends StatelessWidget {
       navItems: const [
         MarktNavItem(icon: Icons.local_shipping, label: 'DHL Paketshop', selected: true),
       ],
-      profile: MarktProfileMenu(onLogout: () => _logout(context)),
+      actions: [
+        IconButton(
+          onPressed: widget.storeId == null || _loading ? null : _loadParcels,
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
+      profile: MarktProfileMenu(onLogout: _logout),
       body: _buildBody(context),
     );
   }
 
   /// Kleiner Branding-Slot oberhalb der Sidebar/des Drawers - analog zu
-  /// `DocumentsScreen._buildBrandHeader` / `MaritimeHomeScreen._buildBrandHeader`.
-  /// Lebt bewusst hier (Consumer), nicht in `MarktSideNav`/`MarktAppShell` selbst.
+  /// `DocumentsScreen`/`MaritimeHomeScreen`.
   Widget _buildBrandHeader(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
@@ -72,12 +146,27 @@ class DhlHomeScreen extends StatelessWidget {
   }
 
   Widget _buildBody(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    if (widget.storeId == null) {
+      return _buildNoEntitlement(context);
+    }
 
-    // Bewusst nur ein Platzhalter-Hinweis (keine Fake-Fachdaten, keine
-    // erfundenen APIs) - dieser Screen soll ausschliesslich beweisen, dass
-    // MarktAppShell/MarktSideNav/MarktCard/MarktIconBadge fuer eine dritte,
-    // eigenstaendige App (DHL Paketshop) funktionieren.
+    return MarktResponsiveDataList<DhlParcelDto>(
+      items: _parcels,
+      loading: _loading,
+      error: _error,
+      onRefresh: _loadParcels,
+      emptyWidget: const Text('Keine Pakete im Laden'),
+      gridItemHeight: 116,
+      itemBuilder: (context, parcel) => DhlParcelCard(parcel: parcel),
+    );
+  }
+
+  /// Fail-closed-Zustand: kein aktiviertes DHL-Entitlement / keine
+  /// aufgeloeste storeId (siehe Klassendoku). Zeigt dies explizit an statt
+  /// eine leere Liste zu simulieren oder den Endpoint ohne storeId
+  /// aufzurufen.
+  Widget _buildNoEntitlement(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: MarktCard(
         padding: const EdgeInsets.all(MarktSpacing.xl),
@@ -85,19 +174,20 @@ class DhlHomeScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             MarktIconBadge(
-              icon: Icon(Icons.local_shipping, color: colorScheme.primary),
-              accentColor: colorScheme.primary,
+              icon: Icon(Icons.lock_outline, color: colorScheme.error),
+              accentColor: colorScheme.error,
               size: 64,
             ),
             const SizedBox(height: MarktSpacing.lg),
             Text(
-              'DHL Paketshop',
+              'Kein DHL-Zugriff',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: MarktSpacing.sm),
             Text(
-              'Dieser Bereich ist noch nicht fachlich implementiert - '
-              'die Shell ist bereits einsatzbereit.',
+              'Fuer diesen Account ist kein aktiviertes DHL-Paketshop-Entitlement '
+              'mit Store-Zuordnung bekannt, oder die Sitzung wurde ohne frischen '
+              'Login wiederhergestellt. Bitte neu einloggen.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             ),

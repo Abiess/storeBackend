@@ -5,6 +5,7 @@
 // Platform-Plugins noetig.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:markt_ma_documents_poc/models/auth_response.dart';
+import 'package:markt_ma_documents_poc/models/dhl_parcel_dto.dart';
 import 'package:markt_ma_documents_poc/models/document_dto.dart';
 
 void main() {
@@ -41,6 +42,127 @@ void main() {
 
       expect(result.user.name, isNull);
       expect(result.user.roles, isEmpty);
+    });
+
+    test('parst user.apps[] (AppEntitlementDTO: app/storeId/enabled)', () {
+      final json = {
+        'token': 'x',
+        'user': {
+          'id': 1,
+          'email': 'a@b.c',
+          'apps': [
+            {'app': 'DOCUMENTS', 'storeId': null, 'enabled': true},
+            {'app': 'DHL', 'storeId': 7, 'enabled': true},
+          ],
+        },
+      };
+
+      final result = AuthResponse.fromJson(json);
+
+      expect(result.user.apps, hasLength(2));
+      expect(result.user.apps[1].app, 'DHL');
+      expect(result.user.apps[1].storeId, 7);
+      expect(result.user.apps[1].enabled, isTrue);
+    });
+
+    test('kommt ohne apps-Feld klar (leere Liste statt Crash)', () {
+      final json = {
+        'token': 'x',
+        'user': {'id': 1, 'email': 'a@b.c'},
+      };
+
+      final result = AuthResponse.fromJson(json);
+
+      expect(result.user.apps, isEmpty);
+    });
+  });
+
+  group('AuthUser.storeIdForApp (fail-closed)', () {
+    AuthUser userWithApps(List<AppEntitlement> apps) {
+      return AuthUser(id: 1, email: 'a@b.c', apps: apps);
+    }
+
+    test('liefert storeId fuer aktiviertes, passendes Entitlement', () {
+      final user = userWithApps([
+        AppEntitlement(app: 'DHL', storeId: 7, enabled: true),
+      ]);
+
+      expect(user.storeIdForApp('DHL'), 7);
+    });
+
+    test('liefert null wenn Entitlement vorhanden aber disabled ist', () {
+      final user = userWithApps([
+        AppEntitlement(app: 'DHL', storeId: 7, enabled: false),
+      ]);
+
+      expect(user.storeIdForApp('DHL'), isNull);
+    });
+
+    test('liefert null wenn die App gar nicht in apps[] vorkommt', () {
+      final user = userWithApps([
+        AppEntitlement(app: 'DOCUMENTS', storeId: null, enabled: true),
+      ]);
+
+      expect(user.storeIdForApp('DHL'), isNull);
+    });
+
+    test('liefert null bei komplett leerer apps-Liste', () {
+      final user = userWithApps(const []);
+
+      expect(user.storeIdForApp('DHL'), isNull);
+    });
+
+    test('waehlt aus mehreren Eintraegen gezielt den passenden aus', () {
+      final user = userWithApps([
+        AppEntitlement(app: 'MARITIME', storeId: 3, enabled: true),
+        AppEntitlement(app: 'DHL', storeId: 9, enabled: true),
+      ]);
+
+      expect(user.storeIdForApp('DHL'), 9);
+      expect(user.storeIdForApp('MARITIME'), 3);
+    });
+  });
+
+  group('DhlParcelDto.fromJson', () {
+    test('parst alle Felder 1:1 wie DhlParcelResponse.java', () {
+      final json = {
+        'id': 1,
+        'storeId': 7,
+        'trackingCode': '00340434161094159273',
+        'shelfLocation': 'Regal A3',
+        'receivedAt': '2026-01-15T10:00:00',
+        'status': 'STORED',
+        'standardEventCode': '1',
+      };
+
+      final dto = DhlParcelDto.fromJson(json);
+
+      expect(dto.id, 1);
+      expect(dto.storeId, 7);
+      expect(dto.trackingCode, '00340434161094159273');
+      expect(dto.shelfLocation, 'Regal A3');
+      expect(dto.receivedAt, '2026-01-15T10:00:00');
+      expect(dto.status, 'STORED');
+      expect(dto.standardEventCode, '1');
+    });
+
+    test('faengt fehlende optionale Felder robust ab statt zu crashen', () {
+      final json = {'id': 2, 'storeId': 7, 'trackingCode': 'X1'};
+
+      final dto = DhlParcelDto.fromJson(json);
+
+      expect(dto.shelfLocation, isNull);
+      expect(dto.receivedAt, isNull);
+      expect(dto.status, 'STORED');
+      expect(dto.standardEventCode, isNull);
+    });
+
+    test('faengt sogar eine komplett leere Map robust ab', () {
+      final dto = DhlParcelDto.fromJson(const {});
+
+      expect(dto.id, 0);
+      expect(dto.trackingCode, '-');
+      expect(dto.status, 'STORED');
     });
   });
 
