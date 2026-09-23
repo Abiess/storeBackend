@@ -4,14 +4,19 @@
 // Platform-Channel hat - deshalb wird der zugrunde liegende MethodChannel
 // hier gemockt (identisches Muster wie in `test/core/auth_gate_test.dart`
 // und `test/entrypoints/main_dhl_test.dart`). Der eigentliche HTTP-Aufruf
-// wird ueber `package:http/testing.dart` MockClient simuliert - es wird
-// dabei bewusst NUR der bestehende, lesende Endpoint
-// `GET /stores/{storeId}/dhl/parcels/stored` erwartet, kein anderer Pfad.
+// wird ueber `package:http/testing.dart` MockClient simuliert - es werden
+// dabei bewusst NUR die bestehenden Endpunkte
+// `GET /stores/{storeId}/dhl/parcels/stored`,
+// `POST /stores/{storeId}/dhl/tracking/validate` und
+// `POST /stores/{storeId}/dhl/parcels/store` erwartet, kein anderer Pfad.
+import 'dart:convert';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:markt_ma_documents_poc/config/api_config.dart';
+import 'package:markt_ma_documents_poc/models/dhl_store_parcel_request.dart';
 import 'package:markt_ma_documents_poc/services/dhl_service.dart';
 import 'package:markt_ma_documents_poc/services/token_storage.dart';
 
@@ -93,5 +98,116 @@ void main() {
     await service.listStoredParcels(7);
 
     expect(calledHeaders.containsKey('Authorization'), isTrue);
+  });
+
+  group('validateTrackingCode', () {
+    test('ruft exakt POST /stores/{storeId}/dhl/tracking/validate mit dem Tracking-Code auf', () async {
+      late Uri calledUri;
+      late String? calledMethod;
+      late Map<String, dynamic> calledBody;
+      final mockClient = MockClient((request) async {
+        calledUri = request.url;
+        calledMethod = request.method;
+        calledBody = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response('{"status":"VALID","trackingCode":"JVGL0605379700518040","pieceCode":"JVGL0605379700518040"}', 200);
+      });
+
+      final service = DhlService(client: mockClient);
+      final result = await service.validateTrackingCode(7, 'JVGL0605379700518040');
+
+      expect(calledMethod, 'POST');
+      expect(calledUri.toString(), '${ApiConfig.baseUrl}/stores/7/dhl/tracking/validate');
+      expect(calledBody['trackingCode'], 'JVGL0605379700518040');
+      expect(result.isValid, isTrue);
+      expect(result.status, 'VALID');
+    });
+
+    test('liefert status NOT_FOUND bei HTTP 200 mit status=NOT_FOUND', () async {
+      final mockClient = MockClient(
+        (request) async => http.Response('{"status":"NOT_FOUND","trackingCode":"X"}', 200),
+      );
+
+      final service = DhlService(client: mockClient);
+      final result = await service.validateTrackingCode(7, 'X');
+
+      expect(result.isValid, isFalse);
+      expect(result.status, 'NOT_FOUND');
+    });
+
+    test('liefert status NOT_FOUND (kein ApiException) bei HTTP 422 DHL_TRACKING_NOT_FOUND', () async {
+      final mockClient = MockClient(
+        (request) async => http.Response(
+          '{"error":"DHL shipment not found","code":"DHL_TRACKING_NOT_FOUND","message":"Keine gueltige DHL-Sendung gefunden."}',
+          422,
+        ),
+      );
+
+      final service = DhlService(client: mockClient);
+      final result = await service.validateTrackingCode(7, 'X');
+
+      expect(result.isValid, isFalse);
+      expect(result.status, 'NOT_FOUND');
+      expect(result.dhlErrorMessage, 'Keine gueltige DHL-Sendung gefunden.');
+    });
+
+    test('wirft ApiException bei echtem technischem Fehler (503 DHL_AUTHENTICATION_ERROR)', () async {
+      final mockClient = MockClient(
+        (request) async => http.Response(
+          '{"error":"DHL tracking validation failed","errorCode":"AUTHENTICATION_ERROR","message":"DHL nicht erreichbar"}',
+          503,
+        ),
+      );
+
+      final service = DhlService(client: mockClient);
+
+      expect(
+        () => service.validateTrackingCode(7, 'X'),
+        throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 503)),
+      );
+    });
+  });
+
+  group('storeParcel', () {
+    test('ruft exakt POST /stores/{storeId}/dhl/parcels/store mit mode=auto auf und parst das Paket', () async {
+      late Uri calledUri;
+      late Map<String, dynamic> calledBody;
+      final mockClient = MockClient((request) async {
+        calledUri = request.url;
+        calledBody = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(
+          '{"id":9,"storeId":7,"trackingCode":"JVGL0605379700518040","shelfLocation":"A3","receivedAt":"2026-01-15T10:00:00","status":"STORED"}',
+          200,
+        );
+      });
+
+      final service = DhlService(client: mockClient);
+      final parcel = await service.storeParcel(
+        7,
+        const DhlStoreParcelRequest(trackingCode: 'JVGL0605379700518040', mode: 'auto'),
+      );
+
+      expect(calledUri.toString(), '${ApiConfig.baseUrl}/stores/7/dhl/parcels/store');
+      expect(calledBody['trackingCode'], 'JVGL0605379700518040');
+      expect(calledBody['mode'], 'auto');
+      expect(calledBody.containsKey('slotCode'), isFalse);
+      expect(parcel.shelfLocation, 'A3');
+    });
+
+    test('wirft ApiException mit Backend-message bei 409 (bereits eingelagert)', () async {
+      final mockClient = MockClient(
+        (request) async => http.Response('{"code":"PARCEL_ALREADY_STORED","message":"Paket bereits eingelagert"}', 409),
+      );
+
+      final service = DhlService(client: mockClient);
+
+      expect(
+        () => service.storeParcel(7, const DhlStoreParcelRequest(trackingCode: 'X', mode: 'auto')),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.statusCode, 'statusCode', 409)
+              .having((e) => e.message, 'message', 'Paket bereits eingelagert'),
+        ),
+      );
+    });
   });
 }

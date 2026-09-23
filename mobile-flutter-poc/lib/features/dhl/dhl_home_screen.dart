@@ -16,15 +16,20 @@ import '../../widgets/shared/markt_profile_menu.dart';
 import '../../widgets/shared/markt_responsive_data_list.dart';
 import '../../widgets/shared/markt_side_nav.dart';
 import 'dhl_login_screen.dart';
+import 'dhl_store_parcel_screen.dart';
 
 /// DHL/Paketshop-Home-Screen - erster echter End-to-End-Flow
 /// "Pakete im Laden" (siehe DHL-Audit vom 23.09. + Umsetzung danach).
 ///
-/// Ruft ausschliesslich den bestehenden, lesenden Endpoint
+/// Ruft fuer die Liste ausschliesslich den bestehenden, lesenden Endpoint
 /// `GET /api/stores/{storeId}/dhl/parcels/stored` ueber [DhlService] auf -
-/// KEIN Scanner, KEIN Einlagern/Abholen/Stornieren, KEIN Aufruf der
-/// externen DHL-Tracking-API aus Flutter (das Backend liest hier nur
-/// bereits gespeicherte DB-Daten, siehe `DhlParcelService.listStoredParcels`).
+/// KEIN Aufruf der externen DHL-Tracking-API direkt aus diesem Screen (das
+/// Backend liest hier nur bereits gespeicherte DB-Daten, siehe
+/// `DhlParcelService.listStoredParcels`). Die prominente Aktion
+/// "+ Paket einlagern" oeffnet den separaten `DhlStoreParcelScreen`
+/// (Einlagerungs-Flow, siehe DHL-Einlagerungs-Audit vom 23.09.); Kamera-
+/// Scanner, manuelles Slot-Grid, Abholung und Stornierung sind dort
+/// bewusst noch nicht Teil des Umfangs.
 ///
 /// [storeId] wird vom Aufrufer (i.d.R. `DhlLoginScreen` direkt nach
 /// erfolgreichem Login, siehe dort) aus `AuthUser.storeIdForApp('DHL')`
@@ -140,6 +145,23 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
     );
   }
 
+  /// Oeffnet den Einlagerungs-Flow (siehe DHL-Einlagerungs-Audit vom 23.09.
+  /// + Umsetzung danach, `DhlStoreParcelScreen`). Nach Rueckkehr (egal ob
+  /// per "Zur Uebersicht" oder System-Back) wird die Liste IMMER neu
+  /// geladen, damit ein gerade eingelagertes Paket sofort erscheint (siehe
+  /// Aufgabenstellung) - ein erneutes `_loadParcels()` ist unschaedlich,
+  /// falls in der Zwischenzeit gar nichts eingelagert wurde.
+  Future<void> _openStoreParcelScreen() async {
+    final storeId = widget.storeId;
+    if (storeId == null) return; // fail closed, siehe Klassendoku
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => DhlStoreParcelScreen(storeId: storeId)),
+    );
+    if (!mounted) return;
+    _loadParcels();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MarktAppShell(
@@ -149,8 +171,11 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
       // vorbereiten... noch nicht funktional implementieren"): nur die
       // beiden fuer den aktuellen Flow relevanten Bereiche. "Uebersicht"
       // ist ein reiner Platzhalter (kein eigener Screen/State dahinter) -
-      // Scanner/Einlagerung/Abholung werden bewusst noch NICHT als
-      // Eintraege ergaenzt, da dafuer noch keine Fachlogik existiert.
+      // Scanner/Abholung werden bewusst noch NICHT als Eintraege ergaenzt,
+      // da dafuer noch keine Fachlogik existiert. Die Einlagerung selbst
+      // ist bewusst KEIN Sidebar-Eintrag, sondern die prominente
+      // "+ Paket einlagern"-Aktion (siehe [floatingActionButton]) - keine
+      // komplett neue Navigation, siehe Aufgabenstellung.
       navItems: const [
         MarktNavItem(icon: Icons.dashboard_outlined, label: 'Uebersicht'),
         MarktNavItem(icon: Icons.local_shipping_outlined, label: 'Pakete im Laden', selected: true),
@@ -162,6 +187,16 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
         ),
       ],
       profile: MarktProfileMenu(onLogout: _logout),
+      // Prominente Einlagerungs-Aktion (siehe Aufgabenstellung "+ Paket
+      // einlagern") - nur sichtbar/aktiv, wenn ueberhaupt eine storeId
+      // aufgeloest werden konnte (fail closed, kein Aufruf ohne storeId).
+      floatingActionButton: widget.storeId == null
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: _openStoreParcelScreen,
+              icon: const Icon(Icons.add),
+              label: const Text('Paket einlagern'),
+            ),
       body: _buildBody(context),
     );
   }

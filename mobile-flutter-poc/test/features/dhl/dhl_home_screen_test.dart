@@ -94,4 +94,32 @@ void main() {
     expect(find.textContaining('Kein Zugriff auf diesen Store'), findsOneWidget);
     expect(find.byType(DhlParcelCard), findsNothing);
   });
+
+  testWidgets('FAB "Paket einlagern" oeffnet den Einlagerungs-Screen und laedt die Liste beim Zurueckkehren neu',
+      (tester) async {
+    var listCalls = 0;
+    final mockClient = MockClient((request) async {
+      if (request.url.path.endsWith('/dhl/parcels/stored')) {
+        listCalls++;
+        return http.Response('[]', 200);
+      }
+      return http.Response('{}', 404);
+    });
+
+    await tester.pumpWidget(
+      wrap(DhlHomeScreen(storeId: 7, dhlService: DhlService(client: mockClient))),
+    );
+    await tester.pumpAndSettle();
+    expect(listCalls, 1);
+
+    await tester.tap(find.text('Paket einlagern'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('dhlStoreParcel.trackingField')), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+
+    expect(listCalls, 2);
+  });
 }

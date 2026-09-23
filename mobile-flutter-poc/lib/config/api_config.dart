@@ -55,4 +55,16 @@ class ApiConfig {
   /// (siehe DHL-Audit vom 23.09., `DhlController.listStoredParcels`). Liest
   /// ausschliesslich bereits in der DB gespeicherte Pakete - kein DHL-API-Call.
   static String dhlStoredParcelsPath(int storeId) => '/stores/$storeId/dhl/parcels/stored';
+
+  /// Bestehender, unveraenderter Endpoint
+  /// `POST /api/stores/{storeId}/dhl/tracking/validate` (siehe
+  /// DHL-Einlagerungs-Audit vom 23.09., `DhlController.validateTrackingCode`).
+  /// Reine UX-Vorprüfung gegen die DHL Tracking API - die autoritative
+  /// Pruefung erfolgt serverseitig erneut in [dhlStoreParcelPath].
+  static String dhlTrackingValidatePath(int storeId) => '/stores/$storeId/dhl/tracking/validate';
+
+  /// Bestehender, unveraenderter Endpoint
+  /// `POST /api/stores/{storeId}/dhl/parcels/store` (siehe
+  /// DHL-Einlagerungs-Audit vom 23.09., `DhlController.storeParcel`).
+  static String dhlStoreParcelPath(int storeId) => '/stores/$storeId/dhl/parcels/store';
 }
