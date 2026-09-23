@@ -245,9 +245,19 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
             child: Icon(Icons.apps, color: colorScheme.onPrimary, size: 22),
           ),
           const SizedBox(width: MarktSpacing.md),
-          Text(
-            'markt.ma',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          // Flexible+ellipsis (Fix waehrend Kontext-Zeilen-Arbeit vom
+          // 23.09.): bei der Sidebar-Breite (248px, siehe `MarktAppShell`)
+          // ueberlief der reine `Text('markt.ma')` bislang unbemerkt um
+          // wenige Pixel, weil dieser Codepfad (Desktop-Sidebar sichtbar,
+          // nicht im Drawer versteckt) zuvor in keinem Widget-Test
+          // tatsaechlich bei Desktop-Breite gerendert wurde - kein neues
+          // Feature, nur eine Absicherung des bestehenden Brand-Headers.
+          Flexible(
+            child: Text(
+              'markt.ma',
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),
