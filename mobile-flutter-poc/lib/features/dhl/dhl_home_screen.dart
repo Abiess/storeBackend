@@ -202,6 +202,17 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = MarktBreakpoints.isDesktop(constraints.maxWidth);
+        // Bugfix (Layout-Regression): Header + Stat-Cards + Suchzeile
+        // koennen auf kompakten Bildschirmhoehen (z.B. Tablet-Breite bei
+        // begrenzter Hoehe) mehr vertikalen Platz beanspruchen, als
+        // verfuegbar ist. Ein `Expanded` fuer die Paketliste wuerde dann
+        // auf (nahezu) 0 Hoehe zusammengedrueckt, wodurch keine Pakete
+        // mehr sichtbar sind. Stattdessen bekommt die Paketliste hier eine
+        // garantierte Mindesthoehe (fest, aus der verfuegbaren
+        // Bildschirmhoehe abgeleitet) und die Seite als Ganzes wird
+        // scrollbar - Header/Stat-Cards/Suche scrollen mit, statt die
+        // Liste zu verdraengen.
+        final listHeight = MediaQuery.sizeOf(context).height >= 700 ? 560.0 : 420.0;
         return Center(
           child: ConstrainedBox(
             // Sinnvolle Max-Content-Breite (siehe Aufgabenstellung) - nur
@@ -209,7 +220,7 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
             // 1280-1600px-Desktop-Breiten wird der verfuegbare Platz
             // weiterhin voll genutzt.
             constraints: const BoxConstraints(maxWidth: 1400),
-            child: Padding(
+            child: SingleChildScrollView(
               padding: EdgeInsets.symmetric(
                 horizontal: isDesktop ? MarktSpacing.xl : MarktSpacing.md,
                 vertical: MarktSpacing.md,
@@ -223,7 +234,7 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
                   const SizedBox(height: MarktSpacing.xl),
                   _buildSectionHeader(context),
                   const SizedBox(height: MarktSpacing.md),
-                  Expanded(child: _buildParcelList(context)),
+                  SizedBox(height: listHeight, child: _buildParcelList(context)),
                 ],
               ),
             ),
