@@ -156,7 +156,12 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
       error: _error,
       onRefresh: _loadParcels,
       emptyWidget: const Text('Keine Pakete im Laden'),
-      gridItemHeight: 116,
+      // 140 statt Default 88 (Documents) / 108: DhlParcelCard zeigt zwei
+      // Textzeilen (Lagerplatz+Eingelagert) + einen Status-Badge zusaetzlich
+      // zu Titel/Icon - dafuer wird mehr vertikale Hoehe pro Grid-Zelle
+      // benoetigt, sonst overflowt der Card-Inhalt im Grid-Modus (Tablet/
+      // Desktop-Breite, siehe MarktBreakpoints).
+      gridItemHeight: 140,
       itemBuilder: (context, parcel) => DhlParcelCard(parcel: parcel),
     );
   }

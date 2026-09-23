@@ -81,21 +81,6 @@ jobs:
       - name: flutter test
         run: flutter test
 
-      - name: flutter test (Diagnose bei Fehlschlag)
-        if: failure()
-        run: |
-          flutter test --reporter expanded > test_output.txt 2>&1 || true
-          grep -n "" test_output.txt > numbered.txt
-          match_line=$(grep -n "dhl_home_screen_test.dart: mit storeId zeigt die geladenen Pakete \[E\]" numbered.txt | head -n1 | cut -d: -f1)
-          start=$((match_line - 30))
-          if [ "$start" -lt 1 ]; then start=1; fi
-          end=$((match_line - 1))
-          awk -v s="$start" -v e="$end" 'NR>=s && NR<=e' numbered.txt > excerpt.txt
-          while IFS= read -r line; do
-            escaped=$(echo "$line" | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
-            echo "::error::${escaped}"
-          done < excerpt.txt
-
       # Java 21 (Temurin) fuer den Gradle-Android-Build - identisch zur
       # Java-Version im bestehenden Android-/Backend-Workflow.
       - name: Set up JDK 21
