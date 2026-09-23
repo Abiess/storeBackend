@@ -122,4 +122,49 @@ void main() {
     expect(find.text('DHL User'), findsOneWidget);
     expect(find.text('dhl-user@example.com'), findsOneWidget);
   });
+
+  testWidgets(
+      'Bugfix 23.09.: frischer DHL-Login (ohne App-Neustart) zeigt Name/E-Mail im MarktProfileMenu '
+      'und behaelt die storeId-Aufloesung', (tester) async {
+    // Reproduziert exakt den gemeldeten Produktions-Fehler auf dhl-dev:
+    // ein FRISCHER Login (kein Token beim Start, kein AuthGate-`/me`-Pfad)
+    // navigiert bislang OHNE `user` zu `DhlHomeScreen` - `MarktProfileMenu`
+    // blieb dadurch generisch, obwohl `AuthResponse.user` Name/E-Mail
+    // bereits enthielt.
+    storedToken = null;
+    final loginClient = MockClient((request) async {
+      return http.Response(
+        '{"token":"dummy-jwt-token","user":{"id":1,"email":"dhl-user@example.com","name":"DHL User",'
+        '"roles":["USER"],"appAccessMode":"MANAGED",'
+        '"apps":[{"app":"DHL","storeId":7,"enabled":true}]}}',
+        200,
+      );
+    });
+    final dhlClient = MockClient((request) async => http.Response('[]', 200));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DhlLoginScreen(
+          authService: AuthService(client: loginClient),
+          dhlService: DhlService(client: dhlClient),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextField, 'E-Mail'), 'dhl-user@example.com');
+    await tester.enterText(find.widgetWithText(TextField, 'Passwort'), 'secret123');
+    await tester.tap(find.widgetWithText(FilledButton, 'Anmelden'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DhlHomeScreen), findsOneWidget);
+    expect(find.byType(DhlLoginScreen), findsNothing);
+    expect(find.text('Kein DHL-Zugriff'), findsNothing);
+
+    await tester.tap(find.byType(MarktProfileMenu));
+    await tester.pumpAndSettle();
+
+    expect(find.text('DHL User'), findsOneWidget);
+    expect(find.text('dhl-user@example.com'), findsOneWidget);
+  });
 }

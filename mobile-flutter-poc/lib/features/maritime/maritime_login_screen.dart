@@ -14,11 +14,17 @@ import 'maritime_home_screen.dart';
 /// [MaritimeHomeScreen] - `MarktLoginScreen` selbst kennt weder "Maritime"
 /// noch den Navigator (siehe Doku in `markt_login_screen.dart`).
 class MaritimeLoginScreen extends StatelessWidget {
-  const MaritimeLoginScreen({super.key});
+  const MaritimeLoginScreen({super.key, this.authService});
+
+  /// Nur fuer Tests: erlaubt das Einschleusen eines Fake-`AuthService`
+  /// (analog zum bestehenden `dhlService`/`documentsService`-Injection-
+  /// Muster), ohne dass Consumer-Code diesen Parameter im Normalbetrieb
+  /// setzen muss.
+  final AuthService? authService;
 
   @override
   Widget build(BuildContext context) {
-    final authService = AuthService();
+    final effectiveAuthService = authService ?? AuthService();
 
     return MarktLoginScreen(
       appName: 'Maritime',
@@ -26,10 +32,10 @@ class MaritimeLoginScreen extends StatelessWidget {
       description: 'Häfen, Schiffe und Sendungen im Blick',
       icon: Icons.directions_boat,
       onLogin: (email, password) async {
-        await authService.login(email: email, password: password);
+        final authResponse = await effectiveAuthService.login(email: email, password: password);
         if (!context.mounted) return;
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MaritimeHomeScreen()),
+          MaterialPageRoute(builder: (_) => MaritimeHomeScreen(user: authResponse.user)),
         );
       },
     );

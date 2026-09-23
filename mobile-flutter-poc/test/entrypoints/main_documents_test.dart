@@ -96,5 +96,47 @@ void main() {
     expect(find.text('Documents User'), findsOneWidget);
     expect(find.text('doc-user@example.com'), findsOneWidget);
   });
+
+  testWidgets(
+      'Bugfix 23.09.: frischer Documents-Login (ohne App-Neustart) zeigt Name/E-Mail im MarktProfileMenu',
+      (tester) async {
+    // Reproduziert denselben Root-Cause-Fehlerpfad wie bei DHL (siehe
+    // `main_dhl_test.dart`): ein FRISCHER Login navigiert bislang OHNE
+    // `user` zu `DocumentsScreen` - `MarktProfileMenu` blieb dadurch
+    // generisch, obwohl `AuthResponse.user` Name/E-Mail bereits enthielt.
+    storedToken = null;
+    final loginClient = MockClient((request) async {
+      return http.Response(
+        '{"token":"dummy-jwt-token","user":{"id":1,"email":"doc-user@example.com","name":"Documents User",'
+        '"roles":["USER"]}}',
+        200,
+      );
+    });
+    final documentsClient = MockClient((request) async => http.Response('[]', 200));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          authService: AuthService(client: loginClient),
+          documentsService: DocumentsService(client: documentsClient),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextField, 'E-Mail'), 'doc-user@example.com');
+    await tester.enterText(find.widgetWithText(TextField, 'Passwort'), 'secret123');
+    await tester.tap(find.widgetWithText(FilledButton, 'Anmelden'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DocumentsScreen), findsOneWidget);
+    expect(find.byType(LoginScreen), findsNothing);
+
+    await tester.tap(find.byType(MarktProfileMenu));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Documents User'), findsOneWidget);
+    expect(find.text('doc-user@example.com'), findsOneWidget);
+  });
 }
 

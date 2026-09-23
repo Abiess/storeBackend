@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/auth_service.dart';
+import '../../services/dhl_service.dart';
 import '../../widgets/shared/markt_login_screen.dart';
 import 'dhl_home_screen.dart';
 
@@ -21,12 +22,33 @@ import 'dhl_home_screen.dart';
 /// Kein-Zugriff-Zustand (siehe dort), statt dass dieser Login-Screen den
 /// Login selbst blockiert (Login bleibt generisch, Entitlement-Pruefung
 /// bleibt Sache der jeweiligen App - identisch zum Backend-Modell).
+///
+/// WICHTIG (Bugfix 23.09., zentrale Current-User-Anzeige): dieser
+/// Frisch-Login-Pfad laeuft NICHT durch `AuthGate` (der navigiert selbst
+/// direkt per `pushReplacement`, siehe Klassendoku), daher muss
+/// `authResponse.user` HIER zusaetzlich zur `storeId` explizit an
+/// [DhlHomeScreen] durchgereicht werden - sonst bleibt `MarktProfileMenu`
+/// nach einem frischen Login leer, obwohl `AuthGate` nach einem
+/// App-/Browser-Neustart denselben User korrekt anzeigen wuerde.
 class DhlLoginScreen extends StatelessWidget {
-  const DhlLoginScreen({super.key});
+  const DhlLoginScreen({super.key, this.authService, this.dhlService});
+
+  /// Nur fuer Tests: erlaubt das Einschleusen eines Fake-`AuthService`
+  /// (analog zum bestehenden `dhlService`/`documentsService`-Injection-
+  /// Muster), ohne dass Consumer-Code diesen Parameter im Normalbetrieb
+  /// setzen muss.
+  final AuthService? authService;
+
+  /// Nur fuer Tests: wird 1:1 an das nach dem Login erzeugte
+  /// [DhlHomeScreen] durchgereicht, damit dessen eigener Pakete-Abruf in
+  /// Tests ueber einen `MockClient` gestubbt werden kann statt einen
+  /// echten Netzwerk-Request auszuloesen. Im Normalbetrieb `null`
+  /// (`DhlHomeScreen` nutzt dann seinen eigenen Standard-`DhlService`).
+  final DhlService? dhlService;
 
   @override
   Widget build(BuildContext context) {
-    final authService = AuthService();
+    final effectiveAuthService = authService ?? AuthService();
 
     return MarktLoginScreen(
       appName: 'DHL Paketshop',
@@ -34,11 +56,13 @@ class DhlLoginScreen extends StatelessWidget {
       description: 'Pakete und Sendungen im Blick',
       icon: Icons.local_shipping,
       onLogin: (email, password) async {
-        final authResponse = await authService.login(email: email, password: password);
+        final authResponse = await effectiveAuthService.login(email: email, password: password);
         if (!context.mounted) return;
         final storeId = authResponse.user.storeIdForApp('DHL');
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => DhlHomeScreen(storeId: storeId)),
+          MaterialPageRoute(
+            builder: (_) => DhlHomeScreen(storeId: storeId, user: authResponse.user, dhlService: dhlService),
+          ),
         );
       },
     );

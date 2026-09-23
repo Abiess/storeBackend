@@ -107,4 +107,39 @@ void main() {
     expect(find.text('Maritime User'), findsOneWidget);
     expect(find.text('user@example.com'), findsOneWidget);
   });
+
+  testWidgets('Bugfix 23.09.: frischer Maritime-Login (ohne App-Neustart) zeigt Name/E-Mail im MarktProfileMenu',
+      (tester) async {
+    // Reproduziert denselben Root-Cause-Fehlerpfad wie bei DHL/Documents
+    // (siehe `main_dhl_test.dart`/`main_documents_test.dart`): ein
+    // FRISCHER Login navigiert bislang OHNE `user` zu `MaritimeHomeScreen`
+    // - `MarktProfileMenu` blieb dadurch generisch.
+    storedToken = null;
+    final loginClient = MockClient((request) async {
+      return http.Response(
+        '{"token":"dummy-jwt-token","user":{"id":1,"email":"user@example.com","name":"Maritime User",'
+        '"roles":["USER"]}}',
+        200,
+      );
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(home: MaritimeLoginScreen(authService: AuthService(client: loginClient))),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextField, 'E-Mail'), 'user@example.com');
+    await tester.enterText(find.widgetWithText(TextField, 'Passwort'), 'secret123');
+    await tester.tap(find.widgetWithText(FilledButton, 'Anmelden'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MaritimeHomeScreen), findsOneWidget);
+    expect(find.byType(MaritimeLoginScreen), findsNothing);
+
+    await tester.tap(find.byType(MarktProfileMenu));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Maritime User'), findsOneWidget);
+    expect(find.text('user@example.com'), findsOneWidget);
+  });
 }

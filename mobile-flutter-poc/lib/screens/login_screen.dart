@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
+import '../services/documents_service.dart';
 import '../widgets/shared/markt_login_screen.dart';
 import 'documents_screen.dart';
 
@@ -17,11 +18,23 @@ import 'documents_screen.dart';
 /// zu `DocumentsScreen` - der Shared Screen selbst kennt weder
 /// `DocumentsScreen` noch den Navigator.
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.authService, this.documentsService});
+
+  /// Nur fuer Tests: erlaubt das Einschleusen eines Fake-`AuthService`
+  /// (analog zum bestehenden `dhlService`/`documentsService`-Injection-
+  /// Muster), ohne dass Consumer-Code diesen Parameter im Normalbetrieb
+  /// setzen muss.
+  final AuthService? authService;
+
+  /// Nur fuer Tests: wird 1:1 an das nach dem Login erzeugte
+  /// [DocumentsScreen] durchgereicht, damit dessen eigener Dokumenten-
+  /// Abruf in Tests ueber einen `MockClient` gestubbt werden kann statt
+  /// einen echten Netzwerk-Request auszuloesen. Im Normalbetrieb `null`.
+  final DocumentsService? documentsService;
 
   @override
   Widget build(BuildContext context) {
-    final authService = AuthService();
+    final effectiveAuthService = authService ?? AuthService();
 
     return MarktLoginScreen(
       appName: 'Documents',
@@ -29,10 +42,12 @@ class LoginScreen extends StatelessWidget {
       description: 'Dokumente sicher verwalten',
       icon: Icons.description,
       onLogin: (email, password) async {
-        await authService.login(email: email, password: password);
+        final authResponse = await effectiveAuthService.login(email: email, password: password);
         if (!context.mounted) return;
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const DocumentsScreen()),
+          MaterialPageRoute(
+            builder: (_) => DocumentsScreen(user: authResponse.user, documentsService: documentsService),
+          ),
         );
       },
     );

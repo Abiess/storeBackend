@@ -41,4 +41,54 @@ void main() {
 
     expect(find.text('demo@markt.ma'), findsOneWidget);
   });
+
+  testWidgets('zeigt Name/E-Mail direkt im Trigger auf Desktop-Breiten (>= 1024px), inkl. Initialen',
+      (tester) async {
+    // Bug 23.09.: nach frischem Login (dhl-dev) blieb der Trigger auf
+    // Desktop-Breiten ein generisches Icon, obwohl Name/E-Mail vorlagen -
+    // dieser Test verifiziert direkt den SICHTBAREN Trigger (kein Tap
+    // noetig), nicht nur den geoeffneten Popup-Inhalt.
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      wrap(MarktProfileMenu(userLabel: 'essoudati', userSubLabel: 'essoudati@hotmail.de', onLogout: () {})),
+    );
+    await tester.pumpAndSettle();
+
+    // Initialen aus einem einzelnen Wort: erster Buchstabe, Grossschreibung.
+    expect(find.text('E'), findsOneWidget);
+    expect(find.text('essoudati'), findsOneWidget);
+    expect(find.text('essoudati@hotmail.de'), findsOneWidget);
+    // Generisches Icon darf NICHT mehr erscheinen, sobald Initialen
+    // ermittelt werden konnten.
+    expect(find.byIcon(Icons.person_outline), findsNothing);
+  });
+
+  testWidgets('bleibt auf kompakten Breiten (< 1024px) ohne Tap generisch/kompakt', (tester) async {
+    tester.view.physicalSize = const Size(800, 600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      wrap(MarktProfileMenu(userLabel: 'essoudati', userSubLabel: 'essoudati@hotmail.de', onLogout: () {})),
+    );
+    await tester.pumpAndSettle();
+
+    // Auf kompakten Breiten erscheinen Name/E-Mail NICHT direkt im Trigger
+    // (Platzgruende) - aber die Initialen ersetzen weiterhin das
+    // generische Icon.
+    expect(find.text('essoudati'), findsNothing);
+    expect(find.text('essoudati@hotmail.de'), findsNothing);
+    expect(find.text('E'), findsOneWidget);
+
+    await tester.tap(find.byType(CircleAvatar));
+    await tester.pumpAndSettle();
+
+    expect(find.text('essoudati'), findsOneWidget);
+    expect(find.text('essoudati@hotmail.de'), findsOneWidget);
+  });
 }
