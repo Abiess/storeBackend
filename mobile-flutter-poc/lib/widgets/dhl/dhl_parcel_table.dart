@@ -39,7 +39,7 @@ class DhlParcelTable extends StatelessWidget {
       margin: EdgeInsets.zero,
       child: Column(
         children: [
-          _TableHeaderRow(
+          const _TableHeaderRow(
             trackingFlex: _trackingFlex,
             shelfFlex: _shelfFlex,
             receivedFlex: _receivedFlex,
