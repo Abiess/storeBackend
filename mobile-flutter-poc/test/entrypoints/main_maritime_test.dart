@@ -7,12 +7,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:markt_ma_documents_poc/core/auth_gate.dart';
 import 'package:markt_ma_documents_poc/entrypoints/main_maritime.dart' as maritime_entrypoint;
 import 'package:markt_ma_documents_poc/features/maritime/maritime_home_screen.dart';
 import 'package:markt_ma_documents_poc/features/maritime/maritime_login_screen.dart';
 import 'package:markt_ma_documents_poc/screens/documents_screen.dart';
 import 'package:markt_ma_documents_poc/screens/login_screen.dart';
+import 'package:markt_ma_documents_poc/services/auth_service.dart';
 
 void main() {
   const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
@@ -56,13 +59,23 @@ void main() {
     // `main_maritime.dart` gepumpt (statt erneut `main()` aufzurufen) -
     // ein zweiter `runApp`-Aufruf im selben Test-File fuehrt sonst zu
     // Ticker-/Animation-Ueberschneidungen zwischen Tests.
+    //
+    // Seit der Auth-Persistenz-Korrektur vom 23.09. ruft `AuthGate` bei
+    // vorhandenem Token `GET /auth/me` auf - hier ueber einen injizierten
+    // `MockClient` simuliert (kein echter Netzwerk-Request im Test).
+    // Maritime wertet den geladenen User bewusst nicht aus, der konkrete
+    // Inhalt der Response ist daher fuer diesen Test irrelevant.
     storedToken = 'dummy-jwt-token';
+    final mockClient = MockClient((request) async {
+      return http.Response('{"id":1,"email":"user@example.com","roles":["USER"]}', 200);
+    });
 
     await tester.pumpWidget(
       MaterialApp(
         home: AuthGate(
           loginBuilder: (context) => const MaritimeLoginScreen(),
-          homeBuilder: (context) => const MaritimeHomeScreen(),
+          homeBuilder: (context, user) => const MaritimeHomeScreen(),
+          authService: AuthService(client: mockClient),
         ),
       ),
     );

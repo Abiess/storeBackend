@@ -38,6 +38,16 @@ class ApiConfig {
   );
 
   static const String loginPath = '/auth/login';
+
+  /// Bestehender, unveraenderter Endpoint `GET /api/auth/me` (siehe
+  /// Auth-Persistenz-Audit vom 23.09., `AuthController#getCurrentUser`).
+  /// Liefert seit der Korrektur denselben User-Contract wie [loginPath]
+  /// (inkl. `appAccessMode`/`apps[]`) - genutzt von `AuthGate`, um nach
+  /// App-/Browser-Neustart (vorhandenes JWT, aber kein In-Memory-User mehr)
+  /// die App-Entitlements erneut aufzuloesen, ohne einen erneuten Login zu
+  /// erzwingen.
+  static const String mePath = '/auth/me';
+
   static const String documentsUploadPath = '/documents/upload';
   static const String documentsListPath = '/documents';
 

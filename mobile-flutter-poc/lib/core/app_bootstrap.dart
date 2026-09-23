@@ -32,9 +32,13 @@ class MarktAppConfig {
   /// von `MarktLoginScreen`, siehe `screens/login_screen.dart`).
   final WidgetBuilder loginBuilder;
 
-  /// Baut den Home-Screen der jeweiligen App nach erfolgreichem Login
-  /// (i.d.R. ein duenner Consumer von `MarktAppShell`).
-  final WidgetBuilder homeBuilder;
+  /// Baut den Home-Screen der jeweiligen App nach erfolgreichem Login ODER
+  /// nach App-/Browser-Neustart mit weiterhin gueltigem JWT (siehe
+  /// `AuthGate`) - i.d.R. ein duenner Consumer von `MarktAppShell`. Erhaelt
+  /// den ueber `GET /api/auth/me` geladenen [AuthUser] (siehe
+  /// Auth-Persistenz-Korrektur vom 23.09.); Apps ohne eigene
+  /// Entitlement-Aufloesung (Documents/Maritime) duerfen ihn ignorieren.
+  final AuthUserWidgetBuilder homeBuilder;
 }
 
 /// Startet eine markt.ma Flutter-App mit der gemeinsamen Basis

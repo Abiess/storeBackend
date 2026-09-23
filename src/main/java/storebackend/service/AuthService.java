@@ -111,27 +111,22 @@ public class AuthService {
         // Generate JWT token using JwtUtil with roles
         String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRoles());
 
-        // Create UserDTO with name and primary role
-        String primaryRole = user.getRoles().isEmpty() ? "USER" : user.getRoles().iterator().next().name();
-
-        // App-Entitlement-Konzept (Phase 1): userweiter LEGACY/MANAGED-Modus
-        // + Rohliste der expliziten Entitlement-Einträge (additiv, siehe AppAccessChecker)
-        AppAccessMode appAccessMode = appAccessChecker.getAccessMode(user.getId());
-        List<AppEntitlementDTO> apps = userAppEntitlementRepository.findByUserId(user.getId()).stream()
-            .map(this::toAppEntitlementDTO)
-            .collect(Collectors.toList());
-
-        AuthResponse.UserDTO userDTO = new AuthResponse.UserDTO(
-            user.getId(),
-            user.getEmail(),
-            user.getName(),
-            primaryRole,
-            user.getRoles().stream().map(Enum::name).collect(Collectors.toList()),
-            appAccessMode,
-            apps
-        );
+        AuthResponse.UserDTO userDTO = buildUserDTO(user);
 
         return new AuthResponse(token, userDTO);
+    }
+
+    /**
+     * Liefert denselben User-Contract wie {@link #login(LoginRequest)}
+     * (inkl. {@code appAccessMode}/{@code apps}) fuer einen bereits
+     * authentifizierten User (`GET /api/auth/me`).
+     *
+     * Beseitigt die vorherige Doppelstruktur, bei der `/me` ein eigenes,
+     * schmaleres DTO (ohne Entitlement-Felder) gebaut hat - beide Endpunkte
+     * nutzen jetzt exakt dieselbe Ermittlung ueber {@link #buildUserDTO}.
+     */
+    public AuthResponse.UserDTO getCurrentUser(User user) {
+        return buildUserDTO(user);
     }
 
     public String getEmailFromToken(String token) {
@@ -144,6 +139,44 @@ public class AuthService {
 
     public int getJwtSecretLength() {
         return jwtUtil.getSecretLength();
+    }
+
+    /**
+     * Zentrale, einzige Stelle, die einen {@link User} in das Auth-Response-
+     * DTO uebersetzt - inkl. App-Entitlement-Konzept (Phase 1:
+     * {@code appAccessMode}/{@code apps}). Wird sowohl von {@link #login}
+     * als auch von {@link #getCurrentUser} verwendet, damit `/login` und
+     * `/me` niemals wieder auseinanderlaufen koennen.
+     */
+    private AuthResponse.UserDTO buildUserDTO(User user) {
+        String primaryRole = user.getRoles().isEmpty() ? "USER" : user.getRoles().iterator().next().name();
+
+        // App-Entitlement-Konzept (Phase 1): userweiter LEGACY/MANAGED-Modus
+        // + Rohliste der expliziten Entitlement-Einträge (additiv, siehe AppAccessChecker)
+        AppAccessMode appAccessMode = appAccessChecker.getAccessMode(user.getId());
+        List<AppEntitlementDTO> apps = userAppEntitlementRepository.findByUserId(user.getId()).stream()
+            .map(this::toAppEntitlementDTO)
+            .collect(Collectors.toList());
+
+        // Zuvor nur von /me angewandter Fallback (E-Mail-Praefix statt null),
+        // hier fuer beide Endpunkte einheitlich uebernommen (siehe Doku am
+        // createdAt/updatedAt-Feld oben - keine Feld-Regression bei /me).
+        String name = user.getName() != null ? user.getName() : user.getEmail().split("@")[0];
+
+        AuthResponse.UserDTO userDTO = new AuthResponse.UserDTO(
+            user.getId(),
+            user.getEmail(),
+            name,
+            primaryRole,
+            user.getRoles().stream().map(Enum::name).collect(Collectors.toList()),
+            appAccessMode,
+            apps
+        );
+        // Zuvor nur von /me geliefert (siehe Doku am Feld) - additiv ergaenzt,
+        // damit /me beim Umstieg auf dieses gemeinsame DTO nichts verliert.
+        userDTO.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
+        userDTO.setUpdatedAt(user.getUpdatedAt() != null ? user.getUpdatedAt().toString() : null);
+        return userDTO;
     }
 
     /**

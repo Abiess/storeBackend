@@ -29,16 +29,19 @@ import 'dhl_login_screen.dart';
 ///
 /// WICHTIG (fail-closed, siehe Audit-Abschnitt "kein DHL entitlement / kein
 /// storeId / DHL disabled"): Ist [storeId] `null` (z.B. kein aktiviertes
-/// DHL-Entitlement, oder Cold-Start ueber `AuthGate` mit bereits
-/// gespeichertem Token, siehe `entrypoints/main_dhl.dart` - dort ist zur
-/// Laufzeit keine `AuthResponse`/kein `user.apps` mehr verfuegbar, da nur
-/// das JWT persistiert wird, siehe `TokenStorage`), wird NIE versucht, eine
-/// storeId zu raten oder den Endpoint ohne storeId aufzurufen. Stattdessen
-/// zeigt dieser Screen einen expliziten Kein-Zugriff-Zustand. Ein
-/// vollstaendiges "nach App-Neustart automatisch wieder storeId auflösen"
-/// wuerde eine Erweiterung von `/api/auth/me` (aktuell ohne `apps`, siehe
-/// `AuthController.getCurrentUser`) oder einen neuen Endpoint benoetigen -
-/// beides ist bewusst NICHT Teil dieses ersten Schritts.
+/// DHL-Entitlement, oder DHL-Entitlement mit `enabled: false`), wird NIE
+/// versucht, eine storeId zu raten oder den Endpoint ohne storeId
+/// aufzurufen. Stattdessen zeigt dieser Screen einen expliziten
+/// Kein-Zugriff-Zustand.
+///
+/// Seit der Auth-Persistenz-Korrektur vom 23.09. wird [storeId] nicht nur
+/// direkt nach Login (`DhlLoginScreen`), sondern auch nach App-/
+/// Browser-Neustart zuverlaessig aufgeloest: `AuthGate` laedt den aktuellen
+/// User bei vorhandenem JWT ueber das (nun erweiterte) `GET /api/auth/me`
+/// (liefert denselben Contract wie `/login`, inkl. `apps[]`) und reicht ihn
+/// an `main_dhl.dart`s `homeBuilder` durch, der daraus wie hier `storeId`
+/// aufloest - kein separates storeId-Caching, keine neue Store-Context-
+/// Architektur.
 class DhlHomeScreen extends StatefulWidget {
   const DhlHomeScreen({super.key, this.storeId, this.dhlService});
 
@@ -191,8 +194,7 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
             const SizedBox(height: MarktSpacing.sm),
             Text(
               'Fuer diesen Account ist kein aktiviertes DHL-Paketshop-Entitlement '
-              'mit Store-Zuordnung bekannt, oder die Sitzung wurde ohne frischen '
-              'Login wiederhergestellt. Bitte neu einloggen.',
+              'mit Store-Zuordnung bekannt. Bitte an den Administrator wenden.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             ),

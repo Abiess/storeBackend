@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/app_bootstrap.dart';
 import '../features/dhl/dhl_home_screen.dart';
 import '../features/dhl/dhl_login_screen.dart';
+import '../models/auth_response.dart';
 
 /// DHL/Paketshop-Entrypoint - dritte, eigenstaendige App aus derselben
 /// Codebasis (siehe Multi-App-Beweis vom 22.09., analog zu
@@ -29,4 +30,11 @@ void main() {
 
 Widget _buildLogin(BuildContext context) => const DhlLoginScreen();
 
-Widget _buildHome(BuildContext context) => const DhlHomeScreen();
+/// Loest die DHL-`storeId` aus dem via `AuthGate`/`GET /auth/me` geladenen
+/// [AuthUser] auf (siehe Auth-Persistenz-Korrektur vom 23.09.) - identisch
+/// zur bisherigen Aufloesung direkt nach Login in `DhlLoginScreen`. Fail
+/// closed: ist `user` `null` (z.B. `/me`-Fehler wird bereits von `AuthGate`
+/// separat behandelt) oder kein aktiviertes DHL-Entitlement vorhanden, ist
+/// `storeId` `null` und `DhlHomeScreen` zeigt selbst den Kein-Zugriff-Zustand.
+Widget _buildHome(BuildContext context, AuthUser? user) =>
+    DhlHomeScreen(storeId: user?.storeIdForApp('DHL'));

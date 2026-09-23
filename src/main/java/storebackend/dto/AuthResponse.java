@@ -33,6 +33,18 @@ public class AuthResponse {
         private List<AppEntitlementDTO> apps;
 
         /**
+         * Additive Felder, die zuvor NUR von `GET /api/auth/me` (separates,
+         * mittlerweile entferntes {@code UserInfoResponse}-DTO) geliefert
+         * wurden. Damit `/me` beim Umstieg auf dieses gemeinsame DTO
+         * (siehe {@code AuthService#buildUserDTO}) keine bestehenden Felder
+         * verliert, stehen sie hier ebenfalls zur Verfuegung (bei `/login`
+         * ebenfalls befuellt - rein additiv, aendert das Verhalten
+         * bestehender Konsumenten nicht).
+         */
+        private String createdAt;
+        private String updatedAt;
+
+        /**
          * Bestehender Konstruktor (VOR Phase 1) - bleibt unverändert erhalten,
          * damit bestehende Aufrufstellen (z.B. PhoneAuthController), die nur
          * die ursprünglichen 5 Felder kennen, ohne Anpassung weiter kompilieren.

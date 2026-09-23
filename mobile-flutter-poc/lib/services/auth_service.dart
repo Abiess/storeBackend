@@ -32,6 +32,37 @@ class AuthService {
     return auth;
   }
 
+  /// Loest den aktuell eingeloggten User ueber das BESTEHENDE `GET /api/auth/me`
+  /// auf (kein neuer Endpoint) - liefert seit der Auth-Persistenz-Korrektur
+  /// vom 23.09. denselben Contract wie [login] (inkl. `appAccessMode`/`apps[]`).
+  ///
+  /// Genutzt von [AuthGate], um nach App-/Browser-Neustart (JWT vorhanden,
+  /// aber kein In-Memory-User mehr) die App-Entitlements (z.B. DHL-`storeId`)
+  /// erneut aufzuloesen, ohne dass sich der User erneut einloggen muss.
+  ///
+  /// Wirft [ApiException] bei 401 (Token ungueltig/abgelaufen) oder
+  /// anderen Fehlerstatuscodes, bzw. die zugrundeliegende Netzwerk-Exception
+  /// bei Verbindungsfehlern - der Aufrufer MUSS diese Faelle explizit
+  /// unterscheiden (siehe [AuthGate]): ein Netzwerk-/Serverfehler darf NIE
+  /// wie ein erfolgreich geladener User behandelt werden, und nur ein
+  /// 401 rechtfertigt das Loeschen des Tokens (fail closed, kein
+  /// Redirect-Loop).
+  Future<AuthUser> getCurrentUser(String token) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.mePath}');
+
+    final response = await _client.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode != 200) {
+      throw ApiException(response.statusCode, _extractMessage(response.body));
+    }
+
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    return AuthUser.fromJson(json);
+  }
+
   Future<void> logout() => TokenStorage.instance.clearToken();
 
   /// Das Backend liefert bei Fehlern konsistent {"message": "..."}

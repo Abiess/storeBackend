@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_bootstrap.dart';
+import '../models/auth_response.dart';
 import '../screens/documents_screen.dart';
 import '../screens/login_screen.dart';
 
@@ -31,4 +32,8 @@ void main() {
 
 Widget _buildLogin(BuildContext context) => const LoginScreen();
 
-Widget _buildHome(BuildContext context) => const DocumentsScreen();
+/// [AuthUser] wird bewusst ignoriert (`_`) - Documents hat noch keine
+/// eigene Entitlement-Aufloesung, siehe Auth-Persistenz-Korrektur vom
+/// 23.09. (`AuthGate` laedt den User nun app-uebergreifend via `/auth/me`,
+/// nur DHL wertet ihn aktuell aus).
+Widget _buildHome(BuildContext context, AuthUser? _) => const DocumentsScreen();

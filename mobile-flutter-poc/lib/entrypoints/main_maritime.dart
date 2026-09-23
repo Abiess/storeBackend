@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/app_bootstrap.dart';
 import '../features/maritime/maritime_home_screen.dart';
 import '../features/maritime/maritime_login_screen.dart';
+import '../models/auth_response.dart';
 
 /// Maritime-Entrypoint - Beweis, dass eine zweite, eigenstaendige App aus
 /// derselben Codebasis buildbar ist (siehe Multi-App-Beweis vom 22.09.).
@@ -27,4 +28,6 @@ void main() {
 
 Widget _buildLogin(BuildContext context) => const MaritimeLoginScreen();
 
-Widget _buildHome(BuildContext context) => const MaritimeHomeScreen();
+/// [AuthUser] wird bewusst ignoriert (`_`) - Maritime hat noch keine eigene
+/// Entitlement-Aufloesung, siehe Auth-Persistenz-Korrektur vom 23.09.
+Widget _buildHome(BuildContext context, AuthUser? _) => const MaritimeHomeScreen();

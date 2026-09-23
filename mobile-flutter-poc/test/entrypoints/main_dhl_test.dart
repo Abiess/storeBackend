@@ -8,6 +8,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:markt_ma_documents_poc/core/auth_gate.dart';
 import 'package:markt_ma_documents_poc/entrypoints/main_dhl.dart' as dhl_entrypoint;
 import 'package:markt_ma_documents_poc/features/dhl/dhl_home_screen.dart';
@@ -16,6 +18,8 @@ import 'package:markt_ma_documents_poc/features/maritime/maritime_home_screen.da
 import 'package:markt_ma_documents_poc/features/maritime/maritime_login_screen.dart';
 import 'package:markt_ma_documents_poc/screens/documents_screen.dart';
 import 'package:markt_ma_documents_poc/screens/login_screen.dart';
+import 'package:markt_ma_documents_poc/services/auth_service.dart';
+import 'package:markt_ma_documents_poc/services/dhl_service.dart';
 
 void main() {
   const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
@@ -56,29 +60,50 @@ void main() {
     expect(find.text('DHL Paketshop'), findsWidgets);
   });
 
-  testWidgets('DHL-Konfiguration (AuthGate mit Token) zeigt den DHL-Home-Screen', (tester) async {
+  testWidgets('DHL-Konfiguration (AuthGate mit Token) zeigt den DHL-Home-Screen mit aufgeloester storeId', (tester) async {
     // Bewusst direkt ueber AuthGate + dieselben Builder wie `main_dhl.dart`
     // gepumpt (statt erneut `main()` aufzurufen) - ein zweiter `runApp`-
     // Aufruf im selben Test-File fuehrt sonst zu Ticker-/Animation-
     // Ueberschneidungen zwischen Tests.
+    //
+    // Seit der Auth-Persistenz-Korrektur vom 23.09. ruft `AuthGate` bei
+    // vorhandenem Token `GET /auth/me` auf; hier ueber einen injizierten
+    // `MockClient` mit einem aktivierten DHL-Entitlement simuliert, damit
+    // `DhlHomeScreen` eine echte (aufgeloeste) `storeId` erhaelt - kein
+    // echter Netzwerk-Request im Test. Der Pakete-Abruf selbst wird
+    // zusaetzlich ueber einen injizierten `DhlService`/`MockClient`
+    // gestubbt (analog `test/features/dhl/dhl_home_screen_test.dart`).
     storedToken = 'dummy-jwt-token';
+    final authClient = MockClient((request) async {
+      return http.Response(
+        '{"id":1,"email":"dhl-user@example.com","roles":["USER"],'
+        '"appAccessMode":"MANAGED",'
+        '"apps":[{"app":"DHL","storeId":7,"enabled":true}]}',
+        200,
+      );
+    });
+    final dhlClient = MockClient((request) async => http.Response('[]', 200));
 
     await tester.pumpWidget(
       MaterialApp(
         home: AuthGate(
           loginBuilder: (context) => const DhlLoginScreen(),
-          homeBuilder: (context) => const DhlHomeScreen(),
+          homeBuilder: (context, user) =>
+              DhlHomeScreen(storeId: user?.storeIdForApp('DHL'), dhlService: DhlService(client: dhlClient)),
+          authService: AuthService(client: authClient),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
     // Mit Token muss AuthGate DhlHomeScreen zeigen - kein Login, kein
-    // Documents/Maritime.
+    // Documents/Maritime, und der Kein-Zugriff-Zustand darf NICHT
+    // erscheinen (storeId wurde aus /me erfolgreich aufgeloest).
     expect(find.byType(DhlHomeScreen), findsOneWidget);
     expect(find.byType(DhlLoginScreen), findsNothing);
     expect(find.byType(DocumentsScreen), findsNothing);
     expect(find.byType(MaritimeHomeScreen), findsNothing);
+    expect(find.text('Kein DHL-Zugriff'), findsNothing);
 
     // MarktAppShell-Titel + generische Shared Widgets (MarktCard/
     // MarktIconBadge) werden wiederverwendet, keine Fake-Fachdaten.
