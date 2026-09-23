@@ -5,7 +5,11 @@ import '../../services/auth_service.dart';
 import '../../services/dhl_service.dart';
 import '../../theme/markt_theme.dart';
 import '../../widgets/dhl/dhl_parcel_card.dart';
+import '../../widgets/dhl/dhl_parcel_format.dart';
+import '../../widgets/dhl/dhl_parcel_table.dart';
+import '../../widgets/dhl/dhl_stat_card.dart';
 import '../../widgets/shared/markt_app_shell.dart';
+import '../../widgets/shared/markt_breakpoints.dart';
 import '../../widgets/shared/markt_card.dart';
 import '../../widgets/shared/markt_icon_badge.dart';
 import '../../widgets/shared/markt_profile_menu.dart';
@@ -60,17 +64,52 @@ class DhlHomeScreen extends StatefulWidget {
 class _DhlHomeScreenState extends State<DhlHomeScreen> {
   late final DhlService _dhlService = widget.dhlService ?? DhlService();
   final _authService = AuthService();
+  final _searchController = TextEditingController();
 
   List<DhlParcelDto> _parcels = [];
   bool _loading = false;
   Object? _error;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.trim().toLowerCase());
+    });
     if (widget.storeId != null) {
       _loadParcels();
     }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// Clientseitige Suche nach Trackingnummer/Lagerplatz (siehe
+  /// Aufgabenstellung) - filtert ausschliesslich die bereits geladene
+  /// [_parcels]-Liste, KEIN neuer API-Aufruf. Beeinflusst bewusst NICHT
+  /// die Kennzahl-Karten (siehe [_totalCount] etc.), die weiterhin den
+  /// vollstaendigen geladenen Bestand zeigen.
+  List<DhlParcelDto> get _filteredParcels {
+    if (_searchQuery.isEmpty) return _parcels;
+    return _parcels.where((p) {
+      final tracking = p.trackingCode.toLowerCase();
+      final shelf = (p.shelfLocation ?? '').toLowerCase();
+      return tracking.contains(_searchQuery) || shelf.contains(_searchQuery);
+    }).toList();
+  }
+
+  int get _totalCount => _parcels.length;
+
+  int get _withoutShelfCount =>
+      _parcels.where((p) => p.shelfLocation == null || p.shelfLocation!.trim().isEmpty).length;
+
+  int get _receivedTodayCount {
+    final now = DateTime.now();
+    return _parcels.where((p) => DhlParcelFormat.isReceivedToday(p.receivedAt, now)).length;
   }
 
   Future<void> _loadParcels() async {
@@ -106,8 +145,15 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
     return MarktAppShell(
       title: 'DHL Paketshop',
       sideNavHeader: _buildBrandHeader(context),
+      // Navigation vorbereitet (siehe Aufgabenstellung "Navigation
+      // vorbereiten... noch nicht funktional implementieren"): nur die
+      // beiden fuer den aktuellen Flow relevanten Bereiche. "Uebersicht"
+      // ist ein reiner Platzhalter (kein eigener Screen/State dahinter) -
+      // Scanner/Einlagerung/Abholung werden bewusst noch NICHT als
+      // Eintraege ergaenzt, da dafuer noch keine Fachlogik existiert.
       navItems: const [
-        MarktNavItem(icon: Icons.local_shipping, label: 'DHL Paketshop', selected: true),
+        MarktNavItem(icon: Icons.dashboard_outlined, label: 'Uebersicht'),
+        MarktNavItem(icon: Icons.local_shipping_outlined, label: 'Pakete im Laden', selected: true),
       ],
       actions: [
         IconButton(
@@ -153,19 +199,161 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
       return _buildNoEntitlement(context);
     }
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = MarktBreakpoints.isDesktop(constraints.maxWidth);
+        return Center(
+          child: ConstrainedBox(
+            // Sinnvolle Max-Content-Breite (siehe Aufgabenstellung) - nur
+            // auf ultra-breiten Monitoren relevant; auf typischen
+            // 1280-1600px-Desktop-Breiten wird der verfuegbare Platz
+            // weiterhin voll genutzt.
+            constraints: const BoxConstraints(maxWidth: 1400),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isDesktop ? MarktSpacing.xl : MarktSpacing.md,
+                vertical: MarktSpacing.md,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildPageHeader(context),
+                  const SizedBox(height: MarktSpacing.lg),
+                  _buildStatCards(context, isDesktop),
+                  const SizedBox(height: MarktSpacing.xl),
+                  _buildSectionHeader(context),
+                  const SizedBox(height: MarktSpacing.md),
+                  Expanded(child: _buildParcelList(context)),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Echter Content-Header (siehe Aufgabenstellung) - Titel + Store-
+  /// Kontext. Es steht in den aktuell geladenen Daten (`AppEntitlementDTO`
+  /// / `DhlParcelResponse`) KEIN Store-Name zur Verfuegung (siehe DHL-
+  /// UI-Pass-Audit) - daher bewusst KEIN erfundener Name ("Marrakech
+  /// market"), sondern der real vorhandene Wert `storeId`. Eine
+  /// zukuenftige, hier bewusst ausgeklammerte Backend-Erweiterung um ein
+  /// Store-Namensfeld wuerde ein sprechenderes Label ermoeglichen.
+  Widget _buildPageHeader(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'DHL Paketshop',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Store #${widget.storeId}',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Kennzahl-Karten (siehe Aufgabenstellung) - ausschliesslich aus der
+  /// bereits geladenen [_parcels]-Liste abgeleitet, keine Fake-Daten/neuen
+  /// Endpoints. Auf Desktop nebeneinander, auf schmaleren Breiten
+  /// (Tablet/Phone) untereinander gestapelt (`Wrap`, damit es bei sehr
+  /// schmalen Breiten nicht overflowt).
+  Widget _buildStatCards(BuildContext context, bool isDesktop) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final cards = [
+      DhlStatCard(
+        icon: Icons.inventory_2_outlined,
+        label: 'Pakete im Laden',
+        value: '$_totalCount',
+        accentColor: colorScheme.primary,
+      ),
+      DhlStatCard(
+        icon: Icons.shelves,
+        label: 'Ohne Lagerplatz',
+        value: '$_withoutShelfCount',
+        accentColor: colorScheme.tertiary,
+      ),
+      DhlStatCard(
+        icon: Icons.today_outlined,
+        label: 'Heute eingelagert',
+        value: '$_receivedTodayCount',
+        accentColor: colorScheme.secondary,
+      ),
+    ];
+
+    if (!isDesktop) {
+      return Column(
+        children: [
+          for (final card in cards) ...[card, const SizedBox(height: MarktSpacing.sm)],
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        for (final card in cards) ...[
+          Expanded(child: card),
+          if (card != cards.last) const SizedBox(width: MarktSpacing.md),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Text(
+            'Pakete im Laden',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
+        ),
+        const SizedBox(width: MarktSpacing.md),
+        SizedBox(
+          width: 320,
+          child: TextField(
+            controller: _searchController,
+            decoration: const InputDecoration(
+              isDense: true,
+              prefixIcon: Icon(Icons.search),
+              hintText: 'Suche nach Trackingnummer/Lagerplatz',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildParcelList(BuildContext context) {
     return MarktResponsiveDataList<DhlParcelDto>(
-      items: _parcels,
+      items: _filteredParcels,
       loading: _loading,
       error: _error,
       onRefresh: _loadParcels,
-      emptyWidget: const Text('Keine Pakete im Laden'),
+      emptyWidget: Text(_searchQuery.isEmpty ? 'Keine Pakete im Laden' : 'Keine Treffer fuer "$_searchQuery"'),
       // 140 statt Default 88 (Documents) / 108: DhlParcelCard zeigt zwei
       // Textzeilen (Lagerplatz+Eingelagert) + einen Status-Badge zusaetzlich
       // zu Titel/Icon - dafuer wird mehr vertikale Hoehe pro Grid-Zelle
-      // benoetigt, sonst overflowt der Card-Inhalt im Grid-Modus (Tablet/
-      // Desktop-Breite, siehe MarktBreakpoints).
+      // benoetigt, sonst overflowt der Card-Inhalt im Grid-Modus (Tablet-
+      // Breite, siehe MarktBreakpoints). Auf echten Desktop-Breiten wird
+      // stattdessen `wideBuilder`/`DhlParcelTable` verwendet.
       gridItemHeight: 140,
       itemBuilder: (context, parcel) => DhlParcelCard(parcel: parcel),
+      wideBuilder: (context, parcels) => DhlParcelTable(parcels: parcels),
     );
   }
 

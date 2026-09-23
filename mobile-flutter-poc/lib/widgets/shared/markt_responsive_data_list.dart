@@ -21,8 +21,20 @@ import 'markt_breakpoints.dart';
 ///   Error-State funktioniert, statt dort kaputtzugehen
 ///
 /// Bewusst NICHT enthalten (siehe Audit vom 22.09.): Suche, Sortierung,
-/// Bulk-Select, Table-Mode. Diese werden nur bei echtem Bedarf spaeter als
-/// gezielte Erweiterung ergaenzt.
+/// Bulk-Select. Diese werden nur bei echtem Bedarf spaeter als gezielte
+/// Erweiterung ergaenzt.
+///
+/// Seit dem DHL-UI-Pass (23.09.) zusaetzlich ein rein additiver,
+/// optionaler [wideBuilder]-Slot: Auf echten Desktop-Breiten
+/// (`MarktBreakpoints.isDesktop`, >= 1024px) kann ein Aufrufer damit eine
+/// eigene, dichtere Darstellung (z.B. eine kompakte Tabelle statt einer
+/// Card-Wand) fuer ALLE [items] liefern, statt der Standard-`GridView` aus
+/// [itemBuilder]. Ohne [wideBuilder] (Default `null`, z.B. Documents/
+/// Maritime) aendert sich am bisherigen Verhalten NICHTS - kein zweiter
+/// Design-/Responsive-Layer, sondern derselbe [MarktBreakpoints]-Schwellwert,
+/// nur mit einer zusaetzlichen, rein optionalen Darstellungsvariante.
+/// Tablet-Breiten (600-1023px) bleiben unveraendert bei der bestehenden
+/// 2-Spalten-`GridView` aus [itemBuilder].
 class MarktResponsiveDataList<T> extends StatelessWidget {
   const MarktResponsiveDataList({
     super.key,
@@ -35,6 +47,7 @@ class MarktResponsiveDataList<T> extends StatelessWidget {
     this.loadingWidget,
     this.errorBuilder,
     this.gridItemHeight = 88,
+    this.wideBuilder,
   });
 
   /// Anzuzeigende Elemente. Fachlicher Typ, der Component unbekannt.
@@ -80,6 +93,12 @@ class MarktResponsiveDataList<T> extends StatelessWidget {
   /// Shared-Komponente selbst irgendetwas ueber die jeweilige Fachlichkeit
   /// wissen muss.
   final double gridItemHeight;
+
+  /// Optionale, dichtere Darstellung ALLER [items] auf echten
+  /// Desktop-Breiten (siehe Klassendoku). `null` (Default) aendert nichts
+  /// am bisherigen Verhalten. Muss selbst scrollbar sein (z.B. `ListView`
+  /// intern), damit [onRefresh] (Pull-to-Refresh) weiterhin funktioniert.
+  final Widget Function(BuildContext context, List<T> items)? wideBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +161,8 @@ class MarktResponsiveDataList<T> extends StatelessWidget {
   Widget _buildResponsiveContent(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = MarktBreakpoints.columnsForWidth(constraints.maxWidth);
+        final width = constraints.maxWidth;
+        final columns = MarktBreakpoints.columnsForWidth(width);
 
         if (columns <= 1) {
           return ListView.builder(
@@ -150,6 +170,10 @@ class MarktResponsiveDataList<T> extends StatelessWidget {
             itemCount: items.length,
             itemBuilder: (context, index) => itemBuilder(context, items[index]),
           );
+        }
+
+        if (wideBuilder != null && MarktBreakpoints.isDesktop(width)) {
+          return wideBuilder!(context, items);
         }
 
         return GridView.builder(
