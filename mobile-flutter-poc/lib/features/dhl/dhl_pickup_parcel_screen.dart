@@ -148,8 +148,7 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
       if (!mounted || _trackingController.text.trim() != effectiveCode) return;
       setState(() {
         _foundParcel = parcel;
-        _trackingMode = 'scanner';
-      _searching = false;
+        _searching = false;
       });
     } catch (e) {
       if (!mounted || _trackingController.text.trim() != effectiveCode) return;
@@ -198,6 +197,7 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
     _debounceTimer?.cancel();
     _trackingController.clear();
     setState(() {
+      _trackingMode = 'scanner';
       _searching = false;
       _findError = null;
       _foundParcel = null;
