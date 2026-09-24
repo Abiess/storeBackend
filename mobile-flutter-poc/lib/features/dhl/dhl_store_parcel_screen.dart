@@ -11,6 +11,7 @@ import '../../services/dhl_scan_feedback_service.dart';
 import '../../services/dhl_service.dart';
 import '../../services/token_storage.dart';
 import '../../theme/markt_theme.dart';
+import '../../widgets/markt_barcode_camera_scanner.dart';
 
 /// Fachlicher Validierungszustand des Tracking-Codes gegen die DHL Tracking
 /// API - 1:1 dieselbe Zustandsmaschine wie im bestehenden Angular-Flow
@@ -52,6 +53,7 @@ class DhlStoreParcelScreen extends StatefulWidget {
     required this.storeId,
     this.dhlService,
     this.scanFeedback,
+    this.cameraScanner,
   });
 
   final int storeId;
@@ -60,6 +62,7 @@ class DhlStoreParcelScreen extends StatefulWidget {
   /// (analog zum bestehenden Injection-Muster in `DhlHomeScreen`).
   final DhlService? dhlService;
   final DhlScanFeedback? scanFeedback;
+  final BarcodeCameraScanLauncher? cameraScanner;
 
   @override
   State<DhlStoreParcelScreen> createState() => _DhlStoreParcelScreenState();
@@ -149,6 +152,22 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
         SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
       }
     });
+  }
+
+  Future<void> _scanWithCamera() async {
+    if (_submitting) return;
+    final launcher = widget.cameraScanner ?? showMarktBarcodeCameraScanner;
+    final scanned = await launcher(context);
+    if (!mounted) return;
+
+    final code = scanned?.trim();
+    if (code == null || code.isEmpty) return;
+
+    _trackingController.value = TextEditingValue(
+      text: code,
+      selection: TextSelection.collapsed(offset: code.length),
+    );
+    _onTrackingChanged(code);
   }
 
   Future<void> _setSlotMode(String mode) async {
@@ -454,29 +473,54 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
           ),
         ),
         const SizedBox(height: MarktSpacing.sm),
-        TextField(
-          key: const ValueKey('dhlStoreParcel.trackingField'),
-          controller: _trackingController,
-          focusNode: _focusNode,
-          autofocus: true,
-          keyboardType: TextInputType.text,
-          enabled: !_submitting,
-          autocorrect: false,
-          enableSuggestions: false,
-          inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
-          textCapitalization: TextCapitalization.characters,
-          decoration: _trackingInputDecoration().copyWith(
-            suffixIcon: _trackingMode == 'scanner'
-                ? const Tooltip(
-                    message: 'Scanner-Modus aktiv',
-                    child: Icon(Icons.sensors, color: Color(0xFF667EEA)),
-                  )
-                : const Tooltip(
-                    message: 'Manuelle Eingabe aktiv',
-                    child: Icon(Icons.keyboard_alt_outlined),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: TextField(
+                        key: const ValueKey('dhlStoreParcel.trackingField'),
+                        controller: _trackingController,
+                        focusNode: _focusNode,
+                        autofocus: true,
+                        keyboardType: TextInputType.text,
+                        enabled: !_submitting,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+                        textCapitalization: TextCapitalization.characters,
+                        decoration: _trackingInputDecoration().copyWith(
+                          suffixIcon: _trackingMode == 'scanner'
+                              ? const Tooltip(
+                                  message: 'Scanner-Modus aktiv',
+                                  child: Icon(Icons.sensors, color: Color(0xFF667EEA)),
+                                )
+                              : const Tooltip(
+                                  message: 'Manuelle Eingabe aktiv',
+                                  child: Icon(Icons.keyboard_alt_outlined),
+                                ),
+                        ),
+                        onChanged: _onTrackingChanged,
+              ),
+            ),
+            if (_trackingMode == 'scanner') ...[
+              const SizedBox(width: MarktSpacing.sm),
+              SizedBox(
+                width: 56,
+                height: 56,
+                child: OutlinedButton(
+                  key: const ValueKey('dhlStoreParcel.cameraButton'),
+                  onPressed: (_submitting) ? null : _scanWithCamera,
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    foregroundColor: const Color(0xFF667EEA),
+                    side: const BorderSide(color: Color(0xFF667EEA), width: 2),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-          ),
-          onChanged: _onTrackingChanged,
+                  child: const Icon(Icons.camera_alt_outlined),
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: MarktSpacing.sm),
         Text(
