@@ -1,0 +1,54 @@
+// Kompakt, mobile-first: max. Bildschirmbreite, scrollbar bei Bedarf (siehe Aufgabenstellung).
+:host {
+  display: block;
+  max-width: 100%;
+}
+
+.maritime-help-content {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+dl {
+  margin: 0;
+}
+
+dt {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #374151;
+  margin-top: 0.9rem;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.maritime-help-notice {
+  margin: 1.1rem 0 0;
+  padding: 0.6rem 0.85rem;
+  background: #f9fafb;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.maritime-help-close-btn {
+  border: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  min-height: 40px; // touch target
+}

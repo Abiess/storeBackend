@@ -1,0 +1,54 @@
+.app-account-container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.app-account-header h1 {
+  margin: 0 0 1.25rem;
+  font-size: 1.4rem;
+}
+
+.app-account-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.app-account-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #eef0f4;
+}
+
+.app-account-label {
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.app-account-value {
+  font-weight: 600;
+}
+
+.app-account-logout {
+  margin-top: 1.5rem;
+  width: 100%;
+  padding: 0.85rem;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.app-account-logout:hover {
+  opacity: 0.92;
+}
+
+.app-account-logout:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus, 0 0 0 3px rgba(102, 126, 234, 0.35));
+}

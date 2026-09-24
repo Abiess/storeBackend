@@ -1,0 +1,103 @@
+<div class="customer-dashboard-container">
+  <div class="welcome-section">
+    <h1>Willkommen zurück, {{ customerName }}!</h1>
+    <p>Verwalten Sie Ihre Bestellungen, Wunschlisten und Adressen</p>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="stats-grid" *ngIf="!loading">
+    <div class="stat-card" (click)="navigateTo('/customer/orders')">
+      <div class="stat-icon orders">
+        <i class="fas fa-receipt"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ orderCount }}</h3>
+        <p>Bestellungen</p>
+      </div>
+      <i class="fas fa-chevron-right arrow"></i>
+    </div>
+
+    <div class="stat-card" (click)="navigateTo('/customer/wishlist')">
+      <div class="stat-icon wishlist">
+        <i class="fas fa-heart"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ wishlistCount }}</h3>
+        <p>Wunschliste</p>
+      </div>
+      <i class="fas fa-chevron-right arrow"></i>
+    </div>
+
+    <div class="stat-card" (click)="navigateTo('/customer/saved-carts')">
+      <div class="stat-icon saved-carts">
+        <i class="fas fa-bookmark"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ savedCartsCount }}</h3>
+        <p>Gespeicherte Warenkörbe</p>
+      </div>
+      <i class="fas fa-chevron-right arrow"></i>
+    </div>
+
+    <div class="stat-card" (click)="navigateTo('/customer/addresses')">
+      <div class="stat-icon addresses">
+        <i class="fas fa-address-book"></i>
+      </div>
+      <div class="stat-content">
+        <h3>{{ addressCount }}</h3>
+        <p>Adressen</p>
+      </div>
+      <i class="fas fa-chevron-right arrow"></i>
+    </div>
+  </div>
+
+  <!-- Spending Summary -->
+  <div class="spending-card" *ngIf="!loading && totalSpent > 0">
+    <div class="spending-icon">
+      <i class="fas fa-chart-line"></i>
+    </div>
+    <div class="spending-content">
+      <h3>Gesamtausgaben</h3>
+      <p class="spending-amount">{{ totalSpent | currency: 'EUR' }}</p>
+      <p class="spending-detail">Über {{ orderCount }} Bestellungen</p>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <h2>Schnellzugriff</h2>
+    <div class="actions-grid">
+      <button class="action-button" (click)="navigateTo('/customer/orders')">
+        <i class="fas fa-receipt"></i>
+        <span>Bestellhistorie</span>
+      </button>
+      <button class="action-button" (click)="navigateTo('/customer/wishlist')">
+        <i class="fas fa-heart"></i>
+        <span>Wunschliste</span>
+      </button>
+      <button class="action-button" (click)="navigateTo('/customer/saved-carts')">
+        <i class="fas fa-bookmark"></i>
+        <span>Gespeicherte Warenkörbe</span>
+      </button>
+      <button class="action-button" (click)="navigateTo('/customer/addresses')">
+        <i class="fas fa-address-book"></i>
+        <span>Adressbuch</span>
+      </button>
+      <button class="action-button" (click)="navigateTo('/')">
+        <i class="fas fa-shopping-bag"></i>
+        <span>Weiter einkaufen</span>
+      </button>
+      <button class="action-button" (click)="navigateTo('/cart')">
+        <i class="fas fa-shopping-cart"></i>
+        <span>Warenkorb</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Lade Dashboard...</p>
+  </div>
+</div>
+

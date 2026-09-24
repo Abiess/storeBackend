@@ -1,0 +1,796 @@
+import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
+import { platformAdminGuard } from './core/guards/platform-admin.guard';
+import { dashboardStoresRedirectGuard } from './core/guards/dashboard-stores-redirect.guard';
+import { AppKey } from './core/models';
+
+export const routes: Routes = [
+  // ==================== Legal Pages (Public) ====================
+  // Platform legal pages (markt.ma main domain)
+  {
+    path: 'impressum',
+    loadComponent: () => {
+      const hostname = window.location.hostname;
+      const isSubdomain = hostname.endsWith('.markt.ma') && 
+                         hostname !== 'markt.ma' && 
+                         hostname !== 'www.markt.ma';
+      
+      if (isSubdomain) {
+        // Store-specific imprint
+        return import('./features/legal/impressum-store.component').then(m => m.ImpressumStoreComponent);
+      } else {
+        // Platform imprint
+        return import('./features/legal/impressum.component').then(m => m.ImpressumComponent);
+      }
+    }
+  },
+  {
+    path: 'datenschutz',
+    loadComponent: () => {
+      const hostname = window.location.hostname;
+      const isSubdomain = hostname.endsWith('.markt.ma') && 
+                         hostname !== 'markt.ma' && 
+                         hostname !== 'www.markt.ma';
+      
+      if (isSubdomain) {
+        return import('./features/legal/datenschutz-store.component').then(m => m.DatenschutzStoreComponent);
+      } else {
+        return import('./features/legal/datenschutz.component').then(m => m.DatenschutzComponent);
+      }
+    }
+  },
+  {
+    path: 'agb',
+    loadComponent: () => {
+      const hostname = window.location.hostname;
+      const isSubdomain = hostname.endsWith('.markt.ma') && 
+                         hostname !== 'markt.ma' && 
+                         hostname !== 'www.markt.ma';
+      
+      if (isSubdomain) {
+        return import('./features/legal/agb-store.component').then(m => m.AgbStoreComponent);
+      } else {
+        return import('./features/legal/agb.component').then(m => m.AgbComponent);
+      }
+    }
+  },
+  {
+    path: 'rueckgabe',
+    loadComponent: () => import('./features/legal/rueckgabe-store.component').then(m => m.RueckgabeStoreComponent)
+  },
+  {
+    path: 'versand',
+    loadComponent: () => import('./features/legal/versand-store.component').then(m => m.VersandStoreComponent)
+  },
+  {
+    path: 'kontakt',
+    loadComponent: () => import('./features/legal/kontakt.component').then(m => m.KontaktComponent)
+  },
+
+  // ==================== Auth Routes ====================
+  {
+    path: 'login',
+    loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent)
+  },
+  {
+    path: 'register',
+    loadComponent: () => import('./features/auth/register.component').then(m => m.RegisterComponent)
+  },
+  {
+    path: 'verify',
+    loadComponent: () => import('./features/auth/email-verification.component').then(m => m.EmailVerificationComponent)
+  },
+  {
+    path: 'forgot-password',
+    loadComponent: () => import('./features/auth/forgot-password.component').then(m => m.ForgotPasswordComponent)
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () => import('./features/auth/reset-password.component').then(m => m.ResetPasswordComponent)
+  },
+  // ── Schnellstart: Store ohne E-Mail-Registrierung (WhatsApp/Telegram-Auth) ──
+  {
+    path: 'quick-start',
+    loadComponent: () => import('./features/auth/quick-start.component').then(m => m.QuickStartComponent)
+    // KEIN authGuard – dieser Flow ist der Einstieg für neue Nutzer
+  },
+  
+  // ── Team-Einladung akzeptieren (PUBLIC - redirectet zu Login wenn nicht eingeloggt) ──
+  {
+    path: 'invitations/accept',
+    loadComponent: () => import('./features/invitations/accept-invitation.component').then(m => m.AcceptInvitationComponent)
+    // KEIN authGuard – Component prüft selbst und redirectet zu Login mit returnUrl
+  },
+  
+  // /create-store = NUR für authentifizierte User (Auth-First-Flow)
+  // Nutzt bestehenden authenticated Endpoint POST /api/me/stores
+  {
+    path: 'create-store',
+    loadComponent: () => import('./features/stores/create-store-public.component').then(m => m.CreateStorePublicComponent),
+    canActivate: [authGuard] // ✅ AUTH REQUIRED - redirects to /login?returnUrl=/create-store
+  },
+
+  // ==================== Store Creation Wizard (für eingeloggte User) ====================
+  {
+    path: 'store-wizard',
+    loadComponent: () => import('./features/stores/store-wizard.component').then(m => m.StoreWizardComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'store-success',
+    loadComponent: () => import('./features/stores/store-success.component').then(m => m.StoreSuccessComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'store-success',
+    loadComponent: () => import('./features/stores/store-success.component').then(m => m.StoreSuccessComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Dashboard ====================
+  {
+    path: 'dashboard',
+    loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
+    canActivate: [authGuard]
+  },
+
+  // DEACTIVATED: Choose Store Path - now directly to /create-store
+  // {
+  //   path: 'choose-path',
+  //   loadComponent: () => import('./features/stores/choose-path.component').then(m => m.ChoosePathComponent),
+  //   canActivate: [authGuard]
+  // },
+
+
+  // ==================== User Settings ====================
+  // GELÖSCHT: /settings und /settings/payments (jetzt in /stores/:id/settings integriert)
+  {
+    path: 'subscription',
+    loadComponent: () => import('./features/settings/subscription.component').then(m => m.SubscriptionComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'role-management',
+    loadComponent: () => import('./features/settings/role-management.component').then(m => m.RoleManagementComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Dashboard Legacy Redirects ====================
+  // Vorher existierten 24 doppelte Routen unter `/dashboard/stores/:storeId/...`,
+  // die jeweils dieselbe Komponente luden wie `/stores/:id/...`. Das hatte zwei
+  // Nachteile:
+  //   1. Doppelter Code/Pflege-Aufwand bei jeder neuen Route.
+  //   2. Inkonsistente UI: die globale Admin-Sidebar (Whitelist `/stores/`)
+  //      erschien NUR bei der Primärvariante.
+  //
+  // Lösung: Eine einzige Wildcard-Route + Redirect-Guard, die jede
+  // `/dashboard/stores/...`-URL inkl. Suffix, Query-Params und Fragment
+  // auf die modernen `/stores/:id/...`-Routen umleitet.
+  // Bestehende Bookmarks und externe Links funktionieren weiter, alle landen
+  // auf der konsistenten Variante – inklusive Sidebar.
+  //
+  // WICHTIG: Diese Route muss VOR den primären `/stores/:id/...`-Routen
+  // stehen, damit Angular sie bei `/dashboard/stores/...`-URLs zuerst matcht.
+  {
+    path: 'dashboard/stores',
+    canActivate: [dashboardStoresRedirectGuard],
+    // Dummy-Komponente wird nie geladen – Guard liefert vorher UrlTree zurück.
+    children: [
+      {
+        path: '**',
+        canActivate: [dashboardStoresRedirectGuard],
+        loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent)
+      }
+    ]
+  },
+
+  // ==================== Product Management (Primary Routes) ====================
+  // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
+  {
+    path: 'stores/:id/products/new',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/products/new');
+      return import('./features/products/product-form.component').then(m => m.ProductFormComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/products/:productId/edit',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/products/:productId/edit');
+      return import('./features/products/product-form.component').then(m => m.ProductFormComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/products/:productId',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/products/:productId (detail)');
+      return import('./features/products/product-detail.component').then(m => m.ProductDetailComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/products',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/products');
+      return import('./features/products/product-list.component').then(m => m.ProductListComponent);
+    },
+    canActivate: [authGuard]
+  },
+
+  // ==================== POS (Point of Sale) ====================
+  {
+    path: 'stores/:storeId/pos',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:storeId/pos');
+      return import('./features/pos/pos.component').then(m => m.PosComponent);
+    },
+    canActivate: [authGuard]
+  },
+
+  // ==================== Loyalty / Bonuspunkte (MVP) ====================
+  {
+    path: 'stores/:storeId/loyalty',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:storeId/loyalty');
+      return import('./features/loyalty/loyalty.component').then(m => m.LoyaltyComponent);
+    },
+    canActivate: [authGuard]
+  },
+
+  // ==================== App Factory: Launcher / Switcher / Context-Auswahl ====================
+  // Generische App-Factory-Infrastruktur (siehe ARCHITECTURE_APP_FACTORY.md
+  // Abschnitt 7b): App-Auswahl (/apps) und Context-/Standort-Auswahl
+  // (/apps/{segment}) sind bewusst app-übergreifend generisch und laden KEINE
+  // neue App-spezifische Komponente – nur Konfiguration (data.app) je App.
+  {
+    path: 'apps',
+    loadComponent: () => import('./features/apps/app-launcher.component').then(m => m.AppLauncherComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/no-access',
+    loadComponent: () => import('./features/apps/app-no-access.component').then(m => m.AppNoAccessComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/dhl',
+    loadComponent: () =>
+      import('./shared/components/app-context-selector/app-context-selector.component').then(
+        m => m.AppContextSelectorComponent
+      ),
+    data: { app: AppKey.DHL },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/loyalty',
+    loadComponent: () =>
+      import('./shared/components/app-context-selector/app-context-selector.component').then(
+        m => m.AppContextSelectorComponent
+      ),
+    data: { app: AppKey.LOYALTY },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/shop',
+    loadComponent: () =>
+      import('./shared/components/app-context-selector/app-context-selector.component').then(
+        m => m.AppContextSelectorComponent
+      ),
+    data: { app: AppKey.SHOP },
+    canActivate: [authGuard]
+  },
+
+  // ==================== Platform Administration (App Provisioning Phase 1) ====================
+  // Bewusst AUSSERHALB von /apps/... - dies ist ein Platform-Verwaltungswerkzeug
+  // für ROLE_PLATFORM_ADMIN, kein App-Factory-Consumer (siehe
+  // ARCHITECTURE_APP_FACTORY.md Abschnitt 14/15).
+  {
+    path: 'admin/platform/app-provisioning',
+    loadComponent: () =>
+      import('./features/admin/platform-app-provisioning/platform-app-provisioning.component').then(
+        m => m.PlatformAppProvisioningComponent
+      ),
+    canActivate: [authGuard, platformAdminGuard]
+  },
+
+  // ==================== DHL Parcel Management ====================
+  {
+    path: 'stores/:storeId/dhl',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:storeId/dhl');
+      return import('./features/dhl/dhl.component').then(m => m.DhlComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:storeId/dhl/store',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:storeId/dhl/store');
+      return import('./features/dhl/dhl-store-parcel.component').then(m => m.DhlStoreParcelComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:storeId/dhl/pickup',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:storeId/dhl/pickup');
+      return import('./features/dhl/dhl-pickup-parcel.component').then(m => m.DhlPickupParcelComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:storeId/dhl/plan',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:storeId/dhl/plan');
+      return import('./features/dhl/dhl-warehouse-plan.component').then(m => m.DhlWarehousePlanComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:storeId/dhl/account',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:storeId/dhl/account');
+      return import('./features/dhl/dhl-account.component').then(m => m.DhlAccountComponent);
+    },
+    canActivate: [authGuard]
+  },
+
+  // ==================== DHL App (app-zentrische Alias-Routen) ====================
+  // DHL ist langfristig eine eigenständige App und kein Shop-Untermodul.
+  // Das bestehende DHL-Backend/DB bleibt unverändert an storeId gebunden
+  // (weiterhin nur ein technischer Mandanten-/Datenkontext). Diese Routen
+  // laden dieselben, bereits vorhandenen Komponenten unter einem
+  // app-zentrischen Pfad – die klassischen 'stores/:storeId/dhl...'-Routen
+  // oben bleiben unverändert als Legacy-Alias bestehen (kein Breaking-Change).
+  {
+    path: 'apps/dhl/:storeId',
+    loadComponent: () => {
+      console.log('✅ Route matched: apps/dhl/:storeId');
+      return import('./features/dhl/dhl.component').then(m => m.DhlComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/dhl/:storeId/store',
+    loadComponent: () => import('./features/dhl/dhl-store-parcel.component').then(m => m.DhlStoreParcelComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/dhl/:storeId/pickup',
+    loadComponent: () => import('./features/dhl/dhl-pickup-parcel.component').then(m => m.DhlPickupParcelComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/dhl/:storeId/plan',
+    loadComponent: () => import('./features/dhl/dhl-warehouse-plan.component').then(m => m.DhlWarehousePlanComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/dhl/:storeId/account',
+    loadComponent: () => import('./features/dhl/dhl-account.component').then(m => m.DhlAccountComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== LOYALTY App (app-zentrische Alias-Routen) ====================
+  // Faktortest App Factory: LOYALTY ist der zweite STORE-scoped Consumer und
+  // nutzt dieselben Shared-Bausteine wie DHL (AppNavigationComponent/
+  // AppAccountComponent/AppContextSelectorComponent/AppRegistry), nur eigene
+  // Konfiguration (LOYALTY_NAV_CONFIG). Das bestehende Loyalty-Backend/DB
+  // bleibt unverändert an storeId gebunden. Diese Routen laden dieselbe,
+  // bereits vorhandene Komponente unter einem app-zentrischen Pfad – die
+  // klassische 'stores/:storeId/loyalty'-Route oben bleibt unverändert als
+  // Legacy-Alias bestehen (kein Breaking-Change).
+  {
+    path: 'apps/loyalty/:storeId',
+    loadComponent: () => {
+      console.log('✅ Route matched: apps/loyalty/:storeId');
+      return import('./features/loyalty/loyalty.component').then(m => m.LoyaltyComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/loyalty/:storeId/account',
+    loadComponent: () => import('./features/loyalty/loyalty-account.component').then(m => m.LoyaltyAccountComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== SHOP App (app-zentrische Alias-Route) ====================
+  // SHOP Factory Phase 1: dritter Factory-Consumer, additiv. Kein neuer
+  // Shop-Admin – diese Route lädt bewusst DENSELBEN StoreDetailComponent wie
+  // die bestehende 'stores/:id'-Catch-All-Route weiter unten (die dort
+  // vollständig unverändert bestehen bleibt). StoreDetailComponent liest
+  // sowohl params['id'] als auch params['storeId'] (siehe ngOnInit), daher
+  // funktioniert der Alias ohne Komponentenänderung. '/apps/shop/:storeId'
+  // ist lediglich der neue, app-zentrische Ziel-Pfad, den die Factory
+  // (buildAppHomeUrl/AppContextSelector/AppLauncher/AppSwitcher) für SHOP
+  // berechnet – die komplette bestehende '/stores/:id/...'-Admin-Oberfläche
+  // (Produkte, Bestellungen, POS, Einstellungen, ...) bleibt 1:1 erhalten
+  // und ist über die Legacy-URL weiterhin identisch erreichbar.
+  {
+    path: 'apps/shop/:storeId',
+    loadComponent: () => import('./features/stores/store-detail.component').then(m => m.StoreDetailComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Category Management (Primary Routes) ====================
+  // WICHTIG: Spezifische Routen (mit /new) müssen VOR allgemeinen Routen stehen!
+  {
+    path: 'stores/:id/categories/new',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/categories/new');
+      return import('./features/products/category-form.component').then(m => m.CategoryFormComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/categories/:categoryId/edit',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/categories/:categoryId/edit');
+      return import('./features/products/category-form.component').then(m => m.CategoryFormComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/categories',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/categories');
+      return import('./features/products/category-list.component').then(m => m.CategoryListComponent);
+    },
+    canActivate: [authGuard]
+  },
+
+  // ==================== Store Management Routes ====================
+  // Format: /stores/:id/...
+  {
+    path: 'stores/:id/settings',
+    loadComponent: () => import('./features/stores/store-settings.component').then(m => m.StoreSettingsComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/homepage-builder',
+    loadComponent: () => import('./features/stores/homepage-builder.component').then(m => m.HomepageBuilderComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/orders/verification',
+    loadComponent: () => import('./features/stores/order-verification-center.component').then(m => m.OrderVerificationCenterComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/orders/:orderId',
+    loadComponent: () => {
+      console.log('✅ Route matched: stores/:id/orders/:orderId (detail)');
+      return import('./features/stores/order-detail-professional.component').then(m => m.OrderDetailProfessionalComponent);
+    },
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/orders',
+    loadComponent: () => import('./features/stores/store-orders.component').then(m => m.StoreOrdersComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/mhd-scanner-test',
+    loadComponent: () => import('./features/mhd-scanner/mhd-scanner-test.component').then(m => m.MhdScannerTestComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/products-expiry',
+    loadComponent: () => import('./features/mhd-scanner/mhd-product-list.component').then(m => m.MhdProductListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/supplier-invoices',
+    loadComponent: () => import('./features/supplier-invoices/supplier-invoices.component').then(m => m.SupplierInvoicesComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/supplier-invoices/:documentId/lines',
+    loadComponent: () => import('./features/supplier-invoices/pages/invoice-lines-page/invoice-lines-page.component').then(m => m.InvoiceLinesPageComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/supplier-invoices/:documentId/import-preview',
+    loadComponent: () => import('./features/supplier-invoices/pages/import-preview-page/import-preview-page.component').then(m => m.ImportPreviewPageComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/theme',
+    loadComponent: () => import('./features/stores/store-theme.component').then(m => m.StoreThemeComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/onboarding',
+    loadComponent: () => import('./features/stores/store-onboarding.component').then(m => m.StoreOnboardingComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Delivery Management ====================
+  {
+    path: 'stores/:id/delivery',
+    loadComponent: () => import('./features/delivery/delivery-management.component').then(m => m.DeliveryManagementComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Platform Admin – Delivery Options ====================
+  // Verwaltung globaler Lieferoptionen durch den Plattform-Admin.
+  // Store-Manager sehen diese Seite NICHT (kein Sidebar-Eintrag).
+  {
+    path: 'platform/delivery',
+    loadComponent: () => import('./features/delivery/platform-delivery.component').then(m => m.PlatformDeliveryComponent),
+    canActivate: [authGuard]
+  },
+
+
+  // ==================== Coupon Management ====================
+  {
+    path: 'stores/:id/coupons/:couponId',
+    loadComponent: () => import('./features/coupons/coupon-editor/coupon-editor.component').then(m => m.CouponEditorComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/coupons',
+    loadComponent: () => import('./features/coupons/coupons-list/coupons-list.component').then(m => m.CouponsListComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Reviews Management ====================
+  {
+    path: 'stores/:id/reviews',
+    loadComponent: () => import('./features/stores/store-reviews-manager.component').then(m => m.StoreReviewsManagerComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Chatbot Management ====================
+  {
+    path: 'stores/:id/chatbot',
+    loadComponent: () => import('./components/chatbot-management/chatbot-management.component').then(m => m.ChatbotManagementComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== TEMP: Issue Image Analysis (OpenRouter Vision Test) ====================
+  {
+    path: 'tools/issue-analysis',
+    loadComponent: () => import('./features/tools/issue-analysis/issue-analysis.component').then(m => m.IssueAnalysisComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Maritime (AIS Live-Schiffsdaten, MVP: Tanger Med) ====================
+  // Faktortest App Factory: MARITIME nutzt dieselben Shared-Bausteine wie DHL
+  // (AppNavigationComponent/AppAccountComponent/AppRegistry), nur eigene
+  // Konfiguration (MARITIME_NAV_CONFIG). GLOBAL-Scope (kein storeId) → keine
+  // Context-Auswahl-Route nötig. `/apps/maritime` ist die neue, primäre
+  // app-zentrische Route; `tools/maritime` bleibt als bereits produktiv
+  // genutzter Legacy-Alias unverändert bestehen (kein Breaking-Change).
+  {
+    path: 'apps/maritime',
+    loadComponent: () => import('./features/tools/maritime/maritime.component').then(m => m.MaritimeComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/maritime/account',
+    loadComponent: () => import('./features/tools/maritime/maritime-account.component').then(m => m.MaritimeAccountComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'tools/maritime',
+    loadComponent: () => import('./features/tools/maritime/maritime.component').then(m => m.MaritimeComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== DOCUMENTS (persönlicher Dokumenten-Tresor, GLOBAL-App) ====================
+  // Faktortest App Factory: DOCUMENTS nutzt dieselben Shared-Bausteine wie DHL/MARITIME
+  // (AppNavigationComponent/AppAccountComponent/AppRegistry), nur eigene Konfiguration
+  // (DOCUMENTS_NAV_CONFIG). GLOBAL-Scope (kein storeId) -> keine Context-Auswahl-Route
+  // nötig. Erste rein PERSONAL-GLOBAL-App (Daten sind trotz GLOBAL-App-Scope user-privat,
+  // siehe ARCHITECTURE_APP_FACTORY.md).
+  {
+    path: 'apps/documents',
+    loadComponent: () => import('./features/documents/documents.component').then(m => m.DocumentsComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'apps/documents/account',
+    loadComponent: () => import('./features/documents/documents-account.component').then(m => m.DocumentsAccountComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== SEO & Brand Management ====================
+  {
+    path: 'stores/:id/seo/redirects',
+    loadComponent: () => import('./features/settings/redirects-page/redirects-page.component').then(m => m.RedirectsPageComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/seo/structured-data',
+    loadComponent: () => import('./features/settings/structured-data-page/structured-data-page.component').then(m => m.StructuredDataPageComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/seo',
+    loadComponent: () => import('./features/settings/seo-settings-page/seo-settings-page.component').then(m => m.SeoSettingsPageComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'stores/:id/brand',
+    loadComponent: () => import('./features/settings/brand-onboarding/brand-onboarding.component').then(m => m.BrandOnboardingComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Promo Banner Settings ====================
+  {
+    path: 'stores/:id/banner',
+    loadComponent: () => import('./features/settings/banner-settings/banner-settings.component').then(m => m.BannerSettingsComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Telegram Integration ====================
+  {
+    path: 'stores/:id/telegram',
+    loadComponent: () => import('./features/settings/telegram/telegram-page.component').then(m => m.TelegramPageComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== WooCommerce Import ====================
+  {
+    path: 'stores/:id/woocommerce',
+    loadComponent: () => import('./features/settings/woocommerce/woocommerce-import.component').then(m => m.WooCommerceImportComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Team & Rollen Management ====================
+  {
+    path: 'stores/:id/roles',
+    loadComponent: () => import('./features/settings/store-role-management.component').then(m => m.StoreRoleManagementComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Store Detail (Catch-All) ====================
+  // WICHTIG: Diese Route MUSS nach ALLEN spezifischen /stores/:id/xxx-Routen stehen!
+  // Sonst fängt sie alles ab und zeigt die Store-Übersicht statt der Unterseite.
+  {
+    path: 'stores/:id',
+    loadComponent: () => import('./features/stores/store-detail.component').then(m => m.StoreDetailComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Public Storefront Routes ====================
+  {
+    path: 'storefront-landing',
+    loadComponent: () => import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent)
+  },
+  // ── Native App: Store via Slug öffnen (/s/:slug) ─────────────────────────
+  // Für Capacitor (Android/iOS): Da es keine Subdomains gibt, wird der Store
+  // über diesen Route-Parameter geöffnet (z.B. via Deep Link oder QR-Code).
+  {
+    path: 's/:slug',
+    loadComponent: () => import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent)
+  },
+  // ── Öffentliche Produkt-Detailseite (Subdomain-Storefront) ──────────
+  // Muss VOR dem Wildcard-Handler stehen, damit /products/:productId
+  // nicht von ** abgefangen und als StorefrontLanding gerendert wird.
+  {
+    path: 'products/:productId',
+    loadComponent: () => import('./features/storefront/storefront-product-detail.component')
+      .then(m => m.StorefrontProductDetailComponent)
+  },
+  {
+    path: 'storefront/profile',
+    loadComponent: () => import('./features/storefront/customer-profile.component').then(m => m.CustomerProfileComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'storefront/order-confirmation',
+    loadComponent: () => import('./features/storefront/order-confirmation.component').then(m => m.OrderConfirmationComponent)
+  },
+  {
+    path: 'cart',
+    loadComponent: () => import('./features/storefront/cart.component').then(m => m.CartComponent)
+  },
+  {
+    path: 'checkout',
+    loadComponent: () => import('./features/storefront/checkout.component').then(m => m.CheckoutComponent)
+  },
+  {
+    path: 'order-confirmation',
+    loadComponent: () => import('./features/storefront/order-confirmation.component').then(m => m.OrderConfirmationComponent)
+  },
+
+  // ==================== Customer Account Routes ====================
+  {
+    path: 'customer',
+    loadComponent: () => import('./features/customer/customer-dashboard.component').then(m => m.CustomerDashboardComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'customer/orders',
+    loadComponent: () => import('./features/customer/order-history.component').then(m => m.OrderHistoryComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'customer/wishlist',
+    loadComponent: () => import('./features/customer/wishlist.component').then(m => m.WishlistComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'customer/saved-carts',
+    loadComponent: () => import('./features/customer/saved-carts.component').then(m => m.SavedCartsComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'customer/addresses',
+    loadComponent: () => import('./features/customer/address-book.component').then(m => m.AddressBookComponent),
+    canActivate: [authGuard]
+  },
+
+  // ==================== Demo Routes ====================
+  {
+    path: 'coupon-demo',
+    loadComponent: () => import('./features/coupons/coupon-demo/coupon-demo.component').then(m => m.CouponDemoComponent)
+  },
+  {
+    path: 'checkout-demo',
+    loadComponent: () => import('./features/coupons/checkout-demo/checkout-demo.component').then(m => m.CheckoutDemoComponent)
+  },
+  {
+    path: 'test-dashboard',
+    loadComponent: () => import('./features/testing/test-dashboard.component').then(m => m.TestDashboardComponent)
+  },
+
+  // ==================== Root Route ====================
+  // MUSS am Ende stehen, sonst matched es alles!
+  {
+    path: '',
+    loadComponent: () => {
+      const hostname = window.location.hostname;
+      const isSubdomain = hostname.endsWith('.markt.ma') &&
+                         hostname !== 'markt.ma' &&
+                         hostname !== 'www.markt.ma' &&
+                         hostname !== 'api.markt.ma' &&
+                         hostname !== 'grafana.markt.ma';
+
+      console.log('🌐 Root Route - Hostname:', hostname, 'isSubdomain:', isSubdomain);
+
+      if (isSubdomain) {
+        return import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent);
+      } else {
+        return import('./features/landing/landing.component').then(m => m.LandingComponent);
+      }
+    }
+  },
+
+  // ==================== Legacy/Deprecated Routes (Redirects) ====================
+  {
+    path: 'storefront/:id',
+    redirectTo: '/',
+    pathMatch: 'full'
+  },
+  {
+    path: 'frontend/:id',
+    redirectTo: '/',
+    pathMatch: 'full'
+  },
+
+  // ==================== Wildcard (404) ====================
+  {
+    path: '**',
+    loadComponent: () => {
+      const hostname = window.location.hostname;
+      const path = window.location.pathname;
+      const isSubdomain = hostname.endsWith('.markt.ma') &&
+                         hostname !== 'markt.ma' &&
+                         hostname !== 'www.markt.ma' &&
+                         hostname !== 'api.markt.ma';
+
+      console.log('❌ Wildcard Route (404) - Path:', path, 'Hostname:', hostname, 'isSubdomain:', isSubdomain);
+
+      if (isSubdomain) {
+        return import('./features/storefront/storefront-landing.component').then(m => m.StorefrontLandingComponent);
+      } else {
+        return import('./features/landing/landing.component').then(m => m.LandingComponent);
+      }
+    }
+  }
+];

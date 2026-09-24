@@ -1,0 +1,23 @@
+version: '3.9'
+
+# Telegram MTProto Scraper – separater Microservice für Channel-Import
+# Starte lokal mit: docker-compose up telegram-scraper
+# Oder direkt: cd telegram-scraper && pip install -r requirements.txt && uvicorn main:app --port 8001
+
+services:
+  telegram-scraper:
+    build:
+      context: ./telegram-scraper
+      dockerfile: Dockerfile
+    container_name: marktma-telegram-scraper
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+

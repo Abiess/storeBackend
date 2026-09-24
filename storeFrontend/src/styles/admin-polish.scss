@@ -1,0 +1,122 @@
+/* =============================================================================
+   Admin Polish — Tabler-inspirierte Vereinheitlichung der Admin-UI
+   -----------------------------------------------------------------------------
+   Reuse-First: Greift NICHT in Komponenten ein, sondern setzt nur einheitliche
+   Defaults für alle Admin-Seiten unter dem `app-admin-shell`-Wrapper aus
+   AppComponent. Storefront/Public-Bereich bleibt unberührt.
+
+   Quelle der Design-Tokens: angelehnt an Tabler (MIT, https://tabler.io)
+   ohne externe CSS-Abhängigkeit (kein CDN-Risiko, voll lokal).
+   ========================================================================== */
+
+.app-admin-shell {
+  /* Tabler-inspirierte Token-Overrides (nur im Admin-Bereich aktiv) */
+  --admin-font:        'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --admin-radius:      6px;
+  --admin-shadow-sm:   0 1px 2px rgba(15, 23, 42, 0.04);
+  --admin-shadow:      0 2px 4px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --admin-shadow-lg:   0 8px 24px rgba(15, 23, 42, 0.08);
+  --admin-border:      #e6e7e9;
+  --admin-border-soft: #f1f3f5;
+  --admin-text:        #1e293b;
+  --admin-text-muted:  #64748b;
+  --admin-bg:          #f8fafc;
+  --admin-surface:     #ffffff;
+
+  font-family: var(--admin-font);
+  color: var(--admin-text);
+  background: var(--admin-bg);
+
+  /* Headlines konsistenter machen */
+  h1, h2, h3, h4 {
+    font-family: var(--admin-font);
+    color: var(--admin-text);
+    letter-spacing: -0.01em;
+  }
+
+  /* Karten-Look vereinheitlichen — überall wo Komponenten weiße Boxen rendern */
+  .card,
+  .section,
+  .editor-section,
+  .preview-section,
+  .preset-card,
+  .stat-card {
+    border-radius: var(--admin-radius);
+    box-shadow: var(--admin-shadow);
+    border: 1px solid var(--admin-border-soft);
+  }
+
+  /* Tabler-ähnliche Buttons — nur dezente Polish-Anpassungen,
+     keine Farbüberschreibung der bestehenden .btn-primary etc. */
+  .btn {
+    border-radius: var(--admin-radius);
+    font-weight: 500;
+    letter-spacing: 0;
+    box-shadow: var(--admin-shadow-sm);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  }
+  .btn:hover {
+    box-shadow: var(--admin-shadow);
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+
+  /* Form-Controls etwas ruhiger */
+  .form-control,
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  select,
+  textarea {
+    border-radius: var(--admin-radius);
+    border-color: var(--admin-border);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .form-control:focus,
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  }
+
+  /* Tabellen */
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  table th {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--admin-text-muted);
+    font-weight: 600;
+  }
+
+  /* Badges feiner */
+  .badge {
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+}
+
+/* Custom scrollbar nur im Admin-Shell */
+.app-admin-shell ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.app-admin-shell ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 5px;
+}
+.app-admin-shell ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.app-admin-shell ::-webkit-scrollbar-track {
+  background: transparent;
+}
+

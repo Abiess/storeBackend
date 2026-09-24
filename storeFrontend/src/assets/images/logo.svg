@@ -1,0 +1,67 @@
+<svg width="1200" height="1200" viewBox="0 0 1200 1200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">markt.ma Human Marketplace Logo</title>
+  <desc id="desc">A modern human-centered marketplace logo for markt.ma with an abstract person, shopping bag, Moroccan star accent, market roof and wordmark.</desc>
+
+  <defs>
+    <linearGradient id="greenGradient" x1="260" y1="250" x2="900" y2="780" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#12C99B"/>
+      <stop offset="0.52" stop-color="#069879"/>
+      <stop offset="1" stop-color="#02574D"/>
+    </linearGradient>
+    <linearGradient id="darkGreenGradient" x1="430" y1="390" x2="780" y2="690" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0A8B73"/>
+      <stop offset="1" stop-color="#014B43"/>
+    </linearGradient>
+    <linearGradient id="orangeGradient" x1="480" y1="610" x2="760" y2="730" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB22E"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#001F1C" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="1200" fill="#FFFFFF"/>
+
+  <!-- Symbol group -->
+  <g filter="url(#softShadow)">
+    <!-- Human head -->
+    <circle cx="500" cy="350" r="62" fill="url(#greenGradient)"/>
+    <path d="M456 376C474 394 523 394 544 373C522 382 480 382 456 376Z" fill="white" opacity="0.95"/>
+
+    <!-- Human body / welcoming arm -->
+    <path d="M406 454C430 414 472 425 510 444C555 466 607 443 648 398C642 463 599 518 535 554C481 585 446 632 441 704C379 661 366 530 406 454Z" fill="url(#greenGradient)"/>
+
+    <!-- Shopping bag -->
+    <g>
+      <path d="M674 423C678 403 695 390 716 390H805C827 390 846 407 849 429L869 560C872 582 855 602 832 602H674C651 602 633 581 637 558L674 423Z" fill="url(#greenGradient)"/>
+      <path d="M712 426V382C712 337 746 304 788 304C830 304 864 337 864 382V426" stroke="#035F55" stroke-width="16" stroke-linecap="round"/>
+      <circle cx="712" cy="426" r="9" fill="white"/>
+      <circle cx="864" cy="426" r="9" fill="white"/>
+
+      <!-- Moroccan star accent -->
+      <path d="M768 463L784 501H826L792 525L805 565L768 541L731 565L744 525L710 501H752L768 463Z" stroke="white" stroke-width="7" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Market roof / house -->
+    <path d="M435 665C505 583 594 533 681 547C772 562 834 620 874 708C806 652 728 621 649 613C567 628 499 651 435 665Z" fill="url(#darkGreenGradient)"/>
+    <path d="M458 661C520 594 590 561 653 570C744 583 817 642 874 708C809 668 738 642 660 635C589 642 521 652 458 661Z" fill="white" opacity="0.92"/>
+    <path d="M435 665C505 583 594 533 681 547C772 562 834 620 874 708" stroke="#034E45" stroke-width="10" stroke-linecap="round"/>
+
+    <!-- Market doors/windows -->
+    <path d="M563 690C563 657 589 631 622 631C655 631 681 657 681 690V752H563V690Z" fill="url(#greenGradient)"/>
+    <path d="M475 713C475 689 495 669 519 669C543 669 563 689 563 713V752H475V713Z" fill="url(#orangeGradient)"/>
+    <path d="M719 713C719 689 739 669 763 669C787 669 807 689 807 713V752H719V713Z" fill="url(#orangeGradient)"/>
+  </g>
+
+  <!-- Wordmark - fixed spacing, no overlap around the dot -->
+  <g aria-label="markt.ma">
+    <text x="600" y="910" text-anchor="middle"
+          font-family="Inter, Avenir Next, Nunito Sans, Arial, sans-serif"
+          font-size="145" font-weight="800" letter-spacing="-5">
+      <tspan fill="#024B43">markt</tspan>
+      <tspan dx="20" fill="#F59E0B">.</tspan>
+      <tspan dx="20" fill="#10B981">ma</tspan>
+    </text>
+  </g>
+</svg>

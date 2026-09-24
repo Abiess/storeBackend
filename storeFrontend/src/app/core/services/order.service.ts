@@ -1,0 +1,85 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '@env/environment';
+import { Order, OrderStatus } from '../models';
+import { MockOrderService } from '../mocks/mock-order.service';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class OrderService {
+  private mockService = new MockOrderService();
+
+  constructor(private http: HttpClient) {}
+
+  getOrders(storeId: number, status?: OrderStatus): Observable<Order[]> {
+    if (environment.useMockData) {
+      return this.mockService.getOrders(storeId, status);
+    }
+    let params = new HttpParams();
+    if (status) {
+      params = params.set('status', status);
+    }
+    return this.http.get<Order[]>(`${environment.apiUrl}/stores/${storeId}/orders`, { params });
+  }
+
+  getStoreOrders(storeId: number): Observable<Order[]> {
+    return this.getOrders(storeId);
+  }
+
+  getOrder(storeId: number, orderId: number): Observable<any> {
+    if (environment.useMockData) {
+      return this.mockService.getOrder(storeId, orderId);
+    }
+    return this.http.get<any>(`${environment.apiUrl}/stores/${storeId}/orders/${orderId}`);
+  }
+
+  updateOrderStatus(storeId: number, orderId: number, status: OrderStatus, note?: string): Observable<Order> {
+    if (environment.useMockData) {
+      return this.mockService.updateOrderStatus(storeId, orderId, status, note);
+    }
+    return this.http.put<Order>(`${environment.apiUrl}/stores/${storeId}/orders/${orderId}/status`, { status, note });
+  }
+
+  getOrderHistory(storeId: number, orderId: number): Observable<any[]> {
+    if (environment.useMockData) {
+      return this.mockService.getOrderHistory(storeId, orderId);
+    }
+    return this.http.get<any[]>(`${environment.apiUrl}/stores/${storeId}/orders/${orderId}/history`);
+  }
+
+  bulkUpdateOrderStatus(storeId: number, orderIds: number[], status: OrderStatus, note?: string): Observable<Order[]> {
+    if (environment.useMockData) {
+      return this.mockService.bulkUpdateOrderStatus(storeId, orderIds, status, note);
+    }
+    return this.http.put<Order[]>(`${environment.apiUrl}/stores/${storeId}/orders/bulk-status`, { orderIds, status, note });
+  }
+
+  updateOrderTracking(storeId: number, orderId: number, trackingCarrier: string, trackingNumber: string, trackingUrl?: string): Observable<Order> {
+    if (environment.useMockData) {
+      return this.mockService.updateOrderTracking(storeId, orderId, trackingCarrier, trackingNumber, trackingUrl);
+    }
+    return this.http.put<Order>(`${environment.apiUrl}/stores/${storeId}/orders/${orderId}/tracking`, {
+      trackingCarrier,
+      trackingNumber,
+      trackingUrl
+    });
+  }
+
+  addOrderNote(storeId: number, orderId: number, note: string): Observable<any> {
+    if (environment.useMockData) {
+      return this.mockService.addOrderNote(storeId, orderId, note);
+    }
+    return this.http.post(`${environment.apiUrl}/stores/${storeId}/orders/${orderId}/notes`, { note });
+  }
+  
+  /**
+   * B2B: Download delivery note PDF
+   */
+  getDeliveryNotePdf(storeId: number, orderId: number): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/stores/${storeId}/orders/${orderId}/delivery-note`, {
+      responseType: 'blob'
+    });
+  }
+}

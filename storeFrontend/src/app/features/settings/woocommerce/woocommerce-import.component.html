@@ -1,0 +1,639 @@
+<div class="woocommerce-import">
+  <!-- Header -->
+  <div class="page-header">
+    <h1>🛍️ {{ 'woocommerce.title' | translate }}</h1>
+    <p>{{ 'woocommerce.subtitle' | translate }}</p>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-navigation">
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'import'"
+      (click)="switchTab('import')">
+      📦 {{ 'woocommerce.import' | translate }}
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'cleanup'"
+      (click)="switchTab('cleanup')">
+      🧹 {{ 'woocommerce.cleanup.tabTitle' | translate }}
+    </button>
+  </div>
+
+  <!-- Step Indicator (only for import tab) -->
+  <div class="step-indicator" *ngIf="activeTab === 'import'">
+    <div class="step" 
+         [class.active]="isStepActive('config')" 
+         [class.completed]="isStepCompleted('config')"
+         (click)="goToStep('config')">
+      <div class="step-number">1</div>
+      <div class="step-label">{{ 'woocommerce.connection' | translate }}</div>
+    </div>
+
+    <div class="step" 
+         [class.active]="isStepActive('test')" 
+         [class.completed]="isStepCompleted('test')"
+         (click)="goToStep('test')">
+      <div class="step-number">2</div>
+      <div class="step-label">{{ 'woocommerce.test' | translate }}</div>
+    </div>
+
+    <div class="step" 
+         [class.active]="isStepActive('preview')" 
+         [class.completed]="isStepCompleted('preview')"
+         (click)="goToStep('preview')">
+      <div class="step-number">3</div>
+      <div class="step-label">{{ 'woocommerce.preview' | translate }}</div>
+    </div>
+
+    <div class="step" 
+         [class.active]="isStepActive('import')" 
+         [class.completed]="false">
+      <div class="step-number">4</div>
+      <div class="step-label">{{ 'woocommerce.import' | translate }}</div>
+    </div>
+  </div>
+
+  <!-- Error Message (global) -->
+  <div class="alert alert-error" *ngIf="errorMessage">
+    <span>❌ {{ errorMessage | translate }}</span>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- STEP 1: Config -->
+  <!-- ================================================================ -->
+  <div class="step-content" *ngIf="activeTab === 'import' && currentStep === 'config'">
+    <div class="form-card">
+      <h2>🔌 {{ 'woocommerce.connectionSettings' | translate }}</h2>
+      
+      <div class="form-group">
+        <label for="shopUrl">{{ 'woocommerce.shopUrl' | translate }} <span class="required">*</span></label>
+        <input 
+          type="url" 
+          id="shopUrl" 
+          [(ngModel)]="shopUrl" 
+          placeholder="https://example.com"
+          [disabled]="savingConfig">
+        <small>{{ 'woocommerce.shopUrlHint' | translate }}</small>
+      </div>
+
+      <div class="form-group">
+        <label for="consumerKey">{{ 'woocommerce.consumerKey' | translate }} <span class="required">*</span></label>
+        <input 
+          type="text" 
+          id="consumerKey" 
+          [(ngModel)]="consumerKey" 
+          placeholder="ck_..."
+          [disabled]="savingConfig">
+      </div>
+
+      <div class="form-group">
+        <label for="consumerSecret">
+          {{ 'woocommerce.consumerSecret' | translate }}
+          <span class="required" *ngIf="!consumerSecretConfigured">*</span>
+        </label>
+        <input 
+          type="password" 
+          id="consumerSecret" 
+          [(ngModel)]="consumerSecret" 
+          [placeholder]="consumerSecretConfigured ? ('woocommerce.secretKeepPlaceholder' | translate) : 'cs_...'"
+          [disabled]="savingConfig">
+        <small *ngIf="consumerSecretConfigured" class="text-success">
+          ✅ {{ 'woocommerce.secretStored' | translate }}
+        </small>
+        <small *ngIf="!consumerSecretConfigured">
+          {{ 'woocommerce.secretHint' | translate }}
+        </small>
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" [(ngModel)]="enabled" [disabled]="savingConfig">
+          {{ 'woocommerce.enabled' | translate }}
+        </label>
+        <small>{{ 'woocommerce.enabledHint' | translate }}</small>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-primary" 
+                (click)="saveConfig()" 
+                [disabled]="savingConfig">
+          <span *ngIf="!savingConfig">💾 {{ 'woocommerce.saveConfig' | translate }}</span>
+          <span *ngIf="savingConfig">
+            <span class="spinner-inline"></span> {{ 'common.saving' | translate }}
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- STEP 2: Test Connection -->
+  <!-- ================================================================ -->
+  <div class="step-content" *ngIf="activeTab === 'import' && currentStep === 'test'">
+    <div class="test-card">
+      <h2>🔍 {{ 'woocommerce.testConnection' | translate }}</h2>
+      <p>{{ 'woocommerce.testHint' | translate }}</p>
+
+      <!-- Test Button -->
+      <button class="btn-test" 
+              (click)="testConnection()" 
+              [disabled]="testingConnection">
+        <span *ngIf="!testingConnection">🚀 {{ 'woocommerce.runTest' | translate }}</span>
+        <span *ngIf="testingConnection">
+          <span class="spinner-inline"></span> {{ 'woocommerce.testing' | translate }}
+        </span>
+      </button>
+
+      <!-- Test Result -->
+      <div class="test-result" *ngIf="testResult">
+        <div class="result-header" [class.success]="testResult.success" [class.error]="!testResult.success">
+          <span *ngIf="testResult.success">✅ {{ 'woocommerce.connectionSuccess' | translate }}</span>
+          <span *ngIf="!testResult.success">❌ {{ 'woocommerce.connectionFailed' | translate }}</span>
+        </div>
+
+        <div class="result-details" *ngIf="testResult.success">
+          <div class="detail-row">
+            <strong>{{ 'woocommerce.wcVersion' | translate }}:</strong>
+            <span>{{ testResult.wcVersion || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <strong>{{ 'woocommerce.wpVersion' | translate }}:</strong>
+            <span>{{ testResult.wpVersion || '-' }}</span>
+          </div>
+          <div class="detail-row">
+            <strong>{{ 'woocommerce.productCount' | translate }}:</strong>
+            <span>{{ testResult.productCount || 0 }}</span>
+          </div>
+          <div class="detail-row">
+            <strong>{{ 'woocommerce.categoryCount' | translate }}:</strong>
+            <span>{{ testResult.categoryCount || 0 }}</span>
+          </div>
+        </div>
+
+        <div class="result-error" *ngIf="!testResult.success">
+          <p>{{ testResult.messageKey | translate }}</p>
+          <small *ngIf="testResult.detail">{{ testResult.detail }}</small>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="step-navigation">
+        <button class="btn-secondary" (click)="goToStep('config')">
+          ← {{ 'common.back' | translate }}
+        </button>
+        <button class="btn-primary" 
+                (click)="goToStep('preview')" 
+                [disabled]="!testResult?.success">
+          {{ 'common.next' | translate }} →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- STEP 3: Preview -->
+  <!-- ================================================================ -->
+  <div class="step-content" *ngIf="activeTab === 'import' && currentStep === 'preview'">
+    <div class="preview-card">
+      <h2>👀 {{ 'woocommerce.previewTitle' | translate }}</h2>
+      <p>{{ 'woocommerce.previewHint' | translate }}</p>
+
+      <!-- Load Preview Button -->
+      <button class="btn-preview" 
+              (click)="loadPreview()" 
+              [disabled]="loadingPreview"
+              *ngIf="!previewResult">
+        <span *ngIf="!loadingPreview">🔄 {{ 'woocommerce.loadPreview' | translate }}</span>
+        <span *ngIf="loadingPreview">
+          <span class="spinner-inline"></span> {{ 'woocommerce.loading' | translate }}
+        </span>
+      </button>
+
+      <!-- Preview Result -->
+      <div class="preview-result" *ngIf="previewResult">
+        <!-- Stats -->
+        <div class="preview-stats">
+          <div class="stat">
+            <strong>{{ previewResult.totalProducts }}</strong>
+            <span>{{ 'woocommerce.productsFound' | translate }}</span>
+          </div>
+          <div class="stat">
+            <strong>{{ previewResult.categoriesCount }}</strong>
+            <span>{{ 'woocommerce.categories' | translate }}</span>
+          </div>
+          <div class="stat warn" *ngIf="previewResult.alreadyImportedCount > 0">
+            <strong>{{ previewResult.alreadyImportedCount }}</strong>
+            <span>{{ 'woocommerce.alreadyImportedShort' | translate }}</span>
+          </div>
+          <div class="stat warn" *ngIf="previewResult.productsWithVariantWarning > 0">
+            <strong>{{ previewResult.productsWithVariantWarning }}</strong>
+            <span>{{ 'woocommerce.variantWarnings' | translate }}</span>
+          </div>
+        </div>
+
+        <!-- Products List -->
+        <div class="products-list" *ngIf="previewResult.products.length > 0">
+          <h3>{{ 'woocommerce.previewProducts' | translate }}</h3>
+          
+          <div class="product-card" *ngFor="let product of previewResult.products">
+            <div class="product-image">
+              <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" />
+              <div *ngIf="!product.imageUrl" class="no-image">📦</div>
+            </div>
+
+            <div class="product-info">
+              <h4>{{ product.name }}</h4>
+              <div class="product-meta">
+                <span *ngIf="product.sku" class="sku">SKU: {{ product.sku }}</span>
+                <span *ngIf="product.price" class="price">{{ product.price }} €</span>
+                <span *ngIf="product.variationCount > 0" class="variants">
+                  {{ product.variationCount }} {{ 'woocommerce.variants' | translate }}
+                </span>
+              </div>
+
+              <div class="product-categories" *ngIf="product.categoryNames.length > 0">
+                <span *ngFor="let cat of product.categoryNames" class="category-tag">
+                  {{ cat }}
+                </span>
+              </div>
+
+              <div class="product-badges">
+                <span class="badge" [ngClass]="getProductBadgeClass(product)">
+                  {{ getProductBadgeText(product) | translate }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="no-products" *ngIf="previewResult.products.length === 0">
+          📭 {{ 'woocommerce.noProducts' | translate }}
+        </div>
+      </div>
+
+      <!-- Import Options -->
+      <div class="import-options">
+        <h3>📋 {{ 'woocommerce.importOptions' | translate }}</h3>
+        
+        <div class="option-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="importImages" />
+            <span>{{ 'woocommerce.importImagesOption' | translate }}</span>
+          </label>
+          <small>{{ 'woocommerce.importImagesHint' | translate }}</small>
+        </div>
+
+        <div class="option-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [(ngModel)]="importCustomers" />
+            <span>{{ 'woocommerce.importCustomersOption' | translate }}</span>
+          </label>
+          <small>{{ 'woocommerce.importCustomersHint' | translate }}</small>
+        </div>
+
+        <div class="option-group" *ngIf="importCustomers">
+          <label class="checkbox-label sub-option">
+            <input type="checkbox" [(ngModel)]="importOnlyCustomersWithOrders" />
+            <span>{{ 'woocommerce.importOnlyCustomersWithOrdersOption' | translate }}</span>
+          </label>
+          <small>{{ 'woocommerce.importOnlyCustomersWithOrdersHint' | translate }}</small>
+        </div>
+
+        <div class="info-box" *ngIf="importCustomers">
+          <span class="info-icon">ℹ️</span>
+          <div class="info-content">
+            <strong>{{ 'woocommerce.customerImportInfo.title' | translate }}</strong>
+            <ul>
+              <li>{{ 'woocommerce.customerImportInfo.noPasswords' | translate }}</li>
+              <li>{{ 'woocommerce.customerImportInfo.emailVerification' | translate }}</li>
+              <li>{{ 'woocommerce.customerImportInfo.duplicateCheck' | translate }}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="step-navigation">
+        <button class="btn-secondary" (click)="goToStep('test')">
+          ← {{ 'common.back' | translate }}
+        </button>
+        <button class="btn-primary btn-import" 
+                (click)="startImport()" 
+                [disabled]="!previewResult || importing">
+          <span *ngIf="!importing">🚀 {{ 'woocommerce.startImport' | translate }}</span>
+          <span *ngIf="importing">⏳ Importiere...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- STEP 4: Import -->
+  <!-- ================================================================ -->
+  <div class="step-content" *ngIf="activeTab === 'import' && currentStep === 'import'">
+    <div class="import-card">
+      <h2>🚀 {{ 'woocommerce.importTitle' | translate }}</h2>
+      
+      <!-- Import Result (if completed) -->
+      <div class="import-result" *ngIf="importResult">
+        <div class="result-header" [ngClass]="importResult.status === 'COMPLETED' ? 'success' : 'error'">
+          <span class="icon">{{ importResult.status === 'COMPLETED' ? '✅' : '❌' }}</span>
+          <h3>{{ importResult.status === 'COMPLETED' ? 'Import abgeschlossen' : 'Import fehlgeschlagen' }}</h3>
+        </div>
+
+        <div class="import-stats">
+          <div class="stat-group">
+            <h4>📦 {{ 'woocommerce.products' | translate }}</h4>
+            <div class="stat success">
+              <strong>{{ importResult.importedCount }}</strong>
+              <span>{{ 'woocommerce.imported' | translate }}</span>
+            </div>
+            <div class="stat warn">
+              <strong>{{ importResult.skippedCount }}</strong>
+              <span>{{ 'woocommerce.skipped' | translate }}</span>
+            </div>
+            <div class="stat error" *ngIf="importResult.failedCount > 0">
+              <strong>{{ importResult.failedCount }}</strong>
+              <span>{{ 'woocommerce.failed' | translate }}</span>
+            </div>
+          </div>
+          
+          <div class="stat-group" *ngIf="importResult.customersImported !== undefined || importResult.customersLinked !== undefined">
+            <h4>👥 {{ 'woocommerce.customers' | translate }}</h4>
+            <div class="stat success" *ngIf="importResult.customersImported && importResult.customersImported > 0">
+              <strong>{{ importResult.customersImported }}</strong>
+              <span>{{ 'woocommerce.created' | translate }}</span>
+            </div>
+            <div class="stat info" *ngIf="importResult.customersLinked && importResult.customersLinked > 0">
+              <strong>{{ importResult.customersLinked }}</strong>
+              <span>{{ 'woocommerce.linked' | translate }}</span>
+            </div>
+            <div class="stat warn">
+              <strong>{{ importResult.customersSkipped || 0 }}</strong>
+              <span>{{ 'woocommerce.skipped' | translate }}</span>
+            </div>
+            <div class="stat error" *ngIf="importResult.customersFailed && importResult.customersFailed > 0">
+              <strong>{{ importResult.customersFailed }}</strong>
+              <span>{{ 'woocommerce.failed' | translate }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Imported Customers (Activation required) -->
+        <section *ngIf="importResult.importedCustomers && importResult.importedCustomers.length > 0" class="imported-customers">
+          <h4>{{ 'woocommerce.customerActivation.title' | translate }}</h4>
+          <p class="info-text">{{ 'woocommerce.customerActivation.description' | translate }}</p>
+
+          <div *ngFor="let customer of importResult.importedCustomers" class="customer-row">
+            <div class="customer-info">
+              <strong>{{ customer.name || customer.email }}</strong>
+              <div class="email">{{ customer.email }}</div>
+
+              <small *ngIf="!customer.activationEmailSentAt" class="status pending">
+                {{ 'woocommerce.customerActivation.pending' | translate }}
+              </small>
+
+              <small *ngIf="customer.activationEmailSentAt" class="status sent">
+                {{ 'woocommerce.customerActivation.sentAt' | translate }}
+                {{ customer.activationEmailSentAt ? (customer.activationEmailSentAt | date:'short') : 'N/A' }}
+              </small>
+            </div>
+
+            <button type="button" 
+                    class="btn-activation"
+                    [disabled]="activationLoading.has(customer.userId)"
+                    (click)="sendActivation(customer)">
+              <span *ngIf="!activationLoading.has(customer.userId)">
+                {{ customer.activationEmailSentAt
+                  ? ('woocommerce.customerActivation.resend' | translate)
+                  : ('woocommerce.customerActivation.send' | translate)
+                }}
+              </span>
+
+              <span *ngIf="activationLoading.has(customer.userId)">
+                {{ 'common.loading' | translate }}...
+              </span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Customer Pagination (if hasMoreCustomers) -->
+        <div class="customer-pagination" *ngIf="importResult.hasMoreCustomers">
+          <div class="pagination-info">
+            <p>📊 {{ importResult.customerPageSize }} {{ 'woocommerce.customersProcessed' | translate }}</p>
+            <p class="next-page-hint">{{ 'woocommerce.moreCustomersAvailable' | translate }}</p>
+          </div>
+          <button class="btn-primary" 
+                  (click)="startImport()" 
+                  [disabled]="importing">
+            <span *ngIf="!importing">
+              ▶️ {{ 'woocommerce.importNextCustomers' | translate }} ({{ importResult.customerPageSize }})
+            </span>
+            <span *ngIf="importing">⏳ {{ 'woocommerce.importing' | translate }}...</span>
+          </button>
+        </div>
+
+        <!-- Warnings -->
+        <div class="warnings" *ngIf="importResult.warnings && importResult.warnings.length > 0">
+          <h4>⚠️ Hinweise:</h4>
+          <ul>
+            <li *ngFor="let warning of importResult.warnings">{{ warning }}</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Import Form (if not yet imported) -->
+      <div class="import-form" *ngIf="!importResult">
+        <div class="info-box">
+          <p>{{ 'woocommerce.importInfo' | translate }}</p>
+          <p><strong>Hinweis:</strong> Variable Produkte werden im MVP noch nicht importiert und automatisch übersprungen.</p>
+        </div>
+
+        <button class="btn-import" 
+                (click)="startImport()" 
+                [disabled]="!previewResult || importing">
+          <span *ngIf="!importing">🚀 {{ 'woocommerce.startImport' | translate }}</span>
+          <span *ngIf="importing">⏳ Importiere...</span>
+        </button>
+      </div>
+
+      <!-- Navigation -->
+      <div class="step-navigation">
+        <button class="btn-secondary" (click)="goToStep('preview')">
+          ← {{ 'common.back' | translate }}
+        </button>
+        <button class="btn-primary" 
+                *ngIf="importResult"
+                (click)="goToStep('preview')">
+          {{ 'woocommerce.importAgain' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- CLEANUP TAB: Clean WooCommerce Descriptions -->
+  <!-- ================================================================ -->
+  <div class="cleanup-content" *ngIf="activeTab === 'cleanup'">
+    <div class="cleanup-card">
+      <h2>🧹 {{ 'woocommerce.cleanup.title' | translate }}</h2>
+      <p>{{ 'woocommerce.cleanup.description' | translate }}</p>
+
+      <!-- Start Preview Button -->
+      <div class="cleanup-actions" *ngIf="!cleanupPreview && !cleanupResult">
+        <button 
+          class="btn-primary" 
+          (click)="startCleanupPreview()" 
+          [disabled]="cleaningDescriptions">
+          <span *ngIf="!cleaningDescriptions">🔍 {{ 'woocommerce.cleanup.startPreview' | translate }}</span>
+          <span *ngIf="cleaningDescriptions">
+            <span class="spinner-inline"></span> {{ 'woocommerce.cleanup.loading' | translate }}
+          </span>
+        </button>
+      </div>
+
+      <!-- Preview Result -->
+      <div class="cleanup-preview" *ngIf="cleanupPreview">
+        <h3>{{ 'woocommerce.cleanup.previewTitle' | translate }}</h3>
+
+        <!-- Stats -->
+        <div class="cleanup-stats">
+          <div class="stat">
+            <strong>{{ cleanupPreview.checked }}</strong>
+            <span>{{ 'woocommerce.cleanup.checked' | translate }}</span>
+          </div>
+          <div class="stat" [class.warn]="cleanupPreview.affected > 0">
+            <strong>{{ cleanupPreview.affected }}</strong>
+            <span>{{ 'woocommerce.cleanup.affected' | translate }}</span>
+          </div>
+          <div class="stat error" *ngIf="cleanupPreview.errors && cleanupPreview.errors.length > 0">
+            <strong>{{ cleanupPreview.errors.length }}</strong>
+            <span>{{ 'woocommerce.cleanup.errors' | translate }}</span>
+          </div>
+        </div>
+
+        <!-- No affected products -->
+        <div class="info-box success" *ngIf="cleanupPreview.affected === 0">
+          <p>✅ {{ 'woocommerce.cleanup.noAffectedProducts' | translate }}</p>
+        </div>
+
+        <!-- Products Table -->
+        <div class="cleanup-table-wrapper" *ngIf="cleanupPreview.affected > 0 && cleanupPreview.products.length > 0">
+          <table class="cleanup-table">
+            <thead>
+              <tr>
+                <th>{{ 'woocommerce.cleanup.productName' | translate }}</th>
+                <th>{{ 'woocommerce.cleanup.before' | translate }}</th>
+                <th>{{ 'woocommerce.cleanup.after' | translate }}</th>
+                <th>{{ 'woocommerce.cleanup.status' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let product of cleanupPreview.products">
+                <td class="product-name">{{ product.title }}</td>
+                <td class="description-preview">
+                  <div class="preview-text">{{ truncateText(product.before, 150) }}</div>
+                </td>
+                <td class="description-preview">
+                  <div class="preview-text">{{ truncateText(product.after, 150) }}</div>
+                </td>
+                <td class="status-cell">
+                  <span class="badge status-processing" *ngIf="product.wouldChange">
+                    {{ 'woocommerce.cleanup.willChange' | translate }}
+                  </span>
+                  <span class="badge status-active" *ngIf="!product.wouldChange">
+                    {{ 'woocommerce.cleanup.noChange' | translate }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Errors -->
+        <div class="cleanup-errors" *ngIf="cleanupPreview.errors && cleanupPreview.errors.length > 0">
+          <h4>⚠️ {{ 'woocommerce.cleanup.errorsTitle' | translate }}</h4>
+          <ul>
+            <li *ngFor="let error of cleanupPreview.errors">{{ error }}</li>
+          </ul>
+        </div>
+
+        <!-- Actions -->
+        <div class="cleanup-actions">
+          <button class="btn-secondary" (click)="startCleanupPreview()">
+            🔄 {{ 'woocommerce.cleanup.runAgain' | translate }}
+          </button>
+          <button 
+            class="btn-primary" 
+            (click)="confirmCleanup()" 
+            [disabled]="cleanupPreview.affected === 0"
+            *ngIf="cleanupPreview.affected > 0">
+            🚀 {{ 'woocommerce.cleanup.runCleanup' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Cleanup Result (after execution) -->
+      <div class="cleanup-result" *ngIf="cleanupResult">
+        <div class="result-header success">
+          <span class="icon">✅</span>
+          <h3>{{ 'woocommerce.cleanup.cleanupComplete' | translate }}</h3>
+        </div>
+
+        <div class="cleanup-stats">
+          <div class="stat">
+            <strong>{{ cleanupResult.checked }}</strong>
+            <span>{{ 'woocommerce.cleanup.checked' | translate }}</span>
+          </div>
+          <div class="stat success">
+            <strong>{{ cleanupResult.updated }}</strong>
+            <span>{{ 'woocommerce.cleanup.updated' | translate }}</span>
+          </div>
+          <div class="stat error" *ngIf="cleanupResult.errors && cleanupResult.errors.length > 0">
+            <strong>{{ cleanupResult.errors.length }}</strong>
+            <span>{{ 'woocommerce.cleanup.errors' | translate }}</span>
+          </div>
+        </div>
+
+        <!-- Errors -->
+        <div class="cleanup-errors" *ngIf="cleanupResult.errors && cleanupResult.errors.length > 0">
+          <h4>⚠️ {{ 'woocommerce.cleanup.errorsTitle' | translate }}</h4>
+          <ul>
+            <li *ngFor="let error of cleanupResult.errors">{{ error }}</li>
+          </ul>
+        </div>
+
+        <!-- Run Again -->
+        <div class="cleanup-actions">
+          <button class="btn-primary" (click)="startCleanupPreview()">
+            🔄 {{ 'woocommerce.cleanup.runAgain' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cleanup Confirmation Dialog -->
+  <div class="modal-overlay" *ngIf="showCleanupConfirmDialog" (click)="cancelCleanup()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>⚠️ {{ 'woocommerce.cleanup.confirmTitle' | translate }}</h3>
+      </div>
+      <div class="modal-body">
+        <p>{{ 'woocommerce.cleanup.confirmMessage' | translate }}</p>
+        <p><strong>{{ cleanupPreview?.affected || 0 }}</strong> Produktbeschreibungen werden dauerhaft bereinigt.</p>
+        <p class="confirm-note">{{ 'woocommerce.cleanup.confirmNote' | translate }}</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cancelCleanup()">
+          {{ 'woocommerce.cleanup.cancel' | translate }}
+        </button>
+        <button class="btn-primary" (click)="executeCleanup()">
+          {{ 'woocommerce.cleanup.confirm' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

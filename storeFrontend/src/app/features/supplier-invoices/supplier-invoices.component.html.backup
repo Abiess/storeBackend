@@ -1,0 +1,151 @@
+<div class="supplier-invoices-container">
+  <div class="page-header">
+    <h1>{{ 'SUPPLIER_INVOICES.TITLE' | translate }}</h1>
+    <p class="subtitle">{{ 'SUPPLIER_INVOICES.SUBTITLE' | translate }}</p>
+  </div>
+
+  <!-- Upload Section -->
+  <mat-card class="upload-card">
+    <mat-card-content>
+      <div 
+        class="dropzone"
+        [class.drag-over]="dragOver"
+        [class.uploading]="uploading"
+        (drop)="onDrop($event)"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)">
+        
+        <mat-icon class="upload-icon">cloud_upload</mat-icon>
+        
+        <div *ngIf="!uploading" class="upload-text">
+          <p class="primary-text">{{ 'SUPPLIER_INVOICES.UPLOAD.DRAG_DROP' | translate }}</p>
+          <p class="secondary-text">{{ 'SUPPLIER_INVOICES.UPLOAD.OR' | translate }}</p>
+          
+          <button mat-raised-button color="primary" (click)="fileInput.click()">
+            <mat-icon>attach_file</mat-icon>
+            {{ 'SUPPLIER_INVOICES.UPLOAD.SELECT_FILE' | translate }}
+          </button>
+          
+          <input 
+            #fileInput 
+            type="file" 
+            accept="application/pdf,image/jpeg,image/png,image/webp"
+            (change)="onFileSelected($event)"
+            style="display: none;">
+          
+          <p class="hint-text">
+            {{ 'SUPPLIER_INVOICES.UPLOAD.ALLOWED_TYPES' | translate }}: PDF, JPEG, PNG, WEBP<br>
+            {{ 'SUPPLIER_INVOICES.UPLOAD.MAX_SIZE' | translate }}: 10 MB
+          </p>
+        </div>
+
+        <div *ngIf="uploading" class="upload-progress">
+          <mat-spinner diameter="50"></mat-spinner>
+          <p>{{ 'SUPPLIER_INVOICES.UPLOAD.UPLOADING' | translate }}</p>
+          <mat-progress-bar mode="determinate" [value]="uploadProgress"></mat-progress-bar>
+          <p class="progress-text">{{ uploadProgress }}%</p>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Documents List -->
+  <mat-card class="documents-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'SUPPLIER_INVOICES.LIST.TITLE' | translate }}</mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <!-- Loading State -->
+      <div *ngIf="loading" class="loading-state">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>{{ 'SUPPLIER_INVOICES.LIST.LOADING' | translate }}</p>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!loading && documents.length === 0" class="empty-state">
+        <mat-icon class="empty-icon">📦</mat-icon>
+        <h3>{{ 'SUPPLIER_INVOICES.LIST.EMPTY_TITLE' | translate }}</h3>
+        <p>{{ 'SUPPLIER_INVOICES.LIST.EMPTY_MESSAGE' | translate }}</p>
+      </div>
+
+      <!-- Documents Table -->
+      <div *ngIf="!loading && documents.length > 0" class="documents-table-container">
+        <table mat-table [dataSource]="documents" class="documents-table">
+          <!-- Icon Column -->
+          <ng-container matColumnDef="icon">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let doc" class="icon-cell">
+              <span class="file-icon">{{ getFileIcon(doc.mimeType) }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Filename Column -->
+          <ng-container matColumnDef="filename">
+            <th mat-header-cell *matHeaderCellDef>{{ 'SUPPLIER_INVOICES.LIST.FILENAME' | translate }}</th>
+            <td mat-cell *matCellDef="let doc" class="filename-cell">
+              <strong>{{ doc.originalFilename }}</strong>
+            </td>
+          </ng-container>
+
+          <!-- Type Column -->
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef>{{ 'SUPPLIER_INVOICES.LIST.TYPE' | translate }}</th>
+            <td mat-cell *matCellDef="let doc">
+              <span class="file-type-badge">{{ getFileTypeLabel(doc.mimeType) }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Size Column -->
+          <ng-container matColumnDef="size">
+            <th mat-header-cell *matHeaderCellDef>{{ 'SUPPLIER_INVOICES.LIST.SIZE' | translate }}</th>
+            <td mat-cell *matCellDef="let doc">{{ formatFileSize(doc.fileSize) }}</td>
+          </ng-container>
+
+          <!-- Pages Column -->
+          <ng-container matColumnDef="pages">
+            <th mat-header-cell *matHeaderCellDef>{{ 'SUPPLIER_INVOICES.LIST.PAGES' | translate }}</th>
+            <td mat-cell *matCellDef="let doc">
+              <span *ngIf="doc.pageCount">{{ doc.pageCount }}</span>
+              <span *ngIf="!doc.pageCount">–</span>
+            </td>
+          </ng-container>
+
+          <!-- Date Column -->
+          <ng-container matColumnDef="date">
+            <th mat-header-cell *matHeaderCellDef>{{ 'SUPPLIER_INVOICES.LIST.DATE' | translate }}</th>
+            <td mat-cell *matCellDef="let doc">{{ doc.createdAt | date:'short' }}</td>
+          </ng-container>
+
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>{{ 'SUPPLIER_INVOICES.LIST.STATUS' | translate }}</th>
+            <td mat-cell *matCellDef="let doc">
+              <span class="status-badge" [ngClass]="getStatusClass(doc.uploadStatus)">
+                {{ getStatusLabel(doc.uploadStatus) | translate }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>{{ 'SUPPLIER_INVOICES.LIST.ACTIONS' | translate }}</th>
+            <td mat-cell *matCellDef="let doc" class="actions-cell">
+              <button mat-icon-button color="primary" (click)="openPreview(doc)" 
+                      [matTooltip]="'SUPPLIER_INVOICES.ACTIONS.VIEW' | translate">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="confirmDelete(doc)"
+                      [matTooltip]="'SUPPLIER_INVOICES.ACTIONS.DELETE' | translate">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="document-row"></tr>
+        </table>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

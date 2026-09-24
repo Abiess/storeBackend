@@ -1,0 +1,1202 @@
+import { Component, OnInit, AfterViewInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { ProductService } from '@app/core/services/product.service';
+import { OrderService } from '@app/core/services/order.service';
+import { CategoryService } from '@app/core/services/category.service';
+import { StoreService } from '@app/core/services/store.service';
+import { AuthService } from '@app/core/services/auth.service';
+import { HCaptchaService } from '@app/core/services/hcaptcha.service';
+import { Product, Order, Category } from '@app/core/models';
+import { toDate } from '@app/core/utils/date.utils';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { OnboardingChecklistComponent } from '@app/shared/components/onboarding-checklist/onboarding-checklist.component';
+import { TelegramNotificationBadgeComponent } from '@app/shared/components/telegram-notification-badge/telegram-notification-badge.component';
+import { StoreAnalyticsComponent } from '@app/shared/components/store-analytics/store-analytics.component';
+import { environment } from '@env/environment';
+
+@Component({
+    selector: 'app-store-detail',
+    imports: [CommonModule, RouterModule, FormsModule, TranslatePipe, OnboardingChecklistComponent, TelegramNotificationBadgeComponent, StoreAnalyticsComponent],
+    template: `
+    <div class="store-detail-page">
+      <div class="content">
+
+        <!-- ── Anonymous-User Banner ── -->
+        <div class="anon-banner" *ngIf="isAnonymous && !anonBannerDismissed">
+          <div class="anon-banner__blob1"></div>
+          <div class="anon-banner__blob2"></div>
+          <div class="anon-banner__inner">
+            <div class="anon-banner__left">
+              <span class="anon-banner__icon">🔗</span>
+              <div>
+                <strong>{{ 'anonBanner.title' | translate }}</strong>
+                <p>{{ 'anonBanner.subtitle' | translate }}</p>
+              </div>
+            </div>
+
+            <!-- Store-Link kopieren -->
+            <div class="anon-link-row" *ngIf="storePublicUrl">
+              <span class="anon-link-url">{{ storePublicUrl }}</span>
+              <button class="btn-copy" (click)="copyStoreLink()" [class.copied]="linkCopied">
+                {{ linkCopied ? ('anonBanner.copied' | translate) : ('anonBanner.copyBtn' | translate) }}
+              </button>
+            </div>
+
+            <!-- E-Mail hinterlegen -->
+            <div class="anon-email-row" *ngIf="!anonEmailSaved">
+              <input
+                type="email"
+                [(ngModel)]="anonEmail"
+                [placeholder]="'anonBanner.emailPlaceholder' | translate"
+                class="anon-email-input"
+                [disabled]="anonEmailSaving"
+              />
+              <!-- Honeypot Field (unsichtbar) -->
+              <input
+                type="text"
+                name="website"
+                [(ngModel)]="anonWebsite"
+                autocomplete="off"
+                tabindex="-1"
+                aria-hidden="true"
+                style="position:absolute;left:-5000px;width:1px;height:1px;opacity:0;pointer-events:none"
+              />
+              <!-- hCaptcha Widget -->
+              <div 
+                id="save-email-captcha" 
+                class="h-captcha" 
+                [attr.data-sitekey]="captchaSiteKey"
+                [attr.data-callback]="'onSaveEmailCaptchaVerified'"
+                [attr.data-error-callback]="'onSaveEmailCaptchaError'"
+                [attr.data-expired-callback]="'onSaveEmailCaptchaExpired'"
+                style="margin: 12px 0;">
+              </div>
+              <button
+                class="btn-save-email"
+                (click)="saveAnonEmail()"
+                [disabled]="anonEmailSaving || !anonEmail.includes('@') || !saveEmailCaptchaToken">
+                <span *ngIf="anonEmailSaving" class="spinner-xs"></span>
+                <span *ngIf="!anonEmailSaving">{{ 'anonBanner.saveEmailBtn' | translate }}</span>
+              </button>
+            </div>
+            <p class="anon-email-ok" *ngIf="anonEmailSaved">{{ 'anonBanner.emailSaved' | translate }}</p>
+            <button class="btn-set-password" (click)="requestPasswordLink()" *ngIf="anonEmailSaved && !anonPwLinkSent && !anonPwLinkSending">
+              {{ 'anonBanner.setPasswordBtn' | translate }}
+            </button>
+            <p class="anon-email-ok" *ngIf="anonPwLinkSending">🔑 {{ 'anonBanner.setPasswordSending' | translate }}</p>
+            <p class="anon-email-ok" *ngIf="anonPwLinkSent">{{ 'anonBanner.setPasswordSent' | translate }}</p>
+            <p class="anon-email-err" *ngIf="anonPwLinkError">⚠️ {{ anonPwLinkError }}</p>
+            <p class="anon-email-err" *ngIf="anonEmailError">⚠️ {{ anonEmailError }}</p>
+
+            <div class="anon-banner__actions">
+              <a routerLink="/login" class="btn-login">{{ 'anonBanner.loginBtn' | translate }}</a>
+              <button class="btn-dismiss" (click)="anonBannerDismissed = true">{{ 'anonBanner.dismiss' | translate }}</button>
+            </div>
+          </div>
+        </div>
+        <!-- Page Header – schlankes Design ohne doppelten Topbar-Konflikt auf Mobile -->
+        <div class="page-header">
+          <div class="page-header__left">
+            <a routerLink="/dashboard" class="back-link">
+              <span class="back-arrow">←</span>
+              {{ 'storeDetail.backToDashboard' | translate }}
+            </a>
+            <h1 class="page-title">{{ 'storeDetail.title' | translate }}</h1>
+          </div>
+          <!-- Telegram Notification Badge – oben rechts -->
+          <app-telegram-notification-badge
+            *ngIf="storeId"
+            [storeId]="storeId">
+          </app-telegram-notification-badge>
+        </div>
+
+        <div class="container">
+          <!-- ✅ Onboarding-Checklist (nur sichtbar wenn noch nicht alle Schritte erledigt) -->
+          @if (storeId) {
+            <app-onboarding-checklist
+              [storeId]="storeId"
+              [storeSlug]="storeSlug">
+            </app-onboarding-checklist>
+          }
+
+          <!-- Stats Cards -->
+          <div class="stats-grid">
+            <!-- Total Sales -->
+            <div class="stat-card gradient-purple">
+              <div class="stat-icon">💰</div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ getTotalSales() | currency:'EUR':'symbol':'1.0-0' }}</h3>
+                <p class="stat-label">{{ 'storeDetail.totalSales' | translate }}</p>
+              </div>
+            </div>
+
+            <!-- Orders Count -->
+            <div class="stat-card gradient-blue">
+              <div class="stat-icon">📋</div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ orders.length }}</h3>
+                <p class="stat-label">{{ 'storeDetail.orders' | translate }}</p>
+              </div>
+            </div>
+
+            <!-- Products Count -->
+            <div class="stat-card gradient-green">
+              <div class="stat-icon">📦</div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ products.length }}</h3>
+                <p class="stat-label">{{ 'storeDetail.products' | translate }}</p>
+              </div>
+            </div>
+
+            <!-- Categories Count -->
+            <div class="stat-card gradient-orange">
+              <div class="stat-icon">🏷️</div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ categories.length }}</h3>
+                <p class="stat-label">{{ 'storeDetail.categories' | translate }}</p>
+              </div>
+            </div>
+
+            <!-- Average Order Value -->
+            <div class="stat-card gradient-pink">
+              <div class="stat-icon">📊</div>
+              <div class="stat-content">
+                <h3 class="stat-value">{{ getAverageOrderValue() | currency:'EUR':'symbol':'1.0-0' }}</h3>
+                <p class="stat-label">{{ 'storeDetail.avgOrderValue' | translate }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Analytics Dashboard -->
+          @if (storeId) {
+            <app-store-analytics [storeId]="storeId"></app-store-analytics>
+          }
+
+          <!-- Quick Actions -->
+          <div class="section quick-actions-section">
+            <h2>{{ 'storeDetail.quickAccess' | translate }}</h2>
+            <div class="quick-actions">
+              <button class="action-btn" [routerLink]="['/stores', storeId, 'products', 'new']">
+                <span class="action-icon">➕</span>
+                <span class="action-text">{{ 'storeDetail.addProduct' | translate }}</span>
+              </button>
+              <button class="action-btn" [routerLink]="['/stores', storeId, 'categories', 'new']">
+                <span class="action-icon">🏷️</span>
+                <span class="action-text">{{ 'storeDetail.createCategory' | translate }}</span>
+              </button>
+              <button class="action-btn" [routerLink]="['/stores', storeId, 'orders']">
+                <span class="action-icon">📋</span>
+                <span class="action-text">{{ 'storeDetail.viewOrders' | translate }}</span>
+              </button>
+              <button class="action-btn" [routerLink]="['/stores', storeId, 'products']">
+                <span class="action-icon">📦</span>
+                <span class="action-text">{{ 'storeDetail.allProducts' | translate }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Recent Orders -->
+          <div class="section">
+            <div class="section-header">
+              <h2>{{ 'storeDetail.recentOrders' | translate }}</h2>
+              <a class="link" [routerLink]="['/stores', storeId, 'orders']">{{ 'storeDetail.showAll' | translate }} →</a>
+            </div>
+            
+            <div *ngIf="ordersLoading" class="loading">
+              <div class="spinner"></div>
+              <p>{{ 'storeDetail.loadingOrders' | translate }}</p>
+            </div>
+
+            <div *ngIf="!ordersLoading && orders.length === 0" class="empty">
+              <div class="icon">📋</div>
+              <p>{{ 'storeDetail.noOrders' | translate }}</p>
+              <p class="hint">{{ 'storeDetail.noOrdersHint' | translate }}</p>
+            </div>
+
+            <div *ngIf="!ordersLoading && orders.length > 0" class="orders-table">
+              <div class="table-header">
+                <div class="col">{{ 'storeDetail.orderNumber' | translate }}</div>
+                <div class="col">{{ 'storeDetail.customer' | translate }}</div>
+                <div class="col">{{ 'storeDetail.status' | translate }}</div>
+                <div class="col">{{ 'storeDetail.amount' | translate }}</div>
+                <div class="col">{{ 'storeDetail.date' | translate }}</div>
+              </div>
+              <div *ngFor="let order of orders.slice(0, 5)" class="table-row" [routerLink]="['/stores', storeId, 'orders', order.id]">
+                <div class="col">
+                  <strong>{{ order.orderNumber }}</strong>
+                </div>
+                <div class="col">
+                  <span class="customer-email">{{ order.customerEmail }}</span>
+                </div>
+                <div class="col">
+                  <span [class]="'badge badge-' + getOrderStatusClass(order.status)">
+                    {{ getOrderStatusLabel(order.status) }}
+                  </span>
+                </div>
+                <div class="col">
+                  <strong class="amount">{{ (order.totalAmount || 0) | currency:'EUR':'symbol':'1.2-2' }}</strong>
+                </div>
+                <div class="col">
+                  <span class="date">{{ toDate(order.createdAt) | date:'dd.MM.yyyy HH:mm' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Products Overview -->
+          <div class="section">
+            <div class="section-header">
+              <h2>{{ 'storeDetail.products' | translate }}</h2>
+              <a class="link" [routerLink]="['/stores', storeId, 'products']">{{ 'storeDetail.showAllProducts' | translate }} ({{ products.length }}) →</a>
+            </div>
+
+            <div *ngIf="productsLoading" class="loading">
+              <div class="spinner"></div>
+              <p>{{ 'storeDetail.loadingProducts' | translate }}</p>
+            </div>
+
+            <div *ngIf="!productsLoading && products.length === 0" class="empty">
+              <div class="icon">📦</div>
+              <p>{{ 'storeDetail.noProducts' | translate }}</p>
+              <button class="btn btn-primary" [routerLink]="['/stores', storeId, 'products', 'new']">
+                {{ 'storeDetail.createFirstProduct' | translate }}
+              </button>
+            </div>
+
+            <div *ngIf="!productsLoading && products.length > 0" class="products-grid">
+              <div *ngFor="let product of products.slice(0, 6)" class="product-card" [routerLink]="['/stores', storeId, 'products', product.id]">
+                <div class="product-image" *ngIf="getProductImage(product)">
+                  <img [src]="getProductImage(product)" [alt]="product.title" />
+                </div>
+                <div class="product-image placeholder" *ngIf="!getProductImage(product)">
+                  <span class="placeholder-icon">📦</span>
+                </div>
+                <div class="product-content">
+                  <h3>{{ product.title }}</h3>
+                  <span [class]="'badge badge-' + getProductStatusClass(product.status)">
+                    {{ getProductStatusLabel(product.status) }}
+                  </span>
+                  <div class="product-footer">
+                    <span class="price">{{ (product.basePrice || product.price || 0) | currency:'EUR':'symbol':'1.2-2' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `,
+    styles: [`
+    /* ── Anonymous Banner ─────────────────────────────────────── */
+    .anon-banner {
+      position: relative; overflow: hidden;
+      background: linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #667eea 100%);
+      padding: 1.25rem 2rem; color: #fff;
+      z-index: 1;
+      margin-bottom: 0;
+    }
+    .anon-banner__blob1 {
+      position: absolute; width: 200px; height: 200px; border-radius: 50%;
+      background: rgba(255,255,255,.1); top: -80px; right: 5%; pointer-events: none;
+    }
+    .anon-banner__blob2 {
+      position: absolute; width: 120px; height: 120px; border-radius: 50%;
+      background: rgba(255,255,255,.08); bottom: -40px; left: 10%; pointer-events: none;
+    }
+    .anon-banner__inner {
+      position: relative; display: flex; flex-direction: column; gap: 0.85rem;
+      max-width: 860px;
+    }
+    .anon-banner__left {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+    }
+    .anon-banner__icon { font-size: 1.6rem; flex-shrink: 0; }
+    .anon-banner__left strong { font-size: 1rem; font-weight: 700; display: block; margin-bottom: 0.15rem; }
+    .anon-banner__left p { margin: 0; font-size: 0.82rem; opacity: .88; }
+
+    .anon-link-row {
+      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+      background: rgba(0,0,0,.2); padding: 0.5rem 0.85rem;
+      border-radius: 10px; backdrop-filter: blur(4px);
+    }
+    .anon-link-url {
+      font-size: 0.82rem; font-weight: 700; flex: 1;
+      color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .btn-copy {
+      padding: 5px 14px; background: rgba(255,255,255,.25); border: 1px solid rgba(255,255,255,.5);
+      border-radius: 8px; color: #fff; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+      white-space: nowrap; transition: background .15s;
+      &:hover { background: rgba(255,255,255,.4); }
+      &.copied { background: rgba(255,255,255,.35); }
+    }
+
+    .anon-email-row {
+      display: flex; gap: 0.5rem; flex-wrap: wrap;
+    }
+    .anon-email-input {
+      flex: 1; min-width: 200px; padding: 0.5rem 0.85rem; border-radius: 10px;
+      border: 1.5px solid rgba(255,255,255,0.6); background: rgba(255,255,255,0.95);
+      color: #1f2937; font-size: 0.875rem; outline: none;
+      &::placeholder { color: #6b7280; }
+      &:focus {
+        border-color: #a855f7; background: #fff;
+        box-shadow: 0 0 0 3px rgba(168,85,247,.15);
+      }
+    }
+    .btn-save-email {
+      padding: 0.5rem 1.25rem; background: #fff; color: #a855f7; border: none;
+      border-radius: 10px; font-size: 0.875rem; font-weight: 700; cursor: pointer;
+      transition: opacity .15s; white-space: nowrap;
+      &:disabled { opacity: .5; cursor: not-allowed; }
+      &:hover:not(:disabled) { opacity: .9; }
+    }
+    .btn-set-password {
+      padding: 7px 18px; background: rgba(255,255,255,.15); border: 1.5px solid rgba(255,255,255,.55);
+      border-radius: 10px; color: #fff; font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; backdrop-filter: blur(4px); transition: background .15s; margin-top: 0.5rem;
+      &:hover { background: rgba(255,255,255,.3); }
+    }
+    .anon-email-ok { margin: 0; font-size: 0.82rem; font-weight: 600; color: #d1fae5; }
+    .anon-email-err { margin: 0; font-size: 0.82rem; color: #fee2e2; }
+    .spinner-xs {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(168,85,247,.3); border-top-color: #a855f7;
+      border-radius: 50%; animation: spin 0.6s linear infinite;
+    }
+
+    .anon-banner__actions {
+      display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+    }
+    .btn-login {
+      padding: 7px 18px; background: rgba(255,255,255,.2); border: 1.5px solid rgba(255,255,255,.55);
+      border-radius: 10px; color: #fff; font-size: 0.82rem; font-weight: 700;
+      text-decoration: none; backdrop-filter: blur(4px); transition: background .15s;
+      &:hover { background: rgba(255,255,255,.35); }
+    }
+    .btn-dismiss {
+      background: none; border: none; color: rgba(255,255,255,.7); font-size: 0.78rem;
+      cursor: pointer; padding: 4px 8px; border-radius: 6px;
+      &:hover { color: #fff; background: rgba(255,255,255,.1); }
+    }
+
+    .content {
+      background: #f8f9fa;
+      min-height: 100vh;
+      position: relative;
+    }
+
+
+    /* ── Page Header (ersetzt alten .topbar, kein Konflikt mehr mit Admin-Layout-Topbar) ── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 2rem;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .page-header__left {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      min-width: 0;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      color: #6b7280;
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+
+    .back-link:hover { color: #667eea; }
+
+    .back-arrow { font-size: 1rem; line-height: 1; }
+
+    .page-title {
+      margin: 0;
+      font-size: 1.375rem;
+      color: #111827;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width: 640px) {
+      .page-header { padding: 0.875rem 1rem; }
+      .page-title { font-size: 1.125rem; }
+    }
+
+    .container {
+      padding: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 2;
+      background: #f8f9fa;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 640px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stat-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+
+    .gradient-purple {
+      --gradient-start: #667eea;
+      --gradient-end: #764ba2;
+    }
+
+    .gradient-blue {
+      --gradient-start: #4facfe;
+      --gradient-end: #00f2fe;
+    }
+
+    .gradient-green {
+      --gradient-start: #43e97b;
+      --gradient-end: #38f9d7;
+    }
+
+    .gradient-orange {
+      --gradient-start: #fa709a;
+      --gradient-end: #fee140;
+    }
+
+    .gradient-pink {
+      --gradient-start: #f093fb;
+      --gradient-end: #f5576c;
+    }
+
+    .stat-icon {
+      font-size: 2.5rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .stat-content {
+      flex: 1;
+    }
+
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #333;
+      margin: 0 0 0.25rem;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: #666;
+      margin: 0;
+      font-weight: 500;
+    }
+
+    /* Quick Actions */
+    .quick-actions-section {
+      margin-bottom: 2rem;
+    }
+
+    .quick-actions-section h2 {
+      margin: 0 0 1rem;
+      font-size: 1.25rem;
+      color: #333;
+      font-weight: 700;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .quick-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .action-btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 1rem;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .action-icon {
+      font-size: 1.5rem;
+    }
+
+    .action-text {
+      flex: 1;
+      text-align: left;
+    }
+
+    /* Section */
+    .section {
+      background: #fff;
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #333;
+      font-weight: 700;
+    }
+
+    .link {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .link:hover {
+      color: #764ba2;
+    }
+
+    /* Orders Table */
+    .orders-table {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .table-header {
+      display: grid;
+      grid-template-columns: 1.5fr 2fr 1fr 1fr 1.5fr;
+      gap: 1rem;
+      padding: 0.75rem 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #666;
+    }
+
+    @media (max-width: 1023px) {
+      .table-header {
+        display: none;
+      }
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: 1.5fr 2fr 1fr 1fr 1.5fr;
+      gap: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      align-items: center;
+    }
+
+    .table-row:hover {
+      background: #e9ecef;
+      transform: translateX(4px);
+    }
+
+    @media (max-width: 1023px) {
+      .table-row {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+      }
+
+      .table-row .col:before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #666;
+        margin-right: 0.5rem;
+      }
+    }
+
+    .col {
+      font-size: 0.875rem;
+      color: #333;
+    }
+
+    .customer-email {
+      color: #666;
+      font-size: 0.875rem;
+    }
+
+    .amount {
+      color: #667eea;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .date {
+      color: #999;
+      font-size: 0.875rem;
+    }
+
+    /* Products Grid */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+      .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      }
+    }
+
+    .product-card {
+      background: #f8f9fa;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 2px solid transparent;
+    }
+
+    .product-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      border-color: #667eea;
+    }
+
+    .product-image {
+      width: 100%;
+      padding-top: 100%;
+      position: relative;
+      background: #e9ecef;
+      overflow: hidden;
+    }
+
+    .product-image img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .product-image.placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .placeholder-icon {
+      font-size: 3rem;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .product-content {
+      padding: 1rem;
+    }
+
+    .product-content h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1rem;
+      color: #333;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .product-footer {
+      margin-top: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .price {
+      font-weight: 700;
+      color: #667eea;
+      font-size: 1.125rem;
+    }
+
+    /* Badge */
+    .badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+      display: inline-block;
+    }
+
+    .badge-success { background: #d4edda; color: #155724; }
+    .badge-warning { background: #fff3cd; color: #856404; }
+    .badge-danger { background: #f8d7da; color: #721c24; }
+    .badge-info { background: #d1ecf1; color: #0c5460; }
+    .badge-secondary { background: #e9ecef; color: #495057; }
+
+    /* Loading & Empty States */
+    .loading, .empty {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+
+    .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .hint {
+      color: #999;
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+
+      .section {
+        padding: 1.5rem;
+      }
+
+      .topbar {
+        padding: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .page-title {
+        font-size: 1.25rem;
+      }
+    }
+  `]
+})
+export class StoreDetailComponent implements OnInit, AfterViewInit {
+  storeId!: number;
+  storeSlug: string = '';
+  storePublicUrl: string = '';
+  products: Product[] = [];
+  orders: Order[] = [];
+  categories: Category[] = [];
+
+  // Anon-Banner
+  isAnonymous = false;
+  anonBannerDismissed = false;
+  anonEmail = '';
+  anonEmailSaving = false;
+  anonEmailSaved = false;
+  anonEmailError = '';
+  anonWebsite = '';  // Honeypot field
+  saveEmailCaptchaToken = '';
+  saveEmailCaptchaWidgetId: string | null = null;
+  linkCopied = false;
+  anonPwLinkSending = false;
+  anonPwLinkSent = false;
+  anonPwLinkError = '';
+  captchaSiteKey = environment.captcha.siteKey;
+
+  toDate = toDate;
+  productsLoading = false;
+  ordersLoading = false;
+  categoriesLoading = false;
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private productService: ProductService,
+    private orderService: OrderService,
+    private categoryService: CategoryService,
+    private storeService: StoreService,
+    private authService: AuthService,
+    private http: HttpClient,
+    private hCaptchaService: HCaptchaService
+  ) {}
+
+  ngOnInit(): void {
+    const user = this.authService.getCurrentUser();
+    this.isAnonymous = !!user?.email?.startsWith('anon-');
+
+    this.route.params.subscribe(params => {
+      this.storeId = +params['id'] || +params['storeId'];
+      if (this.storeId) {
+        this.loadStoreInfo();
+        this.loadProducts();
+        this.loadOrders();
+        this.loadCategories();
+      }
+    });
+
+    // Global hCaptcha callbacks for save-email
+    (window as any).onSaveEmailCaptchaVerified = (token: string) => {
+      this.saveEmailCaptchaToken = token;
+    };
+    (window as any).onSaveEmailCaptchaError = () => {
+      this.saveEmailCaptchaToken = '';
+      this.anonEmailError = this.hCaptchaService.getSafeErrorMessage('verification_failed');
+    };
+    (window as any).onSaveEmailCaptchaExpired = () => {
+      this.saveEmailCaptchaToken = '';
+    };
+  }
+
+  ngAfterViewInit(): void {
+    // Render hCaptcha widget when anonymous banner is visible
+    if (this.isAnonymous && environment.captcha.enabled) {
+      setTimeout(() => {
+        const container = document.getElementById('save-email-captcha');
+        if (container && typeof (window as any).hcaptcha !== 'undefined') {
+          try {
+            this.saveEmailCaptchaWidgetId = (window as any).hcaptcha.render('save-email-captcha', {
+              sitekey: this.captchaSiteKey,
+              callback: 'onSaveEmailCaptchaVerified',
+              'error-callback': 'onSaveEmailCaptchaError',
+              'expired-callback': 'onSaveEmailCaptchaExpired'
+            });
+          } catch (err) {
+            console.error('Failed to render save-email hCaptcha:', err);
+          }
+        }
+      }, 100);
+    }
+  }
+
+  loadStoreInfo(): void {
+    this.storeService.getMyStores().subscribe({
+      next: (stores) => {
+        const store = stores.find(s => s.id === this.storeId);
+        if (store) {
+          this.storeSlug = store.slug;
+          this.storePublicUrl = `https://${store.slug}.markt.ma`;
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  copyStoreLink(): void {
+    navigator.clipboard.writeText(this.storePublicUrl).then(() => {
+      this.linkCopied = true;
+      setTimeout(() => this.linkCopied = false, 2500);
+    });
+  }
+
+  saveAnonEmail(): void {
+    const email = this.anonEmail.trim();
+    if (!email.includes('@')) return;
+    
+    // CAPTCHA validation
+    if (!this.saveEmailCaptchaToken) {
+      this.anonEmailError = this.hCaptchaService.getSafeErrorMessage('missing_captcha');
+      return;
+    }
+
+    // Honeypot check (client-side pre-validation)
+    if (this.anonWebsite && this.anonWebsite.trim()) {
+      // Silent fail for bots - don't reveal honeypot
+      this.anonEmailError = this.hCaptchaService.getSafeErrorMessage('validation_failed');
+      this.resetSaveEmailCaptcha();
+      return;
+    }
+
+    this.anonEmailSaving = true;
+    this.anonEmailError = '';
+    const token = this.authService.getToken();
+    
+    this.http.post<{ token: string }>(
+      `${environment.publicApiUrl}/create-store/save-email`,
+      { 
+        email, 
+        storeId: this.storeId,
+        captchaToken: this.saveEmailCaptchaToken,
+        website: this.anonWebsite
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    ).subscribe({
+      next: (res) => {
+        this.anonEmailSaving = false;
+        this.anonEmailSaved = true;
+        // M3a: Über AuthService.updateCurrentUser() statt direktem localStorage-Zugriff.
+        this.authService.updateCurrentUser({ email } as any, res.token);
+        this.isAnonymous = false;
+        this.resetSaveEmailCaptcha();
+      },
+      error: (err) => {
+        this.anonEmailSaving = false;
+        // User-friendly error messages
+        const status = err?.status;
+        if (status === 429) {
+          this.anonEmailError = this.hCaptchaService.getSafeErrorMessage('rate_limit');
+        } else if (status === 403 || status === 400) {
+          this.anonEmailError = this.hCaptchaService.getSafeErrorMessage('validation_failed');
+        } else if (status === 503) {
+          this.anonEmailError = this.hCaptchaService.getSafeErrorMessage('service_unavailable');
+        } else {
+          this.anonEmailError = err?.error?.message || this.hCaptchaService.getSafeErrorMessage('network_error');
+        }
+        this.resetSaveEmailCaptcha();
+      }
+    });
+  }
+
+  resetSaveEmailCaptcha(): void {
+    if (this.saveEmailCaptchaWidgetId && typeof (window as any).hcaptcha !== 'undefined') {
+      try {
+        (window as any).hcaptcha.reset(this.saveEmailCaptchaWidgetId);
+      } catch (err) {
+        console.error('Failed to reset save-email hCaptcha:', err);
+      }
+    }
+    this.saveEmailCaptchaToken = '';
+  }
+
+  requestPasswordLink(): void {
+    const email = this.anonEmail.trim();
+    if (!email.includes('@')) return;
+    this.anonPwLinkSending = true;
+    this.anonPwLinkSent = false;
+    this.anonPwLinkError = '';
+    this.http.post(
+      `${environment.apiUrl}/auth/forgot-password`,
+      { email }
+    ).subscribe({
+      next: () => {
+        this.anonPwLinkSending = false;
+        this.anonPwLinkSent = true;
+      },
+      error: (err) => {
+        this.anonPwLinkSending = false;
+        this.anonPwLinkError = err?.error?.message || 'Fehler';
+      }
+    });
+  }
+
+  loadProducts(): void {
+    this.productsLoading = true;
+    this.productService.getProducts(this.storeId).subscribe({
+      next: (products) => {
+        this.products = products;
+        this.productsLoading = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Produkte:', error);
+        this.productsLoading = false;
+      }
+    });
+  }
+
+  loadOrders(): void {
+    this.ordersLoading = true;
+    this.orderService.getOrders(this.storeId).subscribe({
+      next: (orders) => {
+        this.orders = orders;
+        this.ordersLoading = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Bestellungen:', error);
+        this.ordersLoading = false;
+      }
+    });
+  }
+
+  loadCategories(): void {
+    this.categoriesLoading = true;
+    this.categoryService.getCategories(this.storeId).subscribe({
+      next: (categories) => {
+        this.categories = categories;
+        this.categoriesLoading = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Kategorien:', error);
+        this.categoriesLoading = false;
+      }
+    });
+  }
+
+  getTotalSales(): number {
+    return this.orders.reduce((sum, order) => sum + order.totalAmount, 0);
+  }
+
+  getAverageOrderValue(): number {
+    if (this.orders.length === 0) return 0;
+    return this.getTotalSales() / this.orders.length;
+  }
+
+  getProductImage(product: Product): string | null {
+    // Priorität: primaryImageUrl > imageUrl > media[0].url
+    if (product.primaryImageUrl) {
+      return product.primaryImageUrl;
+    }
+    if (product.imageUrl) {
+      return product.imageUrl;
+    }
+    if (product.media && product.media.length > 0) {
+      // Suche nach dem primary Image oder nimm das erste
+      const primaryMedia = product.media.find(m => m.isPrimary);
+      if (primaryMedia?.url) {
+        return primaryMedia.url;
+      }
+      // Fallback: erstes Bild mit URL
+      const firstMedia = product.media.find(m => m.url);
+      if (firstMedia?.url) {
+        return firstMedia.url;
+      }
+    }
+    return null;
+  }
+
+  getProductStatusClass(status: string): string {
+    switch (status) {
+      case 'ACTIVE': return 'success';
+      case 'DRAFT': return 'warning';
+      case 'ARCHIVED': return 'danger';
+      default: return 'info';
+    }
+  }
+
+  getProductStatusLabel(status: string): string {
+    switch (status) {
+      case 'ACTIVE': return 'Aktiv';
+      case 'DRAFT': return 'Entwurf';
+      case 'ARCHIVED': return 'Archiviert';
+      default: return status;
+    }
+  }
+
+  getOrderStatusClass(status: string): string {
+    switch (status) {
+      case 'PENDING': return 'warning';
+      case 'CONFIRMED': return 'info';
+      case 'PROCESSING': return 'info';
+      case 'SHIPPED': return 'success';
+      case 'DELIVERED': return 'success';
+      case 'CANCELLED': return 'danger';
+      default: return 'secondary';
+    }
+  }
+
+  getOrderStatusLabel(status: string): string {
+    switch (status) {
+      case 'PENDING': return 'Ausstehend';
+      case 'CONFIRMED': return 'Bestätigt';
+      case 'PROCESSING': return 'In Bearbeitung';
+      case 'SHIPPED': return 'Versendet';
+      case 'DELIVERED': return 'Zugestellt';
+      case 'CANCELLED': return 'Storniert';
+      default: return status;
+    }
+  }
+}
+

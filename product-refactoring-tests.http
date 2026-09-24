@@ -1,0 +1,304 @@
+### ============================================================
+### PRODUCT & VARIANT REFACTORING - MANUELLE TESTS
+### Basierend auf: localhost:8080
+###
+### Reihenfolge: 1. Login → 2. Store → 3. Product → 4. Variants
+### ============================================================
+
+@baseUrl = http://localhost:8080
+@storeId = 1
+@productId = 1
+@variantId = 1
+@token = DEIN_JWT_TOKEN_HIER
+
+### ============================================================
+### SCHRITT 1: LOGIN (Token holen)
+### ============================================================
+
+### 1a. Login
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### Danach token= Wert aus Response in @token eintragen
+
+### ============================================================
+### SCHRITT 2: PRODUKT TESTEN
+### FIX 1: SKU wird jetzt korrekt im Response geliefert
+### ============================================================
+
+### 2a. Produkt anlegen (SKU muss jetzt im Response erscheinen!)
+POST {{baseUrl}}/api/stores/{{storeId}}/products
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Test Shirt",
+  "description": "Ein Testprodukt",
+  "basePrice": 29.99,
+  "sku": "SHIRT-001",
+  "status": "PUBLISHED"
+}
+
+# ✅ ERWARTETES ERGEBNIS: Response enthält "sku": "SHIRT-001"
+# ❌ VOR DEM FIX: "sku": null (wurde nie gesetzt)
+
+### 2b. Produkt abrufen - SKU prüfen
+GET {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}
+Authorization: Bearer {{token}}
+
+# ✅ PRÜFEN: Feld "sku" muss vorhanden und nicht null sein
+# ✅ PRÜFEN: Feld "media" ist List<ProductMediaDTO> mit Feldern:
+#           id, productId, mediaId, url, filename, contentType, sizeBytes, sortOrder, isPrimary
+# ❌ VOR DEM FIX: "media" nutzte innere Klasse ohne contentType/sizeBytes/productId
+
+### 2c. Alle Produkte des Stores
+GET {{baseUrl}}/api/stores/{{storeId}}/products
+Authorization: Bearer {{token}}
+
+### 2d. Nach Kategorie filtern
+GET {{baseUrl}}/api/stores/{{storeId}}/products?categoryId=2
+Authorization: Bearer {{token}}
+
+### ============================================================
+### SCHRITT 3: VARIANTEN TESTEN
+### FIX 2: Kein findAll() mehr - direkt per productId geladen
+### ============================================================
+
+### 3a. Variante erstellen
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/variants
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "sku": "SHIRT-001-ROT-M",
+  "price": 29.99,
+  "comparePrice": 39.99,
+  "costPrice": 15.00,
+  "stockQuantity": 50,
+  "option1": "Rot",
+  "option2": "M",
+  "isActive": true,
+  "attributes": {
+    "Farbe": "Rot",
+    "Größe": "M"
+  },
+  "images": [
+    "https://example.com/shirt-rot-m.jpg",
+    "https://example.com/shirt-rot-m-2.jpg"
+  ]
+}
+
+# ✅ PRÜFEN: Response.images enthält die URLs
+# ✅ PRÜFEN: Response.imageUrl = erstes Bild (shirt-rot-m.jpg)
+# ✅ PRÜFEN: Response.attributes = {"Farbe":"Rot","Größe":"M"}
+
+### 3b. Doppeltes SKU testen (muss Fehler geben)
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/variants
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "sku": "SHIRT-001-ROT-M",
+  "price": 25.00,
+  "stockQuantity": 10,
+  "isActive": true
+}
+
+# ✅ ERWARTETES ERGEBNIS: HTTP 500 mit "SKU already exists"
+# (Nutzt jetzt existsBySku() statt findAll() - effizienter!)
+
+### 3c. Zweite Variante (anderes SKU)
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/variants
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "sku": "SHIRT-001-BLAU-L",
+  "price": 29.99,
+  "stockQuantity": 30,
+  "option1": "Blau",
+  "option2": "L",
+  "isActive": true,
+  "attributes": {
+    "Farbe": "Blau",
+    "Größe": "L"
+  }
+}
+
+### 3d. Alle Varianten eines Produkts laden
+GET {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/variants
+Authorization: Bearer {{token}}
+
+# ✅ FIX 2: Nutzt jetzt findByProductId() statt findAll() + Java-Filter
+# → Bei 10.000 Varianten im System: nur die 2 dieses Produkts werden geladen
+
+### 3e. Variante aktualisieren - SKU-Konflikt prüfen
+PUT {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/variants/{{variantId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "sku": "SHIRT-001-BLAU-L",
+  "price": 35.00,
+  "stockQuantity": 25,
+  "isActive": true
+}
+
+# ✅ ERWARTETES ERGEBNIS: HTTP 500 "SKU already exists" (gehört anderer Variante)
+# ✅ FIX 3: Nutzt existsBySkuAndIdNot() - prüft korrekt ohne eigene Variante
+
+### 3f. Variante auf gleiche SKU lassen (kein Fehler)
+PUT {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/variants/{{variantId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "sku": "SHIRT-001-ROT-M",
+  "price": 35.00,
+  "stockQuantity": 45
+}
+
+# ✅ ERWARTETES ERGEBNIS: HTTP 200 (gleiche SKU = erlaubt)
+
+### ============================================================
+### SCHRITT 4: VARIANTEN AUTO-GENERIERUNG
+### ============================================================
+
+### 4a. Alle Kombinationen generieren (Farbe x Größe)
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/variants/generate
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "productId": 1,
+  "basePrice": 29.99,
+  "baseStock": 20,
+  "options": [
+    {
+      "name": "Farbe",
+      "values": ["Rot", "Blau", "Grün"]
+    },
+    {
+      "name": "Größe",
+      "values": ["S", "M", "L", "XL"]
+    }
+  ]
+}
+
+# ✅ ERGEBNIS: 3 x 4 = 12 Varianten werden generiert
+# ✅ Jede Variante hat attributesJson + attributes Map
+# ✅ SKUs werden automatisch generiert
+
+### ============================================================
+### SCHRITT 5: PRODUKT-OPTIONEN TESTEN
+### FIX 4: ProductOption hat productId (nicht variantId) und values[]
+### ============================================================
+
+### 5a. Option anlegen
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/options
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Farbe",
+  "values": ["Rot", "Blau", "Grün"],
+  "sortOrder": 0
+}
+
+# ✅ PRÜFEN: Response.productId = productId (nicht variantId!)
+# ✅ PRÜFEN: Response.values = ["Rot", "Blau", "Grün"] (Array, nicht einzelner Wert)
+
+### 5b. Alle Optionen eines Produkts
+GET {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/options
+Authorization: Bearer {{token}}
+
+### 5c. Varianten aus gespeicherten Optionen regenerieren
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/options/regenerate-variants
+Authorization: Bearer {{token}}
+
+# ✅ PRÜFEN: Antwort = Anzahl generierter Varianten
+
+### ============================================================
+### SCHRITT 6: PRODUKT-MEDIA TESTEN
+### FIX 5: ProductDTO.media nutzt jetzt standalone ProductMediaDTO
+###        mit Feldern: contentType, sizeBytes, productId
+### ============================================================
+
+### 6a. Produktbilder abfragen (direkt über Media-Endpoint)
+GET {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/media
+Authorization: Bearer {{token}}
+
+# ✅ PRÜFEN: Jedes Media-Objekt hat:
+#   - id, productId, mediaId
+#   - url (presigned MinIO URL)
+#   - filename, contentType, sizeBytes  ← NEU durch standalone DTO
+#   - sortOrder, isPrimary
+
+### 6b. Produktdetail-Response auf Media-Felder prüfen
+GET {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}
+Authorization: Bearer {{token}}
+
+# ✅ PRÜFEN: product.media[] hat alle obigen Felder
+# ✅ PRÜFEN: product.primaryImageUrl ist gesetzt
+# ✅ PRÜFEN: product.sku ist gesetzt (FIX 1)
+
+### ============================================================
+### SCHRITT 7: PERFORMANCE-TEST (FIX 2 validieren)
+### Bei vielen Produkten/Varianten sichtbar
+### ============================================================
+
+### 7a. DB direkt prüfen (H2-Konsole: http://localhost:8080/h2-console)
+# SQL: SELECT COUNT(*) FROM product_variants;
+# → Sollte nur Varianten für {{productId}} geladen werden, nicht alle
+
+### 7b. Logs beobachten beim Abrufen der Varianten
+GET {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/variants
+Authorization: Bearer {{token}}
+
+# ✅ Im Log (application.yml: show-sql: true) prüfen:
+# Hibernate zeigt: SELECT * FROM product_variants WHERE product_id = ?
+# ❌ VOR DEM FIX: SELECT * FROM product_variants (alle geladen!)
+
+### ============================================================
+### SCHRITT 8: FEATURED / TRENDING PRODUKTE (öffentlich)
+### ============================================================
+
+### 8a. Featured Produkte (kein Auth nötig)
+GET {{baseUrl}}/api/stores/{{storeId}}/products/featured
+
+### 8b. Top-Seller
+GET {{baseUrl}}/api/stores/{{storeId}}/products/top?limit=5
+
+### 8c. Trending (nach View-Count)
+GET {{baseUrl}}/api/stores/{{storeId}}/products/trending?limit=5
+
+### 8d. Neue Produkte
+GET {{baseUrl}}/api/stores/{{storeId}}/products/new?limit=5
+
+### 8e. View-Count erhöhen
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/view
+
+### 8f. Als Featured markieren
+POST {{baseUrl}}/api/stores/{{storeId}}/products/{{productId}}/featured
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "featured": true,
+  "order": 1
+}
+
+### ============================================================
+### SCHRITT 9: SWAGGER UI (alle Endpoints auf einen Blick)
+### ============================================================
+
+### Swagger öffnen im Browser:
+# http://localhost:8080/swagger-ui.html
+# → Tags: "Products", "Product Variants", "Product Options", "Product Media"
+

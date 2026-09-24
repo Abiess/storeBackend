@@ -1,0 +1,408 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      run_research_agent:
+        description: 'Research Agent jetzt ausführen?'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+      agent_source:
+        description: 'Agent-Quelle (avito / opensooq / jumia / all)'
+        required: false
+        default: 'avito'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ...existing code...
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # ── Node.js Version pinnen ──────────────────────────────────────
+      # WICHTIG: OHNE dieses Setup nutzt der Job das jeweils vorinstallierte
+      # Node/npm des ubuntu-latest-Runner-Images. Das ist NICHT gepinnt und
+      # kann sich bei einem GitHub-Runner-Image-Update ändern, was zu genau
+      # der Art von "npm ci" Fehlern führen kann, die ohne jede Code-Änderung
+      # im Repo plötzlich auftreten (z.B. npm-Version kann die vorhandene
+      # package-lock.json/lockfileVersion nicht mehr sauber laden). Pinnen auf
+      # Node 20 (identisch zu deploy-frontend.yml) macht den Build reproduzierbar.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── Microsoft Clarity ID injizieren ────────────────────────────
+      # Ersetzt den Platzhalter __CLARITY_ID__ in environment.prod.ts
+      # mit dem echten Wert aus dem GitHub Secret CLARITY_ID.
+      # Leer gelassenes Secret → clarityId bleibt '__CLARITY_ID__' →
+      # ClarityService erkennt dies als ungültige ID und startet nicht.
+      - name: Inject CLARITY_ID into environment.prod.ts
+        run: |
+          CLARITY_VAL="${{ secrets.CLARITY_ID }}"
+          # Nur environment.prod.ts – ClarityService lädt das Script dynamisch,
+          # kein statisches Script-Tag in index.html (vermeidet 400er mit Platzhalter).
+          sed -i "s/__CLARITY_ID__/${CLARITY_VAL}/g" storeFrontend/src/environments/environment.prod.ts
+          echo "✅ Clarity ID injected: ${CLARITY_VAL}"
+          grep clarityId storeFrontend/src/environments/environment.prod.ts
+
+      # ── hCaptcha Site Key injizieren ────────────────────────────────
+      # Ersetzt den Platzhalter __HCAPTCHA_SITE_KEY__ in environment.prod.ts
+      # mit dem echten Site Key aus dem GitHub Secret HCAPTCHA_SITE_KEY.
+      # WICHTIG: Site Key ist PUBLIC (Frontend), Secret Key ist PRIVATE (Backend)!
+      - name: Inject HCAPTCHA_SITE_KEY into environment.prod.ts
+        run: |
+          HCAPTCHA_VAL="${{ secrets.HCAPTCHA_SITE_KEY }}"
+          if [ -n "$HCAPTCHA_VAL" ]; then
+            sed -i "s/__HCAPTCHA_SITE_KEY__/${HCAPTCHA_VAL}/g" storeFrontend/src/environments/environment.prod.ts
+            echo "✅ hCaptcha Site Key injected: ${HCAPTCHA_VAL}"
+            grep siteKey storeFrontend/src/environments/environment.prod.ts
+          else
+            echo "⚠️  HCAPTCHA_SITE_KEY Secret nicht gesetzt - CAPTCHA wird deaktiviert"
+            sed -i "s/__HCAPTCHA_SITE_KEY__//g" storeFrontend/src/environments/environment.prod.ts
+          fi
+
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Verify Java Version
+        run: |
+          java -version
+          javac -version
+          mvn -version
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+
+      # JAR lokal umbenennen → bekannter Name, kein Glob-Problem beim SCP
+      - name: Rename JAR to app.jar (lokal)
+        run: |
+          JAR=$(ls target/storeBackend-*.jar | grep -v original | head -1)
+          echo "Gefundene JAR: $JAR"
+          cp "$JAR" target/app.jar
+          ls -lh target/app.jar
+
+      # Nur app.jar hochladen – kein Glob, strip_components nicht nötig
+      - name: Deploy JAR to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "target/app.jar"
+          target: "/tmp/"
+          strip_components: 1
+
+      # Verifikation: app.jar wirklich in /tmp vorhanden?
+      - name: Verify JAR in /tmp
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            echo "📦 Prüfe /tmp/app.jar ..."
+            if [ -f /tmp/app.jar ]; then
+              echo "✅ /tmp/app.jar vorhanden: $(du -h /tmp/app.jar | cut -f1)"
+              ls -lh /tmp/app.jar
+            else
+              echo "❌ /tmp/app.jar NICHT gefunden!"
+              echo "Inhalt von /tmp:"
+              ls -lh /tmp/
+              exit 1
+            fi
+
+      - name: Upload deployment scripts
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "scripts/"
+          target: "/opt/storebackend/"
+          strip_components: 0
+
+      # ── PaddleOCR Spike deployen (KEIN Auto-Install!) ──────────────
+      # Nur Dateien übertragen, keine Installation, keine Tests.
+      # Lokale Testdaten (local-test-data/, local-test-output/, venv/)
+      # werden NICHT übertragen und bleiben auf dem Server erhalten.
+      - name: Check for customer PDFs in paddleocr-spike (security)
+        run: |
+          echo "🔒 Prüfe paddleocr-spike auf Kundendaten..."
+          FOUND_PDF=$(find paddleocr-spike -type f \( -iname "*.pdf" -o -iname "*.png" -o -iname "*.jpg" \) 2>/dev/null || true)
+          if [ -n "$FOUND_PDF" ]; then
+            echo "❌ FEHLER: Kundendaten gefunden in paddleocr-spike!"
+            echo "$FOUND_PDF"
+            echo ""
+            echo "Diese Dateien dürfen NIEMALS deployed werden!"
+            exit 1
+          fi
+          echo "✅ Keine Kundendaten gefunden"
+
+      - name: Deploy PaddleOCR Spike files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "paddleocr-spike/install.sh,paddleocr-spike/run-test.sh,paddleocr-spike/test_paddleocr.py,paddleocr-spike/smoke-test.py,paddleocr-spike/cleanup.sh,paddleocr-spike/requirements.txt,paddleocr-spike/README.md,paddleocr-spike/SETUP.md"
+          target: "/tmp/paddleocr-spike-deploy/"
+          strip_components: 1
+
+      - name: Install PaddleOCR Spike files (preserve local data)
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            echo "📦 Installing PaddleOCR spike files..."
+            
+            # Zielverzeichnis anlegen (falls nicht vorhanden)
+            sudo install -d -m 750 /opt/paddleocr-spike
+            
+            # Dateien kopieren (KEIN rm -rf, KEIN rsync --delete!)
+            # Lokale Daten bleiben erhalten: venv/, local-test-data/, local-test-output/
+            sudo cp /tmp/paddleocr-spike-deploy/install.sh /opt/paddleocr-spike/
+            sudo cp /tmp/paddleocr-spike-deploy/run-test.sh /opt/paddleocr-spike/
+            sudo cp /tmp/paddleocr-spike-deploy/test_paddleocr.py /opt/paddleocr-spike/
+            sudo cp /tmp/paddleocr-spike-deploy/smoke-test.py /opt/paddleocr-spike/
+            sudo cp /tmp/paddleocr-spike-deploy/cleanup.sh /opt/paddleocr-spike/
+            sudo cp /tmp/paddleocr-spike-deploy/requirements.txt /opt/paddleocr-spike/
+            sudo cp /tmp/paddleocr-spike-deploy/README.md /opt/paddleocr-spike/
+            sudo cp /tmp/paddleocr-spike-deploy/SETUP.md /opt/paddleocr-spike/
+            
+            # Berechtigungen setzen
+            sudo chmod 750 /opt/paddleocr-spike/*.sh
+            sudo chmod 640 /opt/paddleocr-spike/*.py
+            sudo chmod 640 /opt/paddleocr-spike/*.txt
+            sudo chmod 640 /opt/paddleocr-spike/*.md
+            
+            # Temp-Ordner aufräumen
+            rm -rf /tmp/paddleocr-spike-deploy
+            
+            echo ""
+            echo "✅ PaddleOCR spike files deployed to /opt/paddleocr-spike"
+            echo "ℹ️  Installation was not started"
+            echo "ℹ️  Run manually: cd /opt/paddleocr-spike && sudo ./install.sh"
+            echo ""
+            echo "📂 Deployed files:"
+            ls -lh /opt/paddleocr-spike/*.sh /opt/paddleocr-spike/*.py /opt/paddleocr-spike/*.txt /opt/paddleocr-spike/*.md 2>/dev/null || true
+
+      # ── Invoice AI Service deployen (KEIN Auto-Install!) ───────────
+      # Dateien für separaten FastAPI-Service auf ai.markt.ma
+      # KEINE automatische Installation, KEINE automatische Aktivierung.
+      - name: Deploy Invoice AI Service files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "invoice-ai-service/main.py,invoice-ai-service/models.py,invoice-ai-service/requirements.txt,invoice-ai-service/invoice-ai.service,invoice-ai-service/nginx-ai-markt-ma.conf,invoice-ai-service/deploy-invoice-ai.sh"
+          target: "/tmp/invoice-ai-service-deploy/"
+          strip_components: 1
+
+      - name: Install Invoice AI Service files (no auto-activation)
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            echo "📦 Deploying Invoice AI Service..."
+            
+            # Deployment-Script ausführen
+            chmod +x /tmp/invoice-ai-service-deploy/deploy-invoice-ai.sh
+            bash /tmp/invoice-ai-service-deploy/deploy-invoice-ai.sh
+
+
+      - name: Check Port 8001 & Setup Telegram Scraper
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            echo "🔌 Prüfe Port 8001 (Telegram MTProto Scraper)..."
+            PORT_FREE=true
+            if ss -tlnp 2>/dev/null | grep -q ':8001 ' || netstat -tlnp 2>/dev/null | grep -q ':8001 '; then
+              PORT_FREE=false
+              echo "   ✅ Port 8001 ist bereits belegt."
+              HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/health 2>/dev/null || echo "000")
+              echo "   🏥 Health-Status: HTTP $HEALTH"
+              if [ "$HEALTH" != "200" ]; then
+                echo "   ⚠️  Scraper antwortet nicht – wird neu gestartet..."
+                sudo systemctl restart telegram-scraper 2>/dev/null || true
+              fi
+            else
+              echo "   ⚠️  Port 8001 ist frei – Telegram Scraper wird eingerichtet..."
+            fi
+            chmod +x /opt/storebackend/scripts/setup-telegram-scraper.sh
+            bash /opt/storebackend/scripts/setup-telegram-scraper.sh
+
+      - name: Execute deployment script
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            chmod +x /opt/storebackend/scripts/*.sh
+            export SMTP_HOST="${{ secrets.SMTP_HOST }}"
+            export SMTP_PORT="${{ secrets.SMTP_PORT }}"
+            export SMTP_USER="${{ secrets.SMTP_USER }}"
+            export SMTP_PASS="${{ secrets.SMTP_PASS }}"
+            export MAIL_FROM="${{ secrets.MAIL_FROM }}"
+            export APP_BASE_URL="${{ secrets.APP_BASE_URL }}"
+            export MAIL_ENABLED="true"
+            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+            export JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            export HUGGINGFACE_API_KEY="${{ secrets.HUGGINGFACE_API_KEY }}"
+            export OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}"
+            export AISSTREAM_API_KEY="${{ secrets.AISSTREAM_API_KEY }}"
+            export TELEGRAM_AUTH_BOT_TOKEN="${{ secrets.TELEGRAM_AUTH_BOT_TOKEN }}"
+            export CLARITY_ID="${{ secrets.CLARITY_ID }}"
+            export UNSPLASH_ACCESS_KEY="${{ secrets.UNSPLASH_ACCESS_KEY }}"
+            export CAPTCHA_ENABLED="${{ secrets.CAPTCHA_ENABLED }}"
+            export CAPTCHA_PROVIDER="${{ secrets.CAPTCHA_PROVIDER }}"
+            export CAPTCHA_SECRET="${{ secrets.CAPTCHA_SECRET }}"
+            export HCAPTCHA_SITE_KEY="${{ secrets.HCAPTCHA_SITE_KEY }}"
+            export CAPTCHA_MIN_SCORE="${{ secrets.CAPTCHA_MIN_SCORE }}"
+            export EMAIL_VERIFICATION_SKIP="${{ secrets.EMAIL_VERIFICATION_SKIP }}"
+            export DHL_ENABLED="${{ secrets.DHL_ENABLED }}"
+            export DHL_ENV="${{ secrets.DHL_ENV }}"
+            export DHL_CLIENT_ID="${{ secrets.DHL_CLIENT_ID }}"
+            export DHL_CLIENT_SECRET="${{ secrets.DHL_CLIENT_SECRET }}"
+            export DHL_AUTH_URL="${{ secrets.DHL_AUTH_URL }}"
+            export DHL_SHIPPING_BASE_URL="${{ secrets.DHL_SHIPPING_BASE_URL }}"
+            export DHL_SANDBOX_USERNAME="${{ secrets.DHL_SANDBOX_USERNAME }}"
+            export DHL_SANDBOX_PASSWORD="${{ secrets.DHL_SANDBOX_PASSWORD }}"
+            export DHL_DEFAULT_PROFILE="${{ secrets.DHL_DEFAULT_PROFILE }}"
+            export DHL_DEFAULT_PRODUCT="${{ secrets.DHL_DEFAULT_PRODUCT }}"
+            export DHL_DEFAULT_BILLING_NUMBER="${{ secrets.DHL_DEFAULT_BILLING_NUMBER }}"
+            export DHL_TIMEOUT="${{ secrets.DHL_TIMEOUT }}"
+            export DHL_TOKEN_CACHE_DURATION="${{ secrets.DHL_TOKEN_CACHE_DURATION }}"
+            export DHL_DEFAULT_WEIGHT_GRAMS="${{ secrets.DHL_DEFAULT_WEIGHT_GRAMS }}"
+            export DHL_DEFAULT_LENGTH_MM="${{ secrets.DHL_DEFAULT_LENGTH_MM }}"
+            export DHL_DEFAULT_WIDTH_MM="${{ secrets.DHL_DEFAULT_WIDTH_MM }}"
+            export DHL_DEFAULT_HEIGHT_MM="${{ secrets.DHL_DEFAULT_HEIGHT_MM }}"
+            export DHL_SANDBOX_SHIPPER_NAME="${{ secrets.DHL_SANDBOX_SHIPPER_NAME }}"
+            export DHL_SANDBOX_SHIPPER_STREET="${{ secrets.DHL_SANDBOX_SHIPPER_STREET }}"
+            export DHL_SANDBOX_SHIPPER_HOUSE_NUMBER="${{ secrets.DHL_SANDBOX_SHIPPER_HOUSE_NUMBER }}"
+            export DHL_SANDBOX_SHIPPER_POSTAL_CODE="${{ secrets.DHL_SANDBOX_SHIPPER_POSTAL_CODE }}"
+            export DHL_SANDBOX_SHIPPER_CITY="${{ secrets.DHL_SANDBOX_SHIPPER_CITY }}"
+            export DHL_SANDBOX_SHIPPER_COUNTRY="${{ secrets.DHL_SANDBOX_SHIPPER_COUNTRY }}"
+            export DHL_PLATFORM_CLIENT_ID="${{ secrets.DHL_PLATFORM_CLIENT_ID }}"
+            export DHL_PLATFORM_CLIENT_SECRET="${{ secrets.DHL_PLATFORM_CLIENT_SECRET }}"
+            export DHL_PLATFORM_CREDENTIALS_ALLOWED="${{ secrets.DHL_PLATFORM_CREDENTIALS_ALLOWED }}"
+            export DHL_TRACKING_SANDBOX_BASE_URL="${{ secrets.DHL_TRACKING_SANDBOX_BASE_URL }}"
+            export DHL_TRACKING_PRODUCTION_BASE_URL="${{ secrets.DHL_TRACKING_PRODUCTION_BASE_URL }}"
+            export DHL_TRACKING_TIMEOUT_MS="${{ secrets.DHL_TRACKING_TIMEOUT_MS }}"
+            export PAYPAL_CLIENT_ID="${{ secrets.PAYPAL_CLIENT_ID }}"
+            export PAYPAL_CLIENT_SECRET="${{ secrets.PAYPAL_CLIENT_SECRET }}"
+            export PAYPAL_MODE="${{ vars.PAYPAL_MODE || 'sandbox' }}"
+            export PAYPAL_SANDBOX_WEBHOOK_ID="${{ secrets.PAYPAL_SANDBOX_WEBHOOK_ID }}"
+            export PAYPAL_LIVE_WEBHOOK_ID="${{ secrets.PAYPAL_LIVE_WEBHOOK_ID }}"
+            export APP_SECRET_ENCRYPTION_KEY="${{ secrets.APP_SECRET_ENCRYPTION_KEY }}"
+            cd /opt/storebackend
+            bash scripts/deploy.sh
+
+      - name: Health Check
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          command_timeout: 10m
+          script: |
+            set -e
+            echo ""
+            echo "🔌 Port 8001 (Telegram Scraper) – Statuscheck..."
+            SCRAPER_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/health 2>/dev/null || echo "000")
+            if [ "$SCRAPER_HEALTH" = "200" ]; then
+              echo "   ✅ Telegram Scraper healthy (HTTP 200)"
+            else
+              echo "   ⚠️  Telegram Scraper antwortet mit HTTP $SCRAPER_HEALTH"
+              echo "   🔁 Versuche Neustart..."
+              sudo systemctl restart telegram-scraper 2>/dev/null || true
+              sleep 5
+              SCRAPER_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/health 2>/dev/null || echo "000")
+              if [ "$SCRAPER_HEALTH" = "200" ]; then
+                echo "   ✅ Telegram Scraper nach Neustart healthy"
+              else
+                echo "   ❌ Telegram Scraper nicht erreichbar (HTTP $SCRAPER_HEALTH)"
+                sudo journalctl -u telegram-scraper -n 20 --no-pager || true
+              fi
+            fi
+            echo ""
+            echo "🏥 Waiting for app..."
+            for i in $(seq 1 30); do
+              HTTP_CODE=$(curl -fsS -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || echo "000")
+              if [ "$HTTP_CODE" = "200" ]; then
+                echo "✅ Healthy"
+                curl -fsS http://localhost:8080/actuator/health
+                exit 0
+              fi
+              echo "⏳ Attempt $i/30 (HTTP $HTTP_CODE)..."
+              if [ "$HTTP_CODE" = "503" ] && [ "$i" -eq 10 ]; then
+                echo "⚠️  HTTP 503 – Auto-Recovery..."
+                sudo systemctl is-active --quiet postgresql || sudo systemctl start postgresql
+                sudo systemctl restart storebackend
+                sleep 5
+              fi
+              sleep 2
+            done
+            echo "❌ Health check failed after 30 attempts"
+            sudo systemctl status storebackend --no-pager || true
+            sudo journalctl -u storebackend -n 120 --no-pager || true
+            exit 1
+
+
+      - name: Download CSV (Research Agent Ergebnisse)
+        if: github.event_name == 'schedule' || github.event.inputs.run_research_agent == 'true'
+        run: |
+          mkdir -p ~/.ssh leads-output
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/vps_dl_key
+          chmod 600 ~/.ssh/vps_dl_key
+          scp -i ~/.ssh/vps_dl_key \
+              -P "${{ secrets.VPS_PORT }}" \
+              -o StrictHostKeyChecking=no \
+              -o ConnectTimeout=30 \
+              "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/latest-leads.csv" \
+              "./leads-output/latest-leads.csv"
+          rm ~/.ssh/vps_dl_key
+          echo "✅ CSV heruntergeladen ($(wc -l < leads-output/latest-leads.csv) Zeilen)"
+
+      - name: Upload CSV als Artifact
+        if: github.event_name == 'schedule' || github.event.inputs.run_research_agent == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: markt-ma-leads-${{ github.run_number }}
+          path: leads-output/latest-leads.csv
+          retention-days: 30
+          if-no-files-found: warn
+

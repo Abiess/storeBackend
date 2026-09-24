@@ -1,0 +1,195 @@
+<div class="editor-container">
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>local_offer</mat-icon>
+        {{ isEditMode ? 'Gutschein bearbeiten' : 'Neuer Gutschein' }}
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div *ngIf="loading" class="loading-spinner">
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+
+      <form [formGroup]="couponForm" *ngIf="!loading">
+        <!-- Basic Settings -->
+        <section class="form-section">
+          <h3>Grundeinstellungen</h3>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Gutscheincode</mat-label>
+            <input matInput formControlName="code" placeholder="SUMMER2024" [attr.readonly]="isEditMode ? true : null">
+            <mat-hint>Eindeutiger Code (wird normalisiert)</mat-hint>
+            <mat-error>Code ist erforderlich</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Beschreibung</mat-label>
+            <textarea matInput formControlName="description" rows="2" placeholder="Sommer-Rabatt-Aktion"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Rabatttyp</mat-label>
+            <mat-select formControlName="type">
+              <mat-option value="PERCENT">Prozentual</mat-option>
+              <mat-option value="FIXED">Fester Betrag</mat-option>
+              <mat-option value="FREE_SHIPPING">Kostenloser Versand</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" *ngIf="showPercentField">
+            <mat-label>Rabatt in %</mat-label>
+            <input matInput type="number" formControlName="percentDiscount" min="1" max="100">
+            <mat-error>Wert zwischen 1 und 100</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" *ngIf="showValueField">
+            <mat-label>Rabattbetrag (Cents)</mat-label>
+            <input matInput type="number" formControlName="valueCents" min="1">
+            <mat-hint>z.B. 1500 für 15,00 €</mat-hint>
+            <mat-error>Betrag erforderlich</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Währung</mat-label>
+            <mat-select formControlName="currency">
+              <mat-option value="USD">USD</mat-option>
+              <mat-option value="EUR">EUR</mat-option>
+              <mat-option value="GBP">GBP</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="ACTIVE">Aktiv</mat-option>
+              <mat-option value="PAUSED">Pausiert</mat-option>
+              <mat-option value="ARCHIVED">Archiviert</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </section>
+
+        <!-- Time Window -->
+        <section class="form-section">
+          <h3>Gültigkeitszeitraum</h3>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Startdatum</mat-label>
+            <input matInput [matDatepicker]="startsAtPicker" formControlName="startsAt">
+            <mat-datepicker-toggle matSuffix [for]="startsAtPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startsAtPicker></mat-datepicker>
+            <mat-hint>Optional</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Enddatum</mat-label>
+            <input matInput [matDatepicker]="endsAtPicker" formControlName="endsAt">
+            <mat-datepicker-toggle matSuffix [for]="endsAtPicker"></mat-datepicker-toggle>
+            <mat-datepicker #endsAtPicker></mat-datepicker>
+            <mat-hint>Optional</mat-hint>
+          </mat-form-field>
+        </section>
+
+        <!-- Conditions -->
+        <section class="form-section">
+          <h3>Bedingungen</h3>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Mindestbestellwert (Cents)</mat-label>
+            <input matInput type="number" formControlName="minSubtotalCents" min="0">
+            <mat-hint>z.B. 5000 für 50,00 € (optional)</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Gilt für</mat-label>
+            <mat-select formControlName="appliesTo">
+              <mat-option value="ALL">Gesamten Warenkorb</mat-option>
+              <mat-option value="PRODUCTS">Bestimmte Produkte</mat-option>
+              <mat-option value="CATEGORIES">Bestimmte Kategorien</mat-option>
+              <mat-option value="COLLECTIONS">Bestimmte Kollektionen</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <div *ngIf="showProductFields" class="filter-fields">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Produkt-IDs (kommagetrennt)</mat-label>
+              <input matInput placeholder="1,2,3">
+              <mat-hint>Nur für ausgewählte Produkte</mat-hint>
+            </mat-form-field>
+          </div>
+        </section>
+
+        <!-- Domain Scope -->
+        <section class="form-section">
+          <h3>Domain-Bereich</h3>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Domain-Gültigkeit</mat-label>
+            <mat-select formControlName="domainScope">
+              <mat-option value="ALL">Alle Domains</mat-option>
+              <mat-option value="SELECTED">Ausgewählte Domains</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width" *ngIf="showDomainFields">
+            <mat-label>Domain-IDs (kommagetrennt)</mat-label>
+            <input matInput placeholder="1,2,3">
+          </mat-form-field>
+        </section>
+
+        <!-- Usage Limits -->
+        <section class="form-section">
+          <h3>Nutzungslimits</h3>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Maximale Gesamtnutzung</mat-label>
+            <input matInput type="number" formControlName="usageLimitTotal" min="1">
+            <mat-hint>Optional</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Max. pro Kunde</mat-label>
+            <input matInput type="number" formControlName="usageLimitPerCustomer" min="1">
+            <mat-hint>Optional</mat-hint>
+          </mat-form-field>
+        </section>
+
+        <!-- Stacking Rules -->
+        <section class="form-section">
+          <h3>Kombinierbarkeit</h3>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Kombinierbar mit anderen Gutscheinen</mat-label>
+            <mat-select formControlName="combinable">
+              <mat-option value="NONE">Nicht kombinierbar</mat-option>
+              <mat-option value="STACK_WITH_DIFFERENT_TYPES">Mit anderen Typen</mat-option>
+              <mat-option value="STACK_ALL">Mit allen</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-checkbox formControlName="autoApply">
+            Automatisch anwenden (ohne Code-Eingabe)
+          </mat-checkbox>
+        </section>
+
+        <!-- Actions -->
+        <div class="actions">
+          <button mat-raised-button color="primary"
+                  (click)="onSave()"
+                  [disabled]="saving || couponForm.invalid">
+            <mat-icon>save</mat-icon>
+            <span *ngIf="!saving">Speichern</span>
+            <span *ngIf="saving">Speichern...</span>
+          </button>
+
+          <button mat-stroked-button (click)="onCancel()" [disabled]="saving">
+            <mat-icon>cancel</mat-icon>
+            Abbrechen
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>
+

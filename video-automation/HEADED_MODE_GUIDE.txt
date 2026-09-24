@@ -1,0 +1,178 @@
+╔══════════════════════════════════════════════════════════════════════════╗
+║                                                                          ║
+║   🌍 MEHRSPRACHIGE VIDEO-AUTOMATION - SCHNELLSTART                      ║
+║                                                                          ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ ✅ DAS SKRIPT IST BEREITS MEHRSPRACHIG!                                 │
+└──────────────────────────────────────────────────────────────────────────┘
+
+Das neue Skript `quick-start-multilang.spec.js` unterstützt ALLE 4 Sprachen:
+  • 🇩🇪 Deutsch (de)
+  • 🇬🇧 Englisch (en)
+  • 🇫🇷 Französisch (fr)
+  • 🇸🇦 Arabisch (ar)
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 🎯 HEADED MODE (Sichtbarer Browser)                                     │
+└──────────────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════
+
+# MIT POWERSHELL-WRAPPER (Empfohlen):
+
+  Deutsch:
+  .\run-multilang-tests.ps1 -Language de -Headed
+
+  Französisch:
+  .\run-multilang-tests.ps1 -Language fr -Headed
+
+  Englisch:
+  .\run-multilang-tests.ps1 -Language en -Headed
+
+  Arabisch:
+  .\run-multilang-tests.ps1 -Language ar -Headed
+
+  Alle 4 Sprachen:
+  .\run-multilang-tests.ps1 -Headed
+
+═══════════════════════════════════════════════════════════════════════════
+
+# DIREKT MIT PLAYWRIGHT:
+
+  Deutsch:
+  npx playwright test quick-start-multilang --grep "German" --headed
+
+  Französisch:
+  npx playwright test quick-start-multilang --grep "French" --headed
+
+  Englisch:
+  npx playwright test quick-start-multilang --grep "English" --headed
+
+  Arabisch:
+  npx playwright test quick-start-multilang --grep "Arabic" --headed
+
+═══════════════════════════════════════════════════════════════════════════
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 🎬 HEADLESS MODE (Ohne sichtbaren Browser - Standard)                   │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  Einzelne Sprache:
+  .\run-multilang-tests.ps1 -Language fr
+
+  Alle Sprachen:
+  .\run-multilang-tests.ps1
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 🐛 DEBUG-MODUS (Mit Playwright Inspector)                               │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  .\run-multilang-tests.ps1 -Language de -UseDebugger
+
+  → Browser öffnet sich
+  → Test pausiert bei jedem Schritt
+  → Playwright Inspector zeigt alle Details
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 📊 VERGLEICH: Alt vs. Neu                                               │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────┬──────────────────────┬────────────────────────┐
+│ Kriterium               │ ALT (boutique-...)   │ NEU (quick-start-...)  │
+├─────────────────────────┼──────────────────────┼────────────────────────┤
+│ Sprachen                │ Nur Französisch      │ Alle 4 (de,en,fr,ar)   │
+│ Headed Support          │ Manuell konfigurieren│ -Headed Parameter      │
+│ Code-Duplikation        │ 4 separate Dateien   │ 1 generisches Skript   │
+│ Wartbarkeit             │ Schwierig            │ Einfach                │
+│ Fallback-Strategien     │ Basis                │ 4-stufig (>95%)        │
+│ Status                  │ ⚠️ DEPRECATED        │ ✅ PRODUCTION-READY    │
+└─────────────────────────┴──────────────────────┴────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 🎥 VIDEO-OUTPUT                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+Nach dem Test finden Sie die Videos hier:
+
+  test-results/
+  ├── quick-start-multilang-de-chromium/video.webm  (Deutsch)
+  ├── quick-start-multilang-en-chromium/video.webm  (Englisch)
+  ├── quick-start-multilang-fr-chromium/video.webm  (Französisch)
+  └── quick-start-multilang-ar-chromium/video.webm  (Arabisch)
+
+Videos ansehen:
+  npx playwright show-report
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 💡 PRAKTISCHE BEISPIELE                                                  │
+└──────────────────────────────────────────────────────────────────────────┘
+
+[1] "Ich möchte ein französisches Demo-Video erstellen"
+    → .\run-multilang-tests.ps1 -Language fr
+
+[2] "Ich möchte sehen, was im Browser passiert"
+    → .\run-multilang-tests.ps1 -Language de -Headed
+
+[3] "Ich möchte alle 4 Sprachen-Videos für Marketing"
+    → .\run-multilang-tests.ps1
+
+[4] "Test schlägt fehl, ich brauche Details"
+    → .\run-multilang-tests.ps1 -Language fr -UseDebugger
+
+[5] "Ich teste auf lokalem Development-Server"
+    → $env:BASE_URL="http://localhost:4200"
+    → .\run-multilang-tests.ps1 -Language de -Headed
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 🚀 JETZT AUSPROBIEREN!                                                   │
+└──────────────────────────────────────────────────────────────────────────┘
+
+Schritt 1: Ins Verzeichnis wechseln
+  cd C:\Users\t13016a\Downloads\Team2\storeBackend\video-automation
+
+Schritt 2: Test im sichtbaren Browser ausführen (Französisch)
+  .\run-multilang-tests.ps1 -Language fr -Headed
+
+Schritt 3: Video ansehen
+  npx playwright show-report
+
+Das war's! Der Browser öffnet sich automatisch und Sie können live zusehen! 🎉
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 📚 WEITERE DOKUMENTATION                                                 │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  → QUICK_COMMANDS.md             (Diese Datei - Alle Befehle)
+  → MULTILINGUAL_README.md         (Schnellstart & Übersicht)
+  → MULTILINGUAL_GUIDE.md          (Best Practices & Troubleshooting)
+  → CREATE_MULTILANG_TESTS.md      (Eigene Tests erstellen)
+  → IMPLEMENTATION_SUMMARY_MULTILANG.md  (Technische Details)
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ ⚙️ PARAMETER-ÜBERSICHT                                                   │
+└──────────────────────────────────────────────────────────────────────────┘
+
+PowerShell-Wrapper Parameter:
+
+  -Language <de|en|fr|ar|all>     Sprache auswählen (Standard: all)
+  -Headed                         Sichtbarer Browser
+  -UseDebugger                    Playwright Inspector aktivieren
+
+Beispiele:
+  .\run-multilang-tests.ps1
+  .\run-multilang-tests.ps1 -Language fr
+  .\run-multilang-tests.ps1 -Language de -Headed
+  .\run-multilang-tests.ps1 -Language en -UseDebugger
+  .\run-multilang-tests.ps1 -Headed                    # Alle Sprachen
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 WICHTIG: Das alte "boutique-sans-inscription.spec.js" ist DEPRECATED!
+            Verwenden Sie stattdessen das neue "quick-start-multilang.spec.js"
+
+═══════════════════════════════════════════════════════════════════════════
+
+Version: 1.0.0 | Datum: 2026-06-29 | Status: ✅ READY TO USE
+

@@ -1,0 +1,2158 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::double precision AS value FROM security_events WHERE $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Security Events",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 3,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::double precision AS value FROM security_events WHERE blocked = true AND $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "title": "Blocked Requests",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 20
+              },
+              {
+                "color": "red",
+                "value": 50
+              }
+            ]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 6,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE blocked = true) / NULLIF(COUNT(*), 0), 1)::double precision AS value FROM security_events WHERE $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "title": "Block Rate %",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 9,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(DISTINCT client_ip)::double precision AS value FROM security_events WHERE client_ip IS NOT NULL AND $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "title": "Unique Client IPs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              },
+              {
+                "color": "red",
+                "value": 50
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 12,
+        "y": 0
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::double precision AS value FROM security_events WHERE captcha_present = true AND captcha_valid = false AND $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "title": "CAPTCHA Failures",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 20
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 15,
+        "y": 0
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::double precision AS value FROM security_events WHERE honeypot_triggered = true AND $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "title": "Honeypot Triggers",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 18,
+        "y": 0
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::double precision AS value FROM security_events WHERE mail_sent = true AND $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "title": "Emails Sent",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              },
+              {
+                "color": "red",
+                "value": 50
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 21,
+        "y": 0
+      },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::double precision AS value FROM security_events WHERE endpoint = '/api/auth/login' AND login_success = false AND $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "title": "Failed Logins",
+      "type": "stat"
+    },
+    {
+      "pluginVersion": "10.0.0",
+      "type": "table",
+      "gridPos": {
+        "x": 0,
+        "w": 24,
+        "y": 3,
+        "h": 10
+      },
+      "datasource": {
+        "uid": "grafana-postgresql-datasource",
+        "type": "postgres"
+      },
+      "id": 9,
+      "options": {
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "requests"
+          }
+        ],
+        "showHeader": true,
+        "footer": {
+          "reducer": [
+            "sum"
+          ],
+          "show": false,
+          "countRows": false,
+          "fields": ""
+        },
+        "cellHeight": "sm"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "uid": "grafana-postgresql-datasource",
+            "type": "postgres"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT\n    client_ip,\n    COUNT(*) AS requests,\n    COUNT(*) FILTER (WHERE blocked = true) AS blocked,\n    ROUND(100.0 * COUNT(*) FILTER (WHERE blocked = true) / NULLIF(COUNT(*), 0), 1) AS blocked_percent,\n    COUNT(DISTINCT endpoint) AS endpoints,\n    COUNT(DISTINCT email_domain) AS domains_used,\n    COUNT(DISTINCT email_hash) AS email_addresses,\n    COUNT(*) FILTER (WHERE login_success = false AND endpoint = '/api/auth/login') AS failed_logins,\n    COUNT(*) FILTER (WHERE mail_sent = true) AS mails_sent,\n    CASE\n        WHEN COUNT(*) FILTER (WHERE blocked = true) > 50 OR \n             (COUNT(*) FILTER (WHERE blocked = true) > 20 AND COUNT(*) FILTER (WHERE captcha_valid = false) > 10) THEN 100\n        WHEN COUNT(*) FILTER (WHERE honeypot_triggered = true) > 0 THEN 90\n        WHEN COUNT(*) FILTER (WHERE blocked = true) > 20 THEN 80\n        WHEN COUNT(*) FILTER (WHERE blocked = true) > 10 OR COUNT(*) FILTER (WHERE captcha_valid = false) > 5 THEN 70\n        WHEN COUNT(DISTINCT endpoint) > 5 THEN 60\n        WHEN COUNT(*) FILTER (WHERE blocked = true) > 5 THEN 50\n        WHEN COUNT(*) FILTER (WHERE captcha_valid = false) > 3 THEN 40\n        WHEN COUNT(DISTINCT email_domain) > 3 THEN 30\n        WHEN COUNT(*) FILTER (WHERE blocked = true) > 2 THEN 20\n        WHEN COUNT(*) FILTER (WHERE captcha_valid = false) > 1 THEN 10\n        ELSE 0\n    END AS risk_score,\n    MAX(created_at) AS last_seen\nFROM security_events\nWHERE $__timeFilter(created_at)\n  AND client_ip IS NOT NULL\nGROUP BY client_ip\nORDER BY risk_score DESC, requests DESC\nLIMIT 100",
+          "refId": "A",
+          "format": "table"
+        }
+      ],
+      "title": "Top Attacking IPs (Risk-Based)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "email_addresses": 7,
+              "mails_sent": 9,
+              "last_seen": 10,
+              "risk_score": 1,
+              "domains_used": 6,
+              "failed_logins": 8,
+              "client_ip": 0,
+              "endpoints": 5,
+              "blocked": 3,
+              "blocked_percent": 4,
+              "requests": 2
+            },
+            "renameByName": {
+              "email_addresses": "Email Addresses",
+              "mails_sent": "Mails Sent",
+              "last_seen": "Last Seen",
+              "risk_score": "Risk Score",
+              "domains_used": "Domains",
+              "failed_logins": "Failed Logins",
+              "client_ip": "Client IP",
+              "endpoints": "Endpoints",
+              "blocked": "Blocked",
+              "blocked_percent": "Block %",
+              "requests": "Requests"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [],
+          "custom": {
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false,
+            "align": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "risk_score"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 40
+                    },
+                    {
+                      "color": "orange",
+                      "value": 60
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "blocked_percent"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "timeseries",
+      "datasource": {
+        "uid": "grafana-postgresql-datasource",
+        "type": "postgres"
+      },
+      "gridPos": {
+        "x": 0,
+        "w": 24,
+        "y": 13,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "uid": "grafana-postgresql-datasource",
+            "type": "postgres"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT\n    $__timeGroupAlias(created_at, $__interval),\n    COUNT(*) AS \"Total Requests\",\n    COUNT(*) FILTER (WHERE blocked = true) AS \"Blocked\",\n    COUNT(*) FILTER (WHERE captcha_valid = false AND captcha_present = true) AS \"CAPTCHA Failed\",\n    COUNT(*) FILTER (WHERE login_success = false AND endpoint = '/api/auth/login') AS \"Login Failed\",\n    COUNT(*) FILTER (WHERE mail_sent = true) AS \"Emails Sent\"\nFROM security_events\nWHERE $__timeFilter(created_at)\nGROUP BY 1\nORDER BY 1",
+          "refId": "A",
+          "format": "time_series"
+        }
+      ],
+      "options": {
+        "tooltip": {
+          "sort": "none",
+          "mode": "multi"
+        },
+        "legend": {
+          "showLegend": true,
+          "calcs": [],
+          "placement": "bottom",
+          "displayMode": "list"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [],
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisColorMode": "text",
+            "lineInterpolation": "linear",
+            "pointSize": 5,
+            "axisPlacement": "auto",
+            "axisCenteredZero": false,
+            "axisLabel": "",
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "spanNulls": false,
+            "drawStyle": "line",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "fillOpacity": 10,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "gradientMode": "none",
+            "lineWidth": 1,
+            "barAlignment": 0,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "id": 10,
+      "title": "Security Events Timeline"
+    },
+    {
+      "id": 11,
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "h": 8,
+        "w": 12
+      },
+      "targets": [
+        {
+          "format": "table",
+          "refId": "A",
+          "datasource": {
+            "uid": "grafana-postgresql-datasource",
+            "type": "postgres"
+          },
+          "rawSql": "SELECT\n    client_ip,\n    COUNT(*) AS login_attempts,\n    COUNT(*) FILTER (WHERE login_success = false) AS failed_logins,\n    COUNT(*) FILTER (WHERE login_success = true) AS successful_logins,\n    COUNT(*) FILTER (WHERE blocked = true) AS blocked,\n    COUNT(DISTINCT email_hash) AS accounts_tried,\n    MAX(created_at) AS last_seen\nFROM security_events\nWHERE $__timeFilter(created_at)\n  AND endpoint = '/api/auth/login'\nGROUP BY client_ip\nORDER BY failed_logins DESC, login_attempts DESC\nLIMIT 100",
+          "rawQuery": true
+        }
+      ],
+      "datasource": {
+        "uid": "grafana-postgresql-datasource",
+        "type": "postgres"
+      },
+      "fieldConfig": {
+        "overrides": [
+          {
+            "matcher": {
+              "options": "failed_logins",
+              "id": "byName"
+            },
+            "properties": [
+              {
+                "value": {
+                  "type": "color-background"
+                },
+                "id": "custom.cellOptions"
+              },
+              {
+                "value": {
+                  "mode": "thresholds"
+                },
+                "id": "color"
+              },
+              {
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 10
+                    },
+                    {
+                      "color": "red",
+                      "value": 50
+                    }
+                  ]
+                },
+                "id": "thresholds"
+              }
+            ]
+          }
+        ],
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          }
+        }
+      },
+      "type": "table",
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "fields": "",
+          "countRows": false,
+          "show": false,
+          "reducer": [
+            "sum"
+          ]
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "failed_logins",
+            "desc": true
+          }
+        ]
+      },
+      "title": "Login Attempts by IP"
+    },
+    {
+      "id": 12,
+      "gridPos": {
+        "x": 12,
+        "y": 21,
+        "h": 8,
+        "w": 12
+      },
+      "targets": [
+        {
+          "format": "table",
+          "refId": "A",
+          "datasource": {
+            "uid": "grafana-postgresql-datasource",
+            "type": "postgres"
+          },
+          "rawSql": "SELECT\n    email_domain,\n    COUNT(*) AS attempts,\n    COUNT(*) FILTER (WHERE blocked = true) AS blocked,\n    COUNT(*) FILTER (WHERE mail_sent = true) AS mails_sent,\n    COUNT(*) FILTER (WHERE captcha_valid = false AND captcha_present = true) AS captcha_failed,\n    COUNT(DISTINCT client_ip) AS distinct_ips,\n    COUNT(DISTINCT email_hash) AS distinct_addresses,\n    MAX(created_at) AS last_seen\nFROM security_events\nWHERE $__timeFilter(created_at)\n  AND email_domain IS NOT NULL\nGROUP BY email_domain\nORDER BY attempts DESC\nLIMIT 100",
+          "rawQuery": true
+        }
+      ],
+      "datasource": {
+        "uid": "grafana-postgresql-datasource",
+        "type": "postgres"
+      },
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          }
+        }
+      },
+      "type": "table",
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "fields": "",
+          "countRows": false,
+          "show": false,
+          "reducer": [
+            "sum"
+          ]
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "attempts",
+            "desc": true
+          }
+        ]
+      },
+      "title": "Top Email Domains"
+    },
+    {
+      "id": 13,
+      "gridPos": {
+        "x": 0,
+        "y": 29,
+        "h": 8,
+        "w": 8
+      },
+      "targets": [
+        {
+          "format": "table",
+          "refId": "A",
+          "datasource": {
+            "uid": "grafana-postgresql-datasource",
+            "type": "postgres"
+          },
+          "rawSql": "SELECT\n    COALESCE(block_reason, 'NOT_BLOCKED') AS metric,\n    COUNT(*)::double precision AS value\nFROM security_events\nWHERE $__timeFilter(created_at)\nGROUP BY block_reason\nORDER BY value DESC\nLIMIT 20",
+          "rawQuery": true
+        }
+      ],
+      "datasource": {
+        "uid": "grafana-postgresql-datasource",
+        "type": "postgres"
+      },
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "mappings": [],
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      },
+      "type": "piechart",
+      "options": {
+        "pieType": "pie",
+        "legend": {
+          "showLegend": true,
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "title": "Block Reasons Distribution"
+    },
+    {
+      "id": 14,
+      "gridPos": {
+        "x": 8,
+        "y": 29,
+        "h": 8,
+        "w": 16
+      },
+      "targets": [
+        {
+          "format": "table",
+          "refId": "A",
+          "datasource": {
+            "uid": "grafana-postgresql-datasource",
+            "type": "postgres"
+          },
+          "rawSql": "SELECT\n    COALESCE(user_agent, 'Unknown') AS user_agent,\n    COUNT(*) AS requests,\n    COUNT(*) FILTER (WHERE blocked = true) AS blocked,\n    COUNT(DISTINCT client_ip) AS distinct_ips,\n    COUNT(*) FILTER (WHERE captcha_valid = false AND captcha_present = true) AS captcha_failed,\n    MAX(created_at) AS last_seen\nFROM security_events\nWHERE $__timeFilter(created_at)\nGROUP BY user_agent\nORDER BY requests DESC\nLIMIT 50",
+          "rawQuery": true
+        }
+      ],
+      "datasource": {
+        "uid": "grafana-postgresql-datasource",
+        "type": "postgres"
+      },
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          }
+        }
+      },
+      "type": "table",
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "fields": "",
+          "countRows": false,
+          "show": false,
+          "reducer": [
+            "sum"
+          ]
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "requests",
+            "desc": true
+          }
+        ]
+      },
+      "title": "Top User Agents (Bot Detection)"
+    },
+    {
+      "id": 15,
+      "gridPos": {
+        "x": 0,
+        "y": 37,
+        "h": 8,
+        "w": 24
+      },
+      "targets": [
+        {
+          "format": "time_series",
+          "refId": "A",
+          "datasource": {
+            "uid": "grafana-postgresql-datasource",
+            "type": "postgres"
+          },
+          "rawSql": "SELECT\n    $__timeGroupAlias(created_at, $__interval),\n    COUNT(*) FILTER (WHERE http_status >= 200 AND http_status < 300) AS \"2xx Success\",\n    COUNT(*) FILTER (WHERE http_status >= 400 AND http_status < 500) AS \"4xx Client Error\",\n    COUNT(*) FILTER (WHERE http_status = 429) AS \"429 Rate Limit\",\n    COUNT(*) FILTER (WHERE http_status >= 500) AS \"5xx Server Error\"\nFROM security_events\nWHERE $__timeFilter(created_at)\n  AND http_status IS NOT NULL\nGROUP BY 1\nORDER BY 1",
+          "rawQuery": true
+        }
+      ],
+      "datasource": {
+        "uid": "grafana-postgresql-datasource",
+        "type": "postgres"
+      },
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "drawStyle": "line",
+            "spanNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "showPoints": "never",
+            "axisColorMode": "text",
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "barAlignment": 0,
+            "lineWidth": 1,
+            "axisCenteredZero": false,
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "fillOpacity": 10,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "gradientMode": "none",
+            "pointSize": 5
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      },
+      "type": "timeseries",
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "showLegend": true,
+          "calcs": [],
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "title": "HTTP Status Distribution Over Time"
+    },
+    {
+      "refresh": "5s",
+      "type": "table",
+      "fieldConfig": {
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "risk_score"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "steps": [
+                    {
+                      "value": null,
+                      "color": "green"
+                    },
+                    {
+                      "value": 40,
+                      "color": "yellow"
+                    },
+                    {
+                      "value": 60,
+                      "color": "orange"
+                    },
+                    {
+                      "value": 80,
+                      "color": "red"
+                    }
+                  ],
+                  "mode": "absolute"
+                }
+              }
+            ]
+          }
+        ],
+        "defaults": {
+          "custom": {
+            "cellOptions": {
+              "type": "auto"
+            },
+            "align": "auto",
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              }
+            ],
+            "mode": "absolute"
+          }
+        }
+      },
+      "title": "🔴 LIVE ACTIVE ATTACKS (Last 5 Minutes)",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT\n    client_ip,\n    COUNT(*) AS hits_last_5min,\n    COUNT(DISTINCT endpoint) AS endpoints_hit,\n    COUNT(*) FILTER (WHERE blocked = true) AS blocked,\n    COUNT(*) FILTER (WHERE captcha_valid = false) AS captcha_fails,\n    COUNT(*) FILTER (WHERE honeypot_triggered = true) AS honeypot,\n    ARRAY_AGG(DISTINCT endpoint) AS endpoints,\n    CASE\n        WHEN COUNT(*) FILTER (WHERE blocked = true) > 10 THEN 100\n        WHEN COUNT(*) FILTER (WHERE captcha_valid = false) > 5 THEN 80\n        WHEN COUNT(*) FILTER (WHERE honeypot_triggered = true) > 0 THEN 90\n        WHEN COUNT(*) > 20 THEN 70\n        ELSE 50\n    END AS risk_score,\n    MAX(created_at) AS last_hit\nFROM security_events\nWHERE created_at > NOW() - INTERVAL '5 minutes'\n  AND client_ip IS NOT NULL\nGROUP BY client_ip\nHAVING COUNT(*) > 5\nORDER BY last_hit DESC, risk_score DESC\nLIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "y": 45,
+        "h": 10,
+        "w": 24,
+        "x": 0
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "options": {
+        "footer": {
+          "fields": "",
+          "show": false,
+          "countRows": false,
+          "reducer": [
+            "sum"
+          ]
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "last_hit",
+            "desc": true
+          }
+        ],
+        "cellHeight": "sm"
+      },
+      "id": 16
+    },
+    {
+      "title": "Endpoint Attack Ranking",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT\n    endpoint AS metric,\n    COUNT(*)::double precision AS total,\n    COUNT(*) FILTER (WHERE blocked = true)::double precision AS blocked,\n    COUNT(*) FILTER (WHERE mail_sent = true)::double precision AS mails_sent\nFROM security_events\nWHERE $__timeFilter(created_at)\nGROUP BY endpoint\nORDER BY total DESC\nLIMIT 20",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "fillOpacity": 80,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "hideFrom": {
+              "viz": false,
+              "tooltip": false,
+              "legend": false
+            },
+            "gradientMode": "none",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "axisPlacement": "auto"
+          },
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              }
+            ],
+            "mode": "absolute"
+          }
+        }
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "options": {
+        "fullHighlight": false,
+        "xTickLabelRotation": 0,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "barWidth": 0.97,
+        "stacking": "none",
+        "xTickLabelSpacing": 0,
+        "barRadius": 0,
+        "groupWidth": 0.7,
+        "orientation": "horizontal",
+        "tooltip": {
+          "sort": "none",
+          "mode": "single"
+        },
+        "showValue": "always"
+      },
+      "gridPos": {
+        "y": 55,
+        "h": 10,
+        "w": 12,
+        "x": 0
+      },
+      "type": "barchart",
+      "id": 17
+    },
+    {
+      "title": "Kill Switch Triggers",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT COUNT(*)::double precision AS value\nFROM security_events\nWHERE kill_switch_triggered = true\n  AND $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 1,
+                "color": "red"
+              }
+            ],
+            "mode": "absolute"
+          }
+        }
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false,
+          "fields": ""
+        },
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "gridPos": {
+        "y": 55,
+        "h": 5,
+        "w": 6,
+        "x": 12
+      },
+      "type": "stat",
+      "id": 18
+    },
+    {
+      "title": "Circuit Breaker Triggers",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT COUNT(*)::double precision AS value\nFROM security_events\nWHERE circuit_breaker_triggered = true\n  AND $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              },
+              {
+                "value": 1,
+                "color": "red"
+              }
+            ],
+            "mode": "absolute"
+          }
+        }
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false,
+          "fields": ""
+        },
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "gridPos": {
+        "y": 55,
+        "h": 5,
+        "w": 6,
+        "x": 18
+      },
+      "type": "stat",
+      "id": 19
+    },
+    {
+      "title": "Top Referers (CSRF Detection)",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT\n    COALESCE(referer, '(direct)') AS referer,\n    COUNT(*) AS requests,\n    COUNT(*) FILTER (WHERE blocked = true) AS blocked,\n    COUNT(DISTINCT client_ip) AS distinct_ips,\n    MAX(created_at) AS last_seen\nFROM security_events\nWHERE $__timeFilter(created_at)\nGROUP BY referer\nORDER BY requests DESC\nLIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "custom": {
+            "cellOptions": {
+              "type": "auto"
+            },
+            "align": "auto",
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              }
+            ],
+            "mode": "absolute"
+          }
+        }
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "options": {
+        "footer": {
+          "fields": "",
+          "show": false,
+          "countRows": false,
+          "reducer": [
+            "sum"
+          ]
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "requests",
+            "desc": true
+          }
+        ],
+        "cellHeight": "sm"
+      },
+      "gridPos": {
+        "y": 60,
+        "h": 8,
+        "w": 12,
+        "x": 12
+      },
+      "type": "table",
+      "id": 20
+    },
+    {
+      "title": "Top Origins (CORS Detection)",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT\n    COALESCE(origin, '(none)') AS origin,\n    COUNT(*) AS requests,\n    COUNT(*) FILTER (WHERE blocked = true) AS blocked,\n    COUNT(DISTINCT client_ip) AS distinct_ips,\n    MAX(created_at) AS last_seen\nFROM security_events\nWHERE $__timeFilter(created_at)\nGROUP BY origin\nORDER BY requests DESC\nLIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "custom": {
+            "cellOptions": {
+              "type": "auto"
+            },
+            "align": "auto",
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              }
+            ],
+            "mode": "absolute"
+          }
+        }
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "options": {
+        "footer": {
+          "fields": "",
+          "show": false,
+          "countRows": false,
+          "reducer": [
+            "sum"
+          ]
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "requests",
+            "desc": true
+          }
+        ],
+        "cellHeight": "sm"
+      },
+      "gridPos": {
+        "y": 65,
+        "h": 8,
+        "w": 12,
+        "x": 0
+      },
+      "type": "table",
+      "id": 21
+    },
+    {
+      "gridPos": {
+        "y": 68,
+        "x": 12,
+        "h": 8,
+        "w": 12
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT\n    $__timeGroupAlias(created_at, $__interval),\n    COUNT(*) FILTER (WHERE mail_type = 'STORE_ACCESS') AS \"Store Access\",\n    COUNT(*) FILTER (WHERE mail_type = 'EMAIL_VERIFICATION') AS \"Email Verification\",\n    COUNT(*) FILTER (WHERE mail_type = 'PASSWORD_RESET') AS \"Password Reset\",\n    COUNT(*) FILTER (WHERE mail_type = 'PHONE_VERIFICATION') AS \"Phone Verification\",\n    COUNT(*) FILTER (WHERE mail_type IS NOT NULL AND mail_sent = false) AS \"Blocked Emails\"\nFROM security_events\nWHERE $__timeFilter(created_at)\n  AND mail_type IS NOT NULL\nGROUP BY 1\nORDER BY 1",
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Mail Activity by Type",
+      "id": 22,
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "custom": {
+            "fillOpacity": 10,
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "axisLabel": "",
+            "barAlignment": 0,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "axisPlacement": "auto",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "viz": false,
+              "legend": false,
+              "tooltip": false
+            },
+            "gradientMode": "none",
+            "spanNulls": false,
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "axisColorMode": "text",
+            "axisCenteredZero": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [],
+          "displayMode": "list"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "type": "timeseries"
+    },
+    {
+      "gridPos": {
+        "y": 73,
+        "x": 0,
+        "h": 8,
+        "w": 12
+      },
+      "targets": [
+        {
+          "rawSql": "WITH first_seen_ips AS (\n    SELECT\n        client_ip,\n        MIN(created_at) AS first_seen\n    FROM security_events\n    WHERE client_ip IS NOT NULL\n    GROUP BY client_ip\n)\nSELECT\n    f.client_ip,\n    f.first_seen,\n    COUNT(se.*) AS requests_today,\n    COUNT(*) FILTER (WHERE se.blocked = true) AS blocked,\n    COUNT(DISTINCT se.endpoint) AS endpoints,\n    MAX(se.created_at) AS last_seen\nFROM first_seen_ips f\nJOIN security_events se ON se.client_ip = f.client_ip\nWHERE f.first_seen > CURRENT_DATE\n  AND se.created_at > CURRENT_DATE\nGROUP BY f.client_ip, f.first_seen\nORDER BY f.first_seen DESC\nLIMIT 100",
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "title": "New IPs Today (First-Time Visitors)",
+      "id": 23,
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "mappings": [],
+          "custom": {
+            "align": "auto",
+            "inspect": false,
+            "cellOptions": {
+              "type": "auto"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "first_seen",
+            "desc": true
+          }
+        ],
+        "footer": {
+          "show": false,
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ]
+        }
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "type": "table"
+    },
+    {
+      "gridPos": {
+        "y": 76,
+        "x": 12,
+        "h": 8,
+        "w": 12
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT\n    $__timeGroupAlias(created_at, $__interval),\n    COUNT(*) FILTER (WHERE captcha_present = true AND captcha_valid = true) AS \"CAPTCHA Success\",\n    COUNT(*) FILTER (WHERE captcha_present = true AND captcha_valid = false) AS \"CAPTCHA Failed\",\n    COUNT(*) FILTER (WHERE captcha_present = false) AS \"No CAPTCHA\"\nFROM security_events\nWHERE $__timeFilter(created_at)\nGROUP BY 1\nORDER BY 1",
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "title": "CAPTCHA Validation Status",
+      "id": 24,
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "custom": {
+            "fillOpacity": 10,
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "axisLabel": "",
+            "barAlignment": 0,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "axisPlacement": "auto",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "viz": false,
+              "legend": false,
+              "tooltip": false
+            },
+            "gradientMode": "none",
+            "spanNulls": false,
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "axisColorMode": "text",
+            "axisCenteredZero": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [],
+          "displayMode": "list"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "type": "timeseries"
+    },
+    {
+      "gridPos": {
+        "y": 81,
+        "x": 0,
+        "h": 8,
+        "w": 12
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT\n    $__timeGroupAlias(created_at, $__interval),\n    COUNT(*) FILTER (WHERE login_success = true) AS \"Successful Logins\",\n    COUNT(*) FILTER (WHERE login_success = false) AS \"Failed Logins\",\n    COUNT(*) FILTER (WHERE blocked = true) AS \"Blocked Logins\"\nFROM security_events\nWHERE $__timeFilter(created_at)\n  AND endpoint = '/api/auth/login'\nGROUP BY 1\nORDER BY 1",
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Login Success vs Failed",
+      "id": 25,
+      "fieldConfig": {
+        "overrides": [],
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "custom": {
+            "fillOpacity": 10,
+            "thresholdsStyle": {
+              "mode": "off"
+            },
+            "axisLabel": "",
+            "barAlignment": 0,
+            "lineWidth": 1,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "axisPlacement": "auto",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "viz": false,
+              "legend": false,
+              "tooltip": false
+            },
+            "gradientMode": "none",
+            "spanNulls": false,
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "axisColorMode": "text",
+            "axisCenteredZero": false
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "placement": "bottom",
+          "showLegend": true,
+          "calcs": [],
+          "displayMode": "list"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "type": "timeseries"
+    },
+    {
+      "fieldConfig": {
+        "overrides": [
+          {
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": null,
+                      "color": "green"
+                    },
+                    {
+                      "value": 1,
+                      "color": "red"
+                    }
+                  ]
+                }
+              }
+            ],
+            "matcher": {
+              "id": "byName",
+              "options": "blocked"
+            }
+          },
+          {
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": null,
+                      "color": "green"
+                    },
+                    {
+                      "value": 400,
+                      "color": "yellow"
+                    },
+                    {
+                      "value": 500,
+                      "color": "red"
+                    }
+                  ]
+                }
+              }
+            ],
+            "matcher": {
+              "id": "byName",
+              "options": "http_status"
+            }
+          }
+        ],
+        "defaults": {
+          "mappings": [],
+          "custom": {
+            "align": "auto",
+            "inspect": false,
+            "cellOptions": {
+              "type": "auto"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": null,
+                "color": "green"
+              }
+            ]
+          }
+        }
+      },
+      "id": 26,
+      "title": "🔴 LIVE Security Event Feed (Last 200 Events)",
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "created_at",
+            "desc": true
+          }
+        ],
+        "footer": {
+          "show": false,
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ]
+        }
+      },
+      "gridPos": {
+        "y": 89,
+        "x": 0,
+        "h": 12,
+        "w": 24
+      },
+      "refresh": "5s",
+      "type": "table",
+      "datasource": {
+        "type": "postgres",
+        "uid": "grafana-postgresql-datasource"
+      },
+      "targets": [
+        {
+          "rawSql": "SELECT\n    created_at,\n    event_type,\n    endpoint,\n    client_ip,\n    email_masked,\n    email_domain,\n    mail_type,\n    COALESCE(captcha_valid, false) AS captcha_valid,\n    blocked,\n    block_reason,\n    kill_switch_triggered,\n    circuit_breaker_triggered,\n    mail_sent,\n    login_success,\n    http_status,\n    LEFT(COALESCE(user_agent, ''), 80) AS user_agent\nFROM security_events\nWHERE $__timeFilter(created_at)\nORDER BY created_at DESC\nLIMIT 200",
+          "datasource": {
+            "type": "postgres",
+            "uid": "grafana-postgresql-datasource"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [
+    "security",
+    "soc",
+    "markt.ma",
+    "bot-protection"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "grafana-postgresql-datasource"
+        },
+        "definition": "SELECT DISTINCT client_ip FROM security_events WHERE client_ip IS NOT NULL ORDER BY client_ip",
+        "hide": 0,
+        "includeAll": true,
+        "label": "IP Address",
+        "multi": false,
+        "name": "selected_ip",
+        "options": [],
+        "query": "SELECT DISTINCT client_ip FROM security_events WHERE client_ip IS NOT NULL ORDER BY client_ip",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "grafana-postgresql-datasource"
+        },
+        "definition": "SELECT DISTINCT endpoint FROM security_events WHERE endpoint IS NOT NULL ORDER BY endpoint",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Endpoint",
+        "multi": true,
+        "name": "endpoint",
+        "options": [],
+        "query": "SELECT DISTINCT endpoint FROM security_events WHERE endpoint IS NOT NULL ORDER BY endpoint",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "markt.ma - Security Operations Center (SOC)",
+  "uid": "marktma-soc-complete",
+  "version": 1,
+  "weekStart": ""
+}

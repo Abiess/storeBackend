@@ -1,0 +1,37 @@
+<h2 mat-dialog-title>{{ 'maritime.help.title' | translate }}</h2>
+
+<mat-dialog-content class="maritime-help-content">
+  <dl>
+    <dt>SOG</dt>
+    <dd>{{ 'maritime.help.sog' | translate }}</dd>
+
+    <dt>COG</dt>
+    <dd>{{ 'maritime.help.cog' | translate }}</dd>
+
+    <dt>{{ 'maritime.status.moored' | translate }}</dt>
+    <dd>{{ 'maritime.help.moored' | translate }}</dd>
+
+    <dt>{{ 'maritime.status.inPort' | translate }}</dt>
+    <dd>{{ 'maritime.help.inPort' | translate }}</dd>
+
+    <dt>{{ 'maritime.status.approaching' | translate }}</dt>
+    <dd>{{ 'maritime.help.approaching' | translate }}</dd>
+
+    <dt>{{ 'maritime.status.departing' | translate }}</dt>
+    <dd>{{ 'maritime.help.departing' | translate }}</dd>
+
+    <dt>{{ 'maritime.status.nearPort' | translate }}</dt>
+    <dd>{{ 'maritime.help.nearPort' | translate }}</dd>
+
+    <dt>{{ 'maritime.table.destination' | translate }}</dt>
+    <dd>{{ 'maritime.help.destination' | translate }}</dd>
+  </dl>
+
+  <p class="maritime-help-notice">{{ 'maritime.help.dataNotice' | translate }}</p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button type="button" class="maritime-help-close-btn" (click)="close()">
+    {{ 'maritime.detail.close' | translate }}
+  </button>
+</mat-dialog-actions>

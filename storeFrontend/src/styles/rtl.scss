@@ -1,0 +1,196 @@
+/* ========================================
+   RTL (Right-to-Left) Support Styles
+   ======================================== */
+
+// RTL Mixins für wiederverwendbare Styles
+@mixin rtl {
+  [dir="rtl"] & {
+    @content;
+  }
+}
+
+@mixin ltr {
+  [dir="ltr"] & {
+    @content;
+  }
+}
+
+// Logical Properties Mixins
+@mixin margin-inline-start($value) {
+  margin-inline-start: $value;
+}
+
+@mixin margin-inline-end($value) {
+  margin-inline-end: $value;
+}
+
+@mixin padding-inline-start($value) {
+  padding-inline-start: $value;
+}
+
+@mixin padding-inline-end($value) {
+  padding-inline-end: $value;
+}
+
+/* Global RTL Base Styles */
+[dir="rtl"] {
+  direction: rtl;
+  text-align: start;
+}
+
+[dir="ltr"] {
+  direction: ltr;
+  text-align: start;
+}
+
+/* Typography */
+[dir="rtl"] {
+  h1, h2, h3, h4, h5, h6 {
+    text-align: start;
+  }
+}
+
+/* Use Logical Properties everywhere */
+.m-start { margin-inline-start: 1rem; }
+.m-end { margin-inline-end: 1rem; }
+.p-start { padding-inline-start: 1rem; }
+.p-end { padding-inline-end: 1rem; }
+
+.text-start { text-align: start; }
+.text-end { text-align: end; }
+
+/* Icons that need mirroring in RTL */
+[dir="rtl"] {
+  .icon-arrow-right, .icon-chevron-right, .icon-forward {
+    transform: scaleX(-1);
+  }
+
+  .icon-arrow-left, .icon-chevron-left, .icon-back {
+    transform: scaleX(-1);
+  }
+}
+
+/* Forms */
+[dir="rtl"] {
+  input, textarea, select {
+    text-align: start;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    @include margin-inline-end(0.5rem);
+    margin-inline-start: 0;
+  }
+}
+
+/* Lists */
+[dir="rtl"] {
+  ul, ol {
+    @include padding-inline-start(1.5rem);
+    padding-inline-end: 0;
+  }
+}
+
+/* Flexbox helpers */
+.flex-row-rtl {
+  display: flex;
+
+  @include rtl {
+    flex-direction: row-reverse;
+  }
+}
+
+/* Shopping Cart RTL */
+[dir="rtl"] {
+  .cart-item {
+    flex-direction: row-reverse;
+  }
+
+  .cart-item-image {
+    @include margin-inline-start(1rem);
+    margin-inline-end: 0;
+  }
+}
+
+/* Product Cards RTL */
+[dir="rtl"] {
+  .product-card {
+    text-align: start;
+  }
+
+  .product-actions {
+    justify-content: flex-start;
+  }
+}
+
+/* Navigation RTL */
+[dir="rtl"] {
+  .nav-item {
+    @include margin-inline-end(1.5rem);
+    margin-inline-start: 0;
+  }
+}
+
+/* Dropdowns RTL */
+[dir="rtl"] {
+  .dropdown-menu {
+    left: auto;
+    right: 0;
+    text-align: start;
+  }
+}
+
+/* Arabic Font Optimization */
+[dir="rtl"] {
+  body, input, textarea, select, button {
+    font-family: 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
+  }
+}
+
+/* Number formatting - always LTR */
+[dir="rtl"] {
+  .number, .price, .currency {
+    direction: ltr;
+    display: inline-block;
+  }
+}
+
+/* Animations for RTL */
+@keyframes slideInFromEnd {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromStart {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+[dir="rtl"] {
+  .slide-in-right {
+    animation: slideInFromStart 0.3s ease-out;
+  }
+
+  .slide-in-left {
+    animation: slideInFromEnd 0.3s ease-out;
+  }
+}
+
+[dir="ltr"] {
+  .slide-in-right {
+    animation: slideInFromEnd 0.3s ease-out;
+  }
+
+  .slide-in-left {
+    animation: slideInFromStart 0.3s ease-out;
+  }
+}
+

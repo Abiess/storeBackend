@@ -1,0 +1,515 @@
+.platform-provisioning {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  padding-block-start: calc(24px + env(safe-area-inset-top, 0px));
+  padding-block-end: calc(24px + env(safe-area-inset-bottom, 0px));
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.page-header {
+  margin-block-end: 24px;
+
+  h1 {
+    margin: 0 0 4px 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .subtitle {
+    color: var(--theme-text-secondary, #6b7280);
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 640px) {
+    h1 {
+      font-size: 1.4rem;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+    }
+  }
+}
+
+.section-title {
+  margin: 0 0 14px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--theme-text, #1f2937);
+}
+
+// -- Cards --------------------------------------------------------------
+mat-card.search-card,
+mat-card.user-summary-card,
+mat-card.app-card {
+  border-radius: 14px !important;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.06), 0 1px 2px rgba(17, 24, 39, 0.04) !important;
+}
+
+.search-card {
+  margin-block-end: 20px;
+}
+
+.search-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  .search-field {
+    flex: 1 1 280px;
+    min-width: 0;
+  }
+
+  .search-btn {
+    inline-size: auto;
+    min-inline-size: 120px;
+    min-block-size: 56px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  // Mobile: Suchfeld + Button klar untereinander, Button volle Breite (großes Touch-Target)
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+
+    .search-field {
+      flex: 1 1 auto;
+      width: 100%;
+    }
+
+    .search-btn {
+      inline-size: 100%;
+      width: 100%;
+      min-block-size: 48px;
+    }
+  }
+}
+
+.btn-spinner {
+  ::ng-deep circle {
+    stroke: currentColor;
+  }
+}
+
+.error-text {
+  color: #dc2626;
+  font-size: 0.9rem;
+}
+
+.user-results {
+  list-style: none;
+  margin: 12px 0 0 0;
+  padding: 0;
+  border: 1px solid var(--theme-border, #e5e7eb);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.user-result-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  text-align: start;
+  padding: 14px 16px;
+  background: var(--theme-surface, #fff);
+  border: none;
+  border-block-end: 1px solid var(--theme-border, #f3f4f6);
+  cursor: pointer;
+  min-block-size: 48px;
+
+  &:last-child {
+    border-block-end: none;
+  }
+
+  &:hover {
+    background: var(--theme-surface-alt, #f9fafb);
+  }
+
+  &.selected {
+    background: #ede9fe;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: -2px;
+  }
+
+  .user-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .user-email {
+    font-weight: 500;
+    color: var(--theme-text, #1f2937);
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .user-name {
+    color: var(--theme-text-secondary, #6b7280);
+    font-size: 0.85rem;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  mat-chip-set {
+    flex: 0 0 auto;
+  }
+
+  @media (max-width: 640px) {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    min-block-size: 56px;
+  }
+}
+
+// -- Mode / status chips --------------------------------------------------
+mat-chip.mode-legacy,
+mat-chip.status-chip.mode-legacy {
+  --mdc-chip-elevated-container-color: #fef3c7;
+  --mdc-chip-label-text-color: #92400e;
+}
+
+mat-chip.mode-managed,
+mat-chip.status-chip.mode-managed {
+  --mdc-chip-elevated-container-color: #d1fae5;
+  --mdc-chip-label-text-color: #065f46;
+}
+
+// Der Status-Chip im User-Header ist die wichtigste Information auf der
+// Seite (LEGACY vs. MANAGED) - bewusst größer/fetter als andere Chips.
+mat-chip.status-chip {
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+
+// -- Selected user summary ------------------------------------------------
+.user-detail {
+  margin-block-start: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.user-summary-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-block-end: 10px;
+}
+
+.user-summary-info {
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.user-summary-primary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.user-summary-email {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--theme-text, #1f2937);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.user-summary-name {
+  color: var(--theme-text-secondary, #6b7280);
+  overflow-wrap: anywhere;
+}
+
+.user-summary-id {
+  color: var(--theme-text-secondary, #6b7280);
+  font-size: 0.85rem;
+  margin-block-start: 4px;
+}
+
+.status-chip-set {
+  flex: 0 0 auto;
+}
+
+// Mobile: User-Card kompakt, LEGACY/MANAGED bleibt gut sichtbar (eigene Zeile)
+@media (max-width: 640px) {
+  .user-summary-card mat-card-content {
+    padding: 14px !important;
+  }
+
+  .user-summary-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .user-summary-email {
+    font-size: 1.02rem;
+  }
+
+  .status-chip-set {
+    align-self: flex-start;
+  }
+}
+
+.loading-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--theme-text-secondary, #6b7280);
+  margin-block-start: 8px;
+}
+
+.mode-hint {
+  color: var(--theme-text-secondary, #6b7280);
+  font-size: 0.9rem;
+  margin: 8px 0 0 0;
+}
+
+// -- Legacy warning ---------------------------------------------------------
+.legacy-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 16px;
+  color: #7f1d1d;
+
+  mat-icon {
+    color: #dc2626;
+    flex-shrink: 0;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .legacy-warning-actions {
+    display: flex;
+    gap: 10px;
+    margin-block-start: 14px;
+    flex-wrap: wrap;
+  }
+}
+
+// -- App grid ---------------------------------------------------------------
+.app-grid-title {
+  margin-block-start: 4px;
+}
+
+.app-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (min-width: 1024px) {
+  .app-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .app-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-provisioning {
+    padding: 16px;
+    padding-block-start: calc(16px + env(safe-area-inset-top, 0px));
+    padding-block-end: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  mat-card.app-card mat-card-content {
+    padding: 14px !important;
+  }
+}
+
+.app-card {
+  min-block-size: 100%;
+}
+
+.app-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  margin-block-end: 14px;
+
+  .app-icon {
+    font-size: 2rem; // ~32px
+    line-height: 1;
+    flex: 0 0 auto;
+  }
+
+  .app-name {
+    color: var(--theme-text, #1f2937);
+    overflow-wrap: anywhere;
+  }
+
+  .scope-badge {
+    margin-inline-start: auto;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--theme-text-secondary, #6b7280);
+    border: 1px solid var(--theme-border, #e5e7eb);
+    border-radius: 999px;
+    padding: 3px 10px;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-card-title .app-icon {
+    font-size: 2.25rem; // ~36px, gut sichtbar auf kleinen Screens
+  }
+}
+
+// -- GLOBAL apps --------------------------------------------------------
+.global-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-block-size: 48px;
+
+  // Größere Klickfläche fürs Toggle selbst (Touch-Target auf Capacitor)
+  mat-slide-toggle {
+    padding: 6px;
+    margin-inline-end: -6px;
+  }
+}
+
+.global-status {
+  font-size: 0.9rem;
+  color: var(--theme-text-secondary, #6b7280);
+  font-weight: 500;
+
+  &.active {
+    color: #065f46;
+  }
+}
+
+@media (max-width: 640px) {
+  .global-toggle-row {
+    min-block-size: 56px;
+  }
+
+  .global-status {
+    font-size: 0.95rem;
+  }
+}
+
+// -- STORE apps -----------------------------------------------------------
+.store-app-subtitle {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--theme-text-secondary, #9ca3af);
+  margin-block-end: 8px;
+}
+
+.no-stores-hint {
+  color: var(--theme-text-secondary, #9ca3af);
+  font-size: 0.85rem;
+  font-style: italic;
+  margin: 0 0 8px 0;
+}
+
+.store-chip-set {
+  margin-block-end: 10px;
+}
+
+mat-chip.store-chip {
+  --mdc-chip-elevated-container-color: #ede9fe;
+  --mdc-chip-label-text-color: #4c1d95;
+
+  &.inactive {
+    --mdc-chip-elevated-container-color: var(--theme-surface-alt, #f3f4f6);
+    --mdc-chip-label-text-color: var(--theme-text-secondary, #6b7280);
+    text-decoration: line-through;
+  }
+}
+
+.store-chip-status {
+  font-size: 0.75rem;
+  margin-inline-start: 4px;
+  text-decoration: none;
+}
+
+// Mobile: Chips deutlich größer, damit der Remove/Reactivate-Button gut
+// tippbar bleibt (min. 44x44px Touch-Target, siehe Apple/Material HIG).
+@media (max-width: 640px) {
+  mat-chip.store-chip {
+    --mdc-chip-container-height: 40px;
+    font-size: 0.9rem;
+
+    ::ng-deep .mat-mdc-chip-remove {
+      min-block-size: 40px;
+      min-inline-size: 40px;
+    }
+  }
+}
+
+.add-store-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-block-start: 8px;
+
+  .store-select-field {
+    width: 100%;
+  }
+
+  .add-store-btn {
+    align-self: stretch;
+    min-block-size: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+}
+
+// -- Form field density: keep touch targets comfortable on mobile ---------
+::ng-deep .platform-provisioning .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+// -- Focus-visible hardening (keyboard navigation) -------------------------
+button:focus-visible,
+[mat-flat-button]:focus-visible,
+[mat-stroked-button]:focus-visible {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}

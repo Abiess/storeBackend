@@ -1,0 +1,335 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.ts]
+quote_type = single
+
+[*.md]
+max_line_length = off
+trim_trailing_whitespace = false
+# markt.ma Frontend
+
+Angular-basiertes Frontend für die Multi-Tenant E-Commerce SaaS-Plattform **markt.ma**.
+
+## 🚀 Projektübersicht
+
+Dieses Frontend konsumiert das Spring Boot Backend und bietet eine vollständige Verwaltungsoberfläche für Store-Besitzer.
+
+### Features
+
+- ✅ **Authentifizierung**: Login & Registrierung mit JWT
+- ✅ **Store-Verwaltung**: Erstellen und verwalten Sie mehrere Stores
+- ✅ **Produkt-Management**: Produkte, Varianten, Kategorien und Medien
+- ✅ **Bestellverwaltung**: Übersicht und Statusverwaltung von Bestellungen
+- ✅ **Domain-Verwaltung**: Subdomains und Custom Domains
+- ✅ **Responsive Design**: Optimiert für Desktop und Mobile
+
+## 📋 Voraussetzungen
+
+- **Node.js**: Version 18 oder höher
+- **npm**: Version 9 oder höher
+- **Angular CLI**: Version 17 (wird automatisch installiert)
+
+## 🛠️ Installation
+
+### 1. Dependencies installieren
+
+```bash
+cd storeFrontend
+npm install
+```
+
+### 2. Backend-URL konfigurieren
+
+Passen Sie die Backend-URL in den Environment-Dateien an:
+
+**Entwicklung** (`src/environments/environment.ts`):
+```typescript
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:8080/api',
+  publicApiUrl: 'http://localhost:8080/api/public'
+};
+```
+
+**Produktion** (`src/environments/environment.prod.ts`):
+```typescript
+export const environment = {
+  production: true,
+  apiUrl: 'https://api.markt.ma/api',
+  publicApiUrl: 'https://api.markt.ma/api/public'
+};
+```
+
+## 🚀 Entwicklung
+
+### Entwicklungsserver starten
+
+```bash
+npm start
+```
+
+Die Anwendung ist unter `http://localhost:4200` erreichbar.
+
+Die Anwendung lädt automatisch neu, wenn Sie Änderungen an den Quelldateien vornehmen.
+
+### Build für Produktion
+
+```bash
+npm run build:prod
+```
+
+Die Build-Artefakte werden im Verzeichnis `dist/markt-ma-frontend` gespeichert.
+
+## 📁 Projektstruktur
+
+```
+storeFrontend/
+├── src/
+│   ├── app/
+│   │   ├── core/                    # Kern-Module (singleton services)
+│   │   │   ├── guards/              # Route Guards (authGuard)
+│   │   │   ├── interceptors/        # HTTP Interceptors (JWT, Error Handling)
+│   │   │   ├── models/              # TypeScript Interfaces & Models
+│   │   │   └── services/            # API Services
+│   │   │       ├── auth.service.ts
+│   │   │       ├── store.service.ts
+│   │   │       ├── product.service.ts
+│   │   │       ├── order.service.ts
+│   │   │       ├── domain.service.ts
+│   │   │       ├── category.service.ts
+│   │   │       ├── media.service.ts
+│   │   │       └── public-api.service.ts
+│   │   ├── features/                # Feature-Module
+│   │   │   ├── auth/                # Login & Registrierung
+│   │   │   ├── dashboard/           # Haupt-Dashboard
+│   │   │   ├── stores/              # Store-Verwaltung
+│   │   │   ├── products/            # Produkt-Verwaltung
+│   │   │   └── orders/              # Bestellverwaltung
+│   │   ├── shared/                  # Gemeinsam genutzte Komponenten
+│   │   ├── app.component.ts         # Root Component
+│   │   ├── app.routes.ts            # Routing-Konfiguration
+│   │   └── app.config.ts            # App-Konfiguration
+│   ├── assets/                      # Statische Assets (Bilder, Icons)
+│   ├── environments/                # Environment-Konfigurationen
+│   ├── index.html                   # Haupt-HTML
+│   ├── main.ts                      # App Bootstrap
+│   └── styles.scss                  # Globale Styles
+├── angular.json                     # Angular CLI Konfiguration
+├── package.json                     # NPM Dependencies
+├── tsconfig.json                    # TypeScript Konfiguration
+└── README.md                        # Diese Datei
+```
+
+## 🔌 API Integration
+
+### Services
+
+Alle Services befinden sich unter `src/app/core/services/` und konsumieren das Backend:
+
+#### AuthService
+```typescript
+- register(request: RegisterRequest): Observable<AuthResponse>
+- login(request: LoginRequest): Observable<AuthResponse>
+- logout(): void
+- getMe(): Observable<User>
+- isAuthenticated(): boolean
+```
+
+#### StoreService
+```typescript
+- getMyStores(): Observable<Store[]>
+- createStore(request: CreateStoreRequest): Observable<Store>
+- updateStore(storeId, request): Observable<Store>
+- deleteStore(storeId): Observable<void>
+```
+
+#### ProductService
+```typescript
+- getProducts(storeId, status?): Observable<Product[]>
+- getProduct(storeId, productId): Observable<Product>
+- createProduct(storeId, request): Observable<Product>
+- updateProduct(storeId, productId, request): Observable<Product>
+- deleteProduct(storeId, productId): Observable<void>
+```
+
+#### OrderService
+```typescript
+- getOrders(storeId, status?): Observable<Order[]>
+- getOrder(storeId, orderId): Observable<Order>
+- updateOrderStatus(storeId, orderId, status, note?): Observable<Order>
+```
+
+#### DomainService
+```typescript
+- getDomains(storeId): Observable<Domain[]>
+- createDomain(storeId, request): Observable<Domain>
+- deleteDomain(storeId, domainId): Observable<void>
+```
+
+#### PublicApiService (für Storefront)
+```typescript
+- resolveStore(host): Observable<PublicStore>
+- getCart(sessionId): Observable<Cart>
+- addToCart(request): Observable<Cart>
+- checkout(request): Observable<Order>
+```
+
+## 🔐 Authentifizierung
+
+Das Frontend verwendet JWT-basierte Authentifizierung:
+
+1. **Login**: POST zu `/api/auth/login` → erhält JWT Token
+2. **Token-Speicherung**: Token wird in localStorage gespeichert
+3. **HTTP Interceptor**: Fügt automatisch `Authorization: Bearer <token>` zu allen Requests hinzu
+4. **Route Guards**: Schützen geschützte Routen (Dashboard, Store-Management)
+
+## 🎨 Styling
+
+- **CSS Framework**: Custom SCSS (kein externes Framework)
+- **Design System**: Konsistente Farben und Komponenten
+- **Responsive**: Mobile-First Approach
+
+### Haupt-Farben
+```scss
+Primary: #667eea (Lila/Blau)
+Secondary: #764ba2
+Success: #28a745
+Danger: #dc3545
+Warning: #ffc107
+```
+
+## 📡 Backend-Verbindung
+
+Stellen Sie sicher, dass Ihr Backend läuft:
+
+```bash
+# Im Backend-Verzeichnis (storeBackend/)
+mvn spring-boot:run
+```
+
+Backend sollte unter `http://localhost:8080` erreichbar sein.
+
+## 🧪 Testing
+
+```bash
+# Unit Tests ausführen
+npm test
+
+# E2E Tests (falls konfiguriert)
+npm run e2e
+```
+
+## 📦 Deployment
+
+### 1. Production Build erstellen
+
+```bash
+npm run build:prod
+```
+
+### 2. Build-Output deployen
+
+Der Inhalt von `dist/markt-ma-frontend/` kann auf jeden Webserver deployed werden:
+
+- **Nginx**
+- **Apache**
+- **AWS S3 + CloudFront**
+- **Netlify**
+- **Vercel**
+
+### Nginx Beispiel-Konfiguration
+
+```nginx
+server {
+    listen 80;
+    server_name app.markt.ma;
+
+    root /var/www/markt-ma-frontend;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # API Proxy zum Backend
+    location /api/ {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+## 🔧 Troubleshooting
+
+### CORS-Fehler
+
+Wenn Sie CORS-Fehler erhalten, stellen Sie sicher, dass Ihr Backend CORS richtig konfiguriert hat:
+
+```java
+// In Spring Boot Backend (SecurityConfig.java)
+@Bean
+public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200", "https://app.markt.ma"));
+    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(Arrays.asList("*"));
+    configuration.setAllowCredentials(true);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
+}
+```
+
+### Backend-Verbindung fehlgeschlagen
+
+1. Überprüfen Sie, ob das Backend läuft: `http://localhost:8080/api/auth/login`
+2. Überprüfen Sie die `environment.ts` Konfiguration
+3. Prüfen Sie die Browser-Konsole auf Fehler
+
+## 🤝 Zusammenarbeit mit dem Backend
+
+Dieses Frontend ist speziell für Ihr Spring Boot Backend entwickelt:
+
+**Backend-Repository**: `storeBackend/`
+**Frontend-Repository**: `storeFrontend/` (dieses Projekt)
+
+### Typische Entwicklung-Workflow
+
+1. **Backend starten**: `mvn spring-boot:run` (Port 8080)
+2. **Frontend starten**: `npm start` (Port 4200)
+3. **Testen**: API-Aufrufe über Frontend-UI
+4. **Debuggen**: Browser DevTools + Backend Logs
+
+## 📚 Weitere Ressourcen
+
+- [Angular Dokumentation](https://angular.io/docs)
+- [RxJS Dokumentation](https://rxjs.dev/)
+- [TypeScript Handbuch](https://www.typescriptlang.org/docs/)
+
+## 🆘 Support
+
+Bei Fragen oder Problemen:
+
+1. Überprüfen Sie die Backend-Logs
+2. Überprüfen Sie die Browser-Konsole
+3. Testen Sie die API-Endpoints direkt (z.B. mit Postman oder der `ecommerce-test.http` Datei)
+
+## 📝 Lizenz
+
+Proprietary - markt.ma Platform
+
+---
+
+**Entwickelt für markt.ma - Multi-Tenant E-Commerce SaaS Platform**
+

@@ -1,0 +1,131 @@
+<!-- Modern Storefront Layout (idealo.de inspired) -->
+<div class="modern-storefront">
+  <!-- Top Bar (Language Selection, etc.) -->
+  <app-top-bar></app-top-bar>
+
+  <!-- Modern Store Header -->
+  <app-modern-store-header
+    [storeName]="store?.name || 'Online Shop'"
+    [cartItemCount]="cartItemCount"
+    [showSearch]="true"
+    [showAccount]="true"
+    (cartClick)="goToCart()"
+    (searchChange)="onSearchChange($event)">
+  </app-modern-store-header>
+
+  <!-- Hero Section (Store Slider) -->
+  <div class="hero-section">
+    <app-store-slider-viewer
+      *ngIf="storeId && !loading"
+      [storeId]="storeId">
+    </app-store-slider-viewer>
+  </div>
+
+  <!-- Featured Products (Before Main Content) -->
+  <div class="featured-sections" *ngIf="!selectedCategory && !loading">
+    <app-featured-products
+      [storeId]="storeId"
+      type="featured"
+      [limit]="8">
+    </app-featured-products>
+
+    <app-featured-products
+      [storeId]="storeId"
+      type="top"
+      [limit]="8">
+    </app-featured-products>
+
+    <app-featured-products
+      [storeId]="storeId"
+      type="new"
+      [limit]="8">
+    </app-featured-products>
+  </div>
+
+  <!-- Main Store Layout with Sidebar -->
+  <app-store-layout>
+    <!-- Sidebar: Categories -->
+    <div sidebar>
+      <app-store-sidebar
+        [categories]="categories"
+        [selectedCategory]="selectedCategory"
+        (categorySelect)="selectCategory($event)">
+      </app-store-sidebar>
+    </div>
+
+    <!-- Main Content: Product Grid -->
+    <div main>
+      <app-product-grid
+        [products]="displayedProducts || filteredProducts"
+        [loading]="loading"
+        [title]="selectedCategory ? selectedCategory.name : (searchQuery ? 'Suchergebnisse' : 'Alle Produkte')"
+        [emptyTitle]="searchQuery ? 'Keine Suchergebnisse' : 'Keine Produkte gefunden'"
+        [emptyMessage]="searchQuery ? 'Versuche es mit anderen Suchbegriffen.' : 'In dieser Kategorie sind aktuell keine Produkte verfügbar.'">
+
+        <!-- Product Cards -->
+        <app-modern-product-card
+          *ngFor="let product of displayedProducts || filteredProducts"
+          [product]="product"
+          [isAddingToCart]="addingToCart"
+          [showDescription]="true"
+          (addToCart)="addToCart($event)"
+          (quickView)="openQuickView($event)">
+        </app-modern-product-card>
+      </app-product-grid>
+    </div>
+  </app-store-layout>
+
+  <!-- QuickView Modal (unchanged) -->
+  <app-product-quick-view
+    [product]="quickViewProduct"
+    [isOpen]="quickViewOpen"
+    (close)="closeQuickView()"
+    (addToCartEvent)="onQuickViewAddToCart($event)"
+    (viewDetailsEvent)="onQuickViewDetails($event)">
+  </app-product-quick-view>
+
+  <!-- Footer -->
+  <footer class="modern-footer">
+    <div class="footer-container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h4>{{ store?.name || 'Online Shop' }}</h4>
+          <p class="footer-tagline">Powered by markt.ma</p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Kategorien</h4>
+          <ul class="footer-links">
+            <li *ngFor="let category of categories">
+              <a (click)="selectCategory(category)">{{ category.name }}</a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Informationen</h4>
+          <ul class="footer-links">
+            <li><a>Impressum</a></li>
+            <li><a>Datenschutz</a></li>
+            <li><a>AGB</a></li>
+            <li><a>Versand & Zahlung</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Kontakt</h4>
+          <ul class="footer-links">
+            <li><a>Kontaktformular</a></li>
+            <li><a>FAQ</a></li>
+            <li><a>Support</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2025 {{ store?.name || 'markt.ma' }}. Alle Rechte vorbehalten.</p>
+      </div>
+    </div>
+  </footer>
+</div>
+

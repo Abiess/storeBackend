@@ -1,0 +1,325 @@
+spring:
+  application:
+    name: storeBackend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/storedb
+    username: storeapp
+    # from SPRING_DATASOURCE_PASSWORD env var or /etc/storebackend.env
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 3
+      connection-timeout: 20000
+      idle-timeout: 300000
+      data-source-properties:
+        currentSchema: public
+
+  jpa:
+    hibernate:
+      # 'update' = additive Schema-Änderungen (neue Spalten/Tabellen werden angelegt,
+      # bestehende Daten bleiben erhalten). NIE 'create' oder 'create-drop' in Production!
+      # Override per ENV: SPRING_JPA_HIBERNATE_DDL_AUTO=validate (z.B. nach Flyway-Einführung)
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: false  # In Production: false (performance)
+    open-in-view: false  # Prevents lazy-loading issues
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+
+  sql:
+    init:
+      mode: never  # Disable schema.sql - Hibernate creates schema from Entities
+
+  servlet:
+    multipart:
+      # Siehe application.yml: Frontend erlaubt bis 15MB (Kamera-Fotos), Backend musste >= sein.
+      max-file-size: 20MB
+      max-request-size: 20MB
+
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:markt.ma.noreply@gmail.com}
+    password: ${SMTP_PASS:gpyg clwa icva gteq}
+    from: ${MAIL_FROM:noreply@markt.ma}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+server:
+  port: ${SERVER_PORT:8080}
+  tomcat:
+    threads:
+      max: 100
+      min-spare: 20
+
+# Management & Health Check Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always  # Show details for debugging
+      probes:
+        enabled: true
+  health:
+    # ONLY PostgreSQL and DiskSpace enabled - everything else off!
+    defaults:
+      enabled: false  # IMPORTANT: Disable all other health checks by default
+    db:
+      enabled: true  # Only PostgreSQL
+    diskSpace:
+      enabled: true
+      threshold: 10MB
+    ping:
+      enabled: true  # Einfacher Ping
+    # Explizit alle anderen deaktivieren
+    mail:
+      enabled: false  # No SMTP health check (prevents 503)
+    mongo:
+      enabled: false  # No MongoDB
+    redis:
+      enabled: false  # No Redis
+    cassandra:
+      enabled: false
+    couchbase:
+      enabled: false
+    elasticsearch:
+      enabled: false
+    influxdb:
+      enabled: false
+    jms:
+      enabled: false
+    ldap:
+      enabled: false
+    neo4j:
+      enabled: false
+    rabbit:
+      enabled: false
+    solr:
+      enabled: false
+  health.livenessState.enabled: true
+  health.readinessState.enabled: true
+
+# Logging for Production
+logging:
+  level:
+    root: INFO
+    storebackend: INFO
+    # Security/JWT: WARN verhindert Log-Spam pro Request (alle INFO sind jetzt DEBUG)
+    storebackend.security: WARN
+    org.springframework.security: WARN  # war: INFO
+    org.hibernate: INFO
+    # Actuator Health: WARN statt DEBUG – kein Health-Spam alle 15s
+    org.springframework.boot.actuate.health: WARN  # war: DEBUG
+
+# Swagger/OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    tryItOutEnabled: true
+
+jwt:
+  secret: ${JWT_SECRET:change-me-in-production}
+  expiration: 604800000  # 7 Tage (war: 86400000 = 1 Tag)
+
+# WhatsApp Cloud API (Meta / Facebook)
+# Phone Number ID and Access Token from Meta Developer Portal
+whatsapp:
+  enabled: ${WHATSAPP_ENABLED:true}
+  order-template-name: ${WHATSAPP_ORDER_TEMPLATE_NAME:order_confirmation_de}
+  order-template-lang: ${WHATSAPP_ORDER_TEMPLATE_LANG:de}
+  phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:1083661678159369}
+  access-token: ${WHATSAPP_ACCESS_TOKEN:EAAUgAfPZCuroBRYon0KaFhgUXfJGIhTsno4ZC6wqIZC3dWAKaDBg3CY2t1zfnRTZADypLErxqbzYE1lAZA9JOXhpWVojZBHAvTUtVwZAmZAiXPznazCLfmZCn42RdzCFevr5ZCb9HeNUIEZByAz2sOoQ9ZBsQxwAvSGe0z2oSZCaH7I9Br5ZAkVyh4ZB6kaNthPZCRnehjqxJQuZA7C8cR4drLUnTqZAzlKDBLu2Gx58RWOiGxIGpqYc6PRetkXHssgKXJnuttRx4jYA7aoTojX0FJyG5zqverfpkZD}
+  # Optional: approved template for verification code
+  # Leave empty = plain text message (only for verified test numbers)
+  verification-template-name: ${WHATSAPP_TEMPLATE_NAME:}
+  verification-template-lang: ${WHATSAPP_TEMPLATE_LANG:de}
+
+# Phone Verification Settings
+verification:
+  code:
+    expiry-minutes: 10
+  max-attempts: 3
+  rate-limit-minutes: 1
+
+# Spring Mail Configuration for Email-Verification
+mail:
+  enabled: ${MAIL_ENABLED:true}
+
+# Base URL for Verification-Links
+app:
+  base-url: ${APP_BASE_URL:https://markt.ma}
+  subscription:
+    cron:
+      renewal: ${APP_SUB_CRON_RENEWAL:0 0 2 * * *}
+      trial: ${APP_SUB_CRON_TRIAL:0 30 2 * * *}
+      reminder: ${APP_SUB_CRON_REMINDER:0 0 9 * * *}
+  cart:
+    cron:
+      cleanup: ${APP_CART_CRON_CLEANUP:0 15 3 * * *}
+      reminder: ${APP_CART_CRON_REMINDER:0 0 10 * * *}
+    reminder:
+      idle-hours: ${APP_CART_REMINDER_IDLE_HOURS:24}
+
+minio:
+  enabled: ${MINIO_ENABLED:true}
+  public-endpoint:
+  access-key: ${MINIO_ACCESS_KEY:miniomarkt}
+  secret-key: ${MINIO_SECRET_KEY:miniopassword!}
+  bucket: ${MINIO_BUCKET:store-assets}
+  private-bucket: ${MINIO_PRIVATE_BUCKET:store-private-documents}
+  region: ${MINIO_REGION:us-east-1}
+
+  # endpoint is http internally - secure=false
+
+  endpoint: ${MINIO_ENDPOINT:https://minio.markt.ma}
+  secure: ${MINIO_SECURE:true}
+
+# Plattform-Default-Assets (Starter-Pack-Bilder Restaurant/Riad).
+# Öffentliche MinIO-Basis (Bucket store-assets, Prefix default-assets).
+markt:
+  assets:
+    default-base-url: ${MARKT_ASSETS_BASE_URL:https://minio.markt.ma/store-assets/default-assets}
+
+# CJ Dropshipping API Configuration (Production)
+cj:
+  api:
+    base-url: ${CJ_API_BASE_URL:https://developers.cjdropshipping.com/api2.0/v1}
+    timeout: ${CJ_API_TIMEOUT:30000}
+
+# Hugging Face API Configuration for AI Product Creation
+huggingface:
+  api:
+    key: ${HUGGINGFACE_API_KEY:}
+
+# OpenRouter AI – OpenAI-kompatibler Unified-AI-Zugang
+# Kostenlose Vision-Modelle: google/gemma-4-31b-it:free (Fallback: google/gemma-4-26b-a4b-it:free)
+# Key-Format: sk-or-v1-...  →  https://openrouter.ai/keys
+openrouter:
+  api:
+    key: ${OPENROUTER_API_KEY:}
+
+# Telegram Bot Auth (Phone-Verification via Telegram)
+telegram:
+  auth:
+    bot-token: ${TELEGRAM_AUTH_BOT_TOKEN:}
+    bot-username: ${TELEGRAM_AUTH_BOT_USERNAME:marktma_verify_bot}
+
+# AISStream – Live-AIS-Schiffsdaten (Maritime-Feature MVP, Tanger Med)
+# Key anlegen: https://aisstream.io/apikeys
+# SICHERHEIT: Key ausschließlich serverseitig, NIEMALS ins Frontend, Log oder Git!
+# Ohne Key ist das Feature deaktiviert (Backend startet normal, Status NOT_CONFIGURED).
+aisstream:
+  api-key: ${AISSTREAM_API_KEY:}
+
+# Invoice OCR Configuration (Tesseract)
+# WICHTIG: Tesseract muss auf dem Server installiert sein!
+# Installation: sudo apt-get install tesseract-ocr tesseract-ocr-deu tesseract-ocr-eng
+invoice:
+  ocr:
+    tesseract-command: ${INVOICE_OCR_TESSERACT_COMMAND:tesseract}
+    languages: ${INVOICE_OCR_LANGUAGES:deu+eng}
+    dpi: ${INVOICE_OCR_DPI:300}
+    psm-mode: ${INVOICE_OCR_PSM_MODE:6}
+    timeout-seconds: ${INVOICE_OCR_TIMEOUT_SECONDS:60}
+    max-pages: ${INVOICE_OCR_MAX_PAGES:20}
+    max-concurrent-jobs: ${INVOICE_OCR_MAX_CONCURRENT_JOBS:1}
+
+# DHL Parcel DE Shipping API (Production)
+# Developer Portal: https://developer.dhl.com/
+# WICHTIG: Client Secret NIEMALS committen!
+dhl:
+  enabled: ${DHL_ENABLED:false}
+  env: ${DHL_ENV:production}
+  client-id: ${DHL_CLIENT_ID:}
+  client-secret: ${DHL_CLIENT_SECRET:}
+  auth-url: ${DHL_AUTH_URL:https://api-eu.dhl.com/parcel/de/account/auth/ropc/v1/token}
+  shipping-base-url: ${DHL_SHIPPING_BASE_URL:https://api-eu.dhl.com/parcel/de/shipping/v2}
+  sandbox-username: ${DHL_SANDBOX_USERNAME:}
+  sandbox-password: ${DHL_SANDBOX_PASSWORD:}
+  default-profile: ${DHL_DEFAULT_PROFILE:STANDARD_GRUPPENPROFIL}
+  default-product: ${DHL_DEFAULT_PRODUCT:V01PAK}
+  default-billing-number: ${DHL_DEFAULT_BILLING_NUMBER:}
+  timeout: ${DHL_TIMEOUT:30000}
+  token-cache-duration: ${DHL_TOKEN_CACHE_DURATION:82800}
+  default-weight-grams: ${DHL_DEFAULT_WEIGHT_GRAMS:1000}
+  default-length-mm: ${DHL_DEFAULT_LENGTH_MM:300}
+  default-width-mm: ${DHL_DEFAULT_WIDTH_MM:200}
+  default-height-mm: ${DHL_DEFAULT_HEIGHT_MM:150}
+  sandbox-shipper-name: ${DHL_SANDBOX_SHIPPER_NAME:Test Store}
+  sandbox-shipper-street: ${DHL_SANDBOX_SHIPPER_STREET:Musterstraße}
+  sandbox-shipper-house-number: ${DHL_SANDBOX_SHIPPER_HOUSE_NUMBER:1}
+  sandbox-shipper-postal-code: ${DHL_SANDBOX_SHIPPER_POSTAL_CODE:53113}
+  sandbox-shipper-city: ${DHL_SANDBOX_SHIPPER_CITY:Bonn}
+  sandbox-shipper-country: ${DHL_SANDBOX_SHIPPER_COUNTRY:DE}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PayPal Payment Integration (Production-Server, aber Sandbox-Modus für Tests)
+# ═══════════════════════════════════════════════════════════════════════════
+# WICHTIG: In Production aktuell SANDBOX-Modus für Tests!
+# Client-ID und Secret aus PayPal Developer Dashboard:
+# https://developer.paypal.com/dashboard/applications
+# SICHERHEIT: Client Secret NIEMALS ins Git committen!
+paypal:
+  client-id: ${PAYPAL_CLIENT_ID:}
+  client-secret: ${PAYPAL_CLIENT_SECRET:}
+  mode: ${PAYPAL_MODE:sandbox}  # SANDBOX für Tests (später auf "live" umstellen!)
+  
+  # Sandbox-Buyer-Email für Pre-Fill im PayPal-Checkout
+  # Testkonto: test@markt.ma (Passwort separat dokumentiert)
+  sandbox-buyer-email: ${PAYPAL_SANDBOX_BUYER_EMAIL:test@markt.ma}
+  
+  # Webhook-IDs für verschiedene Modi
+  # Sandbox-Webhook URL: https://api.markt.ma/api/payments/paypal/webhook
+  webhook:
+    sandbox-id: ${PAYPAL_WEBHOOK_SANDBOX_ID:}
+    live-id: ${PAYPAL_WEBHOOK_LIVE_ID:}
+
+# Email Verification Configuration
+email:
+  verification:
+    skip-for-login: ${EMAIL_VERIFICATION_SKIP:false}
+
+# CAPTCHA Configuration (Bot-Schutz für Registrierung, Login, Password-Reset)
+# Provider: hcaptcha (empfohlen, DSGVO-konform) oder recaptcha
+# hCaptcha Setup: https://www.hcaptcha.com/ (kostenlos, DSGVO-konform)
+# reCAPTCHA Setup: https://www.google.com/recaptcha/admin (Google, v3)
+# WICHTIG: CAPTCHA_SECRET ist der SECRET KEY (serverseitig, NIEMALS im Frontend!)
+captcha:
+  enabled: ${CAPTCHA_ENABLED:true}
+  provider: ${CAPTCHA_PROVIDER:hcaptcha}
+  secret: ${CAPTCHA_SECRET:}
+  min-score: ${CAPTCHA_MIN_SCORE:0.5}
+
+# Unsplash API Configuration
+# Key anlegen: https://unsplash.com/developers
+# Production-Key (5.000 req/h) über Unsplash-Support beantragen.
+# SICHERHEIT: Dieser Key darf NIEMALS ins Angular-Frontend oder Git gelangen!
+unsplash:
+  api:
+    key: ${UNSPLASH_ACCESS_KEY:}
+    base-url: https://api.unsplash.com
+    results-per-page: 12

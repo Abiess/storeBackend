@@ -1,0 +1,541 @@
+package storebackend.controller;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import storebackend.entity.*;
+import storebackend.repository.*;
+import storebackend.service.MinioService;
+import storebackend.service.AuthService;
+import storebackend.service.ProductService;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
+
+/**
+ * Vereinfachter Warenkorb ohne Varianten
+ * Arbeitet direkt mit Produkten
+ * FIXED: Jetzt mit JWT-basierter User-Unterscheidung
+ */
+@RestController
+@RequestMapping("/api/public/simple-cart")
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
+@RequiredArgsConstructor
+@Slf4j
+public class SimpleCartController {
+
+    private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
+    private final ProductRepository productRepository;
+    private final StoreRepository storeRepository;
+    private final ProductVariantRepository productVariantRepository;
+    private final ProductMediaRepository productMediaRepository;
+    private final MinioService minioService;
+    private final ProductService productService;
+    private final AuthService authService;
+    private final UserRepository userRepository;
+
+    /**
+     * FIXED: Extrahiert User-ID aus JWT Token (falls vorhanden)
+     * Gibt null zurück für Guest-Benutzer
+     */
+    private Long extractUserIdFromRequest(String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            try {
+                String token = authHeader.substring(7);
+                Long userId = authService.getUserIdFromToken(token);
+                log.info("🔐 Authenticated user detected: {}", userId);
+                return userId;
+            } catch (Exception e) {
+                log.warn("⚠️ Invalid JWT token: {}", e.getMessage());
+                return null;
+            }
+        }
+        log.info("👤 Guest user detected (no token)");
+        return null;
+    }
+
+    /**
+     * Migriert einen Guest-Cart zu einem User-Cart
+     * Wird aufgerufen, wenn sich ein Guest nach dem Hinzufügen von Items anmeldet
+     */
+    private void migrateGuestCartToUser(String guestSessionId, Long userId, Long storeId) {
+        if (guestSessionId == null || guestSessionId.isEmpty()) {
+            log.info("⚠️ Keine Guest-Session vorhanden - keine Migration nötig");
+            return;
+        }
+
+        // Finde Guest-Cart
+        List<Cart> guestCarts = cartRepository.findBySessionIdAndStoreIdAndNotExpired(
+            guestSessionId, storeId, LocalDateTime.now()
+        );
+
+        if (guestCarts.isEmpty()) {
+            log.info("⚠️ Kein Guest-Cart gefunden für sessionId: {}", guestSessionId);
+            return;
+        }
+
+        Cart guestCart = guestCarts.get(0);
+        List<CartItem> guestItems = cartItemRepository.findByCartId(guestCart.getId());
+
+        if (guestItems.isEmpty()) {
+            log.info("⚠️ Guest-Cart ist leer - keine Migration nötig");
+            cartRepository.delete(guestCart); // Lösche leeren Guest-Cart
+            return;
+        }
+
+        log.info("🔄 Migriere Guest-Cart (sessionId: {}) zu User-Cart (userId: {})", guestSessionId, userId);
+        log.info("📦 Guest-Cart hat {} Items", guestItems.size());
+
+        // Finde oder erstelle User-Cart
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<Cart> userCarts = cartRepository.findByUserIdAndStoreIdAndNotExpired(
+            userId, storeId, LocalDateTime.now()
+        );
+
+        Cart userCart;
+        if (userCarts.isEmpty()) {
+            // Erstelle neuen User-Cart
+            log.info("➕ Erstelle neuen User-Cart für Migration");
+            userCart = new Cart();
+            userCart.setUser(user);
+            userCart.setSessionId(null);
+            userCart.setStore(storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found")));
+            userCart.setCreatedAt(LocalDateTime.now());
+            userCart.setUpdatedAt(LocalDateTime.now());
+            userCart.setExpiresAt(LocalDateTime.now().plusDays(30));
+            userCart = cartRepository.save(userCart);
+        } else {
+            userCart = userCarts.get(0);
+            log.info("✅ User-Cart existiert bereits: {}", userCart.getId());
+        }
+
+        // Migriere Items vom Guest-Cart zum User-Cart
+        int mergedCount = 0;
+        int addedCount = 0;
+
+        for (CartItem guestItem : guestItems) {
+            // Prüfe ob Item bereits im User-Cart existiert
+            Optional<CartItem> existingUserItem = cartItemRepository
+                .findByCartIdAndVariantId(userCart.getId(), guestItem.getVariant().getId());
+
+            if (existingUserItem.isPresent()) {
+                // Merge: Addiere Mengen
+                CartItem userItem = existingUserItem.get();
+                userItem.setQuantity(userItem.getQuantity() + guestItem.getQuantity());
+                cartItemRepository.save(userItem);
+                mergedCount++;
+                log.info("🔀 Merged Item: {} (Neue Menge: {})",
+                    guestItem.getVariant().getSku(), userItem.getQuantity());
+            } else {
+                // Neu: Erstelle Item im User-Cart
+                CartItem newUserItem = new CartItem();
+                newUserItem.setCart(userCart);
+                newUserItem.setProduct(guestItem.getProduct()); // FIXED: Set product reference
+                newUserItem.setVariant(guestItem.getVariant());
+                newUserItem.setQuantity(guestItem.getQuantity());
+                newUserItem.setPriceSnapshot(guestItem.getPriceSnapshot());
+                cartItemRepository.save(newUserItem);
+                addedCount++;
+                log.info("➕ Added Item: {} (Menge: {})",
+                    guestItem.getVariant().getSku(), guestItem.getQuantity());
+            }
+        }
+
+        // Lösche Guest-Cart und seine Items
+        cartItemRepository.deleteByCartId(guestCart.getId());
+        cartRepository.delete(guestCart);
+
+        log.info("✅ Cart-Migration abgeschlossen: {} Items gemerged, {} Items hinzugefügt",
+            mergedCount, addedCount);
+    }
+
+    // Findet oder erstellt Cart basierend auf User-ID oder Session-ID
+    // Für angemeldete User: Nur userId + storeId (sessionId ist OPTIONAL für Migration)
+    // Für Gäste: sessionId + storeId
+    private Cart findOrCreateCart(Long userId, Long storeId, String sessionId) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new RuntimeException("Store not found"));
+
+        if (userId != null) {
+            // USER CART: Prüfe ob User existiert
+            Optional<User> userOptional = userRepository.findById(userId);
+
+            if (!userOptional.isPresent()) {
+                log.warn("⚠️ User with ID {} not found in database - treating as guest", userId);
+                // FIXED: Behandle als Guest wenn User nicht existiert
+                if (sessionId == null || sessionId.isEmpty()) {
+                    // Generiere Fallback-SessionId
+                    sessionId = "user-fallback-" + userId + "-" + System.currentTimeMillis();
+                    log.info("🆕 Generated fallback sessionId: {}", sessionId);
+                }
+                // Weiter als Guest-Cart behandeln
+                userId = null;
+            }
+
+            // Wenn User existiert, verarbeite als User-Cart
+            if (userId != null) {
+                User user = userOptional.get();
+
+                // Prüfe ob Guest-Cart migriert werden muss
+                if (sessionId != null && !sessionId.isEmpty()) {
+                    log.info("🔍 Prüfe Guest-Cart-Migration für sessionId: {}", sessionId);
+                    migrateGuestCartToUser(sessionId, userId, storeId);
+                }
+
+                // USER CART: Nutze optimierte Query
+                log.info("🔍 Searching for user cart (userId: {}, storeId: {})", userId, storeId);
+                List<Cart> userCarts = cartRepository.findByUserIdAndStoreIdAndNotExpired(
+                        userId, storeId, LocalDateTime.now()
+                );
+
+                if (!userCarts.isEmpty()) {
+                    Cart cart = userCarts.get(0);
+                    int itemCount = cartItemRepository.findByCartId(cart.getId()).size();
+                    log.info("✅ Found existing user cart: {} (userId: {}, storeId: {}, has {} items)",
+                            cart.getId(), userId, storeId, itemCount);
+                    return cart;
+                }
+
+                // Erstelle neuen User-Cart OHNE sessionId
+                log.info("➕ Creating new user cart for userId: {}, storeId: {}", userId, storeId);
+                Cart cart = new Cart();
+                cart.setUser(user);
+                cart.setSessionId(null); // KEINE sessionId für angemeldete User!
+                cart.setStore(store);
+                cart.setCreatedAt(LocalDateTime.now());
+                cart.setUpdatedAt(LocalDateTime.now());
+                cart.setExpiresAt(LocalDateTime.now().plusDays(30)); // User-Carts länger gültig
+                Cart savedCart = cartRepository.save(cart);
+                log.info("✅ Created new user cart with ID: {}", savedCart.getId());
+                return savedCart;
+            }
+        }
+
+        // GUEST CART: Für nicht-angemeldete User oder wenn User nicht existiert
+        if (sessionId == null || sessionId.isEmpty()) {
+            log.error("❌ Guest user without sessionId - cannot create cart");
+            throw new RuntimeException("SessionId required for guest checkout");
+        }
+
+        log.info("🔍 Searching for guest cart (sessionId: {}, storeId: {})", sessionId, storeId);
+
+        // Nutze die optimierte Repository-Methode
+        List<Cart> guestCarts = cartRepository.findBySessionIdAndStoreIdAndNotExpired(
+                sessionId, storeId, LocalDateTime.now()
+        );
+
+        if (!guestCarts.isEmpty()) {
+            Cart cart = guestCarts.get(0);
+            int itemCount = cartItemRepository.findByCartId(cart.getId()).size();
+            log.info("✅ Found existing guest cart: {} (has {} items)", cart.getId(), itemCount);
+            return cart;
+        }
+
+        // Erstelle neuen Guest-Cart
+        log.info("➕ Creating new guest cart for sessionId: {}, storeId: {}", sessionId, storeId);
+        Cart cart = new Cart();
+        cart.setSessionId(sessionId);
+        cart.setStore(store);
+        cart.setCreatedAt(LocalDateTime.now());
+        cart.setUpdatedAt(LocalDateTime.now());
+        cart.setExpiresAt(LocalDateTime.now().plusDays(7)); // Guest-Carts kürzer gültig
+        Cart savedCart = cartRepository.save(cart);
+        log.info("✅ Created new guest cart with ID: {}", savedCart.getId());
+        return savedCart;
+    }
+
+
+
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> getCart(
+            @RequestParam Long storeId,
+            @RequestParam(required = false) String sessionId,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        try {
+            Long userId = extractUserIdFromRequest(authHeader);
+            log.info("🔍 Loading cart for storeId: {}, userId: {}, sessionId: {}", storeId, userId, sessionId);
+
+            Cart cart = findOrCreateCart(userId, storeId, sessionId);
+
+            log.info("📦 Loading items for cart ID: {}", cart.getId());
+            List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+            log.info("📦 Found {} items in cart", items.size());
+
+            // Konvertiere CartItems zu DTOs
+            List<Map<String, Object>> itemDTOs = items.stream()
+                    .map(item -> {
+                        Map<String, Object> dto = new java.util.HashMap<>();
+                        dto.put("id", item.getId());
+                        dto.put("quantity", item.getQuantity());
+                        dto.put("priceSnapshot", item.getPriceSnapshot()); // FIXED: Verwende getPriceSnapshot() statt getPrice()
+
+                        // FIXED: Behandle Items ohne Varianten (einfache Produkte)
+                        Product product = item.getProduct();
+                        if (product == null && item.getVariant() != null) {
+                            product = item.getVariant().getProduct();
+                        }
+
+                        if (product != null) {
+                            dto.put("productId", product.getId());
+                            dto.put("productTitle", product.getTitle());
+                            dto.put("productDescription", product.getDescription());
+
+                            // Füge Produktbild hinzu (nutzt zentrale Methode)
+                            try {
+                                String imageUrl = productService.resolveProductImageUrl(product);
+                                dto.put("imageUrl", imageUrl);
+                            } catch (Exception e) {
+                                log.warn("Could not load image for product {}: {}", product.getId(), e.getMessage());
+                                dto.put("imageUrl", null);
+                            }
+                        }
+
+                        // Füge Varianten-Informationen hinzu (falls vorhanden)
+                        if (item.getVariant() != null) {
+                            dto.put("variantId", item.getVariant().getId());
+                            dto.put("variantSku", item.getVariant().getSku());
+                        } else {
+                            dto.put("variantId", null);
+                            dto.put("variantSku", null);
+                        }
+
+                        return dto;
+                    })
+                    .toList();
+
+            BigDecimal subtotal = items.stream()
+                    .map(item -> {
+                        BigDecimal price = item.getPriceSnapshot() != null ? item.getPriceSnapshot() : BigDecimal.ZERO;
+                        return price.multiply(BigDecimal.valueOf(item.getQuantity()));
+                    })
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            int itemCount = items.stream().mapToInt(CartItem::getQuantity).sum();
+
+            log.info("✅ Returning cart with {} items, subtotal: {}", itemCount, subtotal);
+
+            return ResponseEntity.ok(Map.of(
+                "items", itemDTOs,
+                "itemCount", itemCount,
+                "subtotal", subtotal,
+                "cartId", cart.getId(),
+                "storeId", storeId,
+                "sessionId", cart.getSessionId() != null ? cart.getSessionId() : ""
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error loading cart for storeId {}: {}", storeId, e.getMessage(), e);
+            return ResponseEntity.ok(Map.of(
+                "items", List.of(),
+                "itemCount", 0,
+                "subtotal", 0,
+                "error", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * FIXED: Gibt die Anzahl der Items im Warenkorb zurück (User-spezifisch)
+     */
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Object>> getCartCount(
+            @RequestParam Long storeId,
+            @RequestParam(required = false) String sessionId,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        try {
+            Long userId = extractUserIdFromRequest(authHeader);
+
+            // Für angemeldete User: sessionId optional
+            if (userId != null) {
+                Cart cart = findOrCreateCart(userId, storeId, null);
+                List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+                int itemCount = items.stream().mapToInt(CartItem::getQuantity).sum();
+                log.info("✅ Cart count for userId: {}, storeId: {} = {}", userId, storeId, itemCount);
+                return ResponseEntity.ok(Map.of("count", itemCount));
+            }
+
+            // Für Gäste: sessionId erforderlich
+            if (sessionId == null || sessionId.isEmpty()) {
+                log.warn("⚠️ Guest user without sessionId");
+                return ResponseEntity.ok(Map.of("count", 0));
+            }
+
+            Cart cart = findOrCreateCart(null, storeId, sessionId);
+            List<CartItem> items = cartItemRepository.findByCartId(cart.getId());
+            int itemCount = items.stream().mapToInt(CartItem::getQuantity).sum();
+            log.info("✅ Cart count for guest (sessionId: {}), storeId: {} = {}", sessionId, storeId, itemCount);
+            return ResponseEntity.ok(Map.of("count", itemCount));
+        } catch (Exception e) {
+            log.error("Error getting cart count for storeId {}: {}", storeId, e.getMessage());
+            return ResponseEntity.ok(Map.of("count", 0));
+        }
+    }
+
+    @PostMapping("/items")
+    public ResponseEntity<?> addItemToCart(
+            @RequestBody Map<String, Object> request,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        try {
+            Long userId = extractUserIdFromRequest(authHeader);
+            Object storeIdRaw = request.get("storeId");
+            Object productIdRaw = request.get("productId");
+            if (storeIdRaw == null) throw new RuntimeException("storeId is required");
+            if (productIdRaw == null) throw new RuntimeException("productId is required");
+            Long storeId = Long.valueOf(storeIdRaw.toString());
+            Long productId = Long.valueOf(productIdRaw.toString());
+            Integer quantity = Integer.valueOf(request.getOrDefault("quantity", 1).toString());
+            String sessionId = (String) request.get("sessionId");
+
+            log.info("📥 Adding item to cart: productId={}, quantity={}, storeId={}, userId={}, sessionId={}",
+                productId, quantity, storeId, userId, sessionId);
+
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new RuntimeException("Product not found"));
+
+            Cart cart = findOrCreateCart(userId, storeId, sessionId);
+            log.info("🛒 Using cart ID: {}", cart.getId());
+
+            // Default-Variante holen oder erstellen (variant_id darf nicht NULL sein in DB)
+            ProductVariant defaultVariant = getOrCreateDefaultVariant(product);
+
+            // Suche nach existierendem Item mit gleicher Variante
+            Optional<CartItem> existingItem = cartItemRepository
+                    .findByCartIdAndVariantId(cart.getId(), defaultVariant.getId());
+
+            CartItem cartItem;
+            if (existingItem.isPresent()) {
+                // Item existiert bereits - Menge erhöhen
+                cartItem = existingItem.get();
+                int oldQuantity = cartItem.getQuantity();
+                cartItem.setQuantity(oldQuantity + quantity);
+                cartItemRepository.save(cartItem);
+                log.info("✅ Updated existing cart item {} (quantity: {} -> {})",
+                    cartItem.getId(), oldQuantity, cartItem.getQuantity());
+            } else {
+                // Neues Item hinzufügen
+                cartItem = new CartItem();
+                cartItem.setCart(cart);
+                cartItem.setProduct(product);
+                cartItem.setVariant(defaultVariant);
+                cartItem.setQuantity(quantity);
+                // FIXED: Varianten-Price hat Vorrang vor Base-Price
+                cartItem.setPriceSnapshot(defaultVariant.getPrice() != null ? defaultVariant.getPrice() : product.getBasePrice());
+                cartItemRepository.save(cartItem);
+                log.info("✅ Added new cart item {} to cart {}", cartItem.getId(), cart.getId());
+            }
+
+            // Berechne aktuelle Cart-Statistiken
+            List<CartItem> allItems = cartItemRepository.findByCartId(cart.getId());
+            int totalItemCount = allItems.stream().mapToInt(CartItem::getQuantity).sum();
+            BigDecimal subtotal = allItems.stream()
+                .map(item -> {
+                    BigDecimal price = item.getPriceSnapshot() != null ? item.getPriceSnapshot() : BigDecimal.ZERO;
+                    return price.multiply(BigDecimal.valueOf(item.getQuantity()));
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            log.info("✅ Cart now contains {} items (total quantity), subtotal: {}", totalItemCount, subtotal);
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Product added to cart",
+                "cartId", cart.getId(),
+                "sessionId", cart.getSessionId() != null ? cart.getSessionId() : "",
+                "itemCount", totalItemCount,
+                "subtotal", subtotal,
+                "cartItemId", cartItem.getId()
+            ));
+
+        } catch (Exception e) {
+            log.error("❌ Error adding item to cart: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * FIXED: Erstellt oder lädt die Default-Variante für ein Produkt.
+     * MEMORY-FIX: Ersetzt findAll()-Tabellenscan durch gezielten DB-Lookup (product_id + sku).
+     */
+    private ProductVariant getOrCreateDefaultVariant(Product product) {
+        String defaultSku = "DEFAULT-" + product.getId();
+
+        // Gezielter Lookup – kein findAll() mehr
+        Optional<ProductVariant> existing = productVariantRepository.findByProduct_IdAndSku(
+            product.getId(), defaultSku);
+
+        if (existing.isPresent()) {
+            log.debug("Found existing default variant for product {}", product.getId());
+            return existing.get();
+        }
+
+        // Erstelle neue Default-Variante in der Datenbank
+        log.info("Creating default variant for product {}", product.getId());
+        ProductVariant variant = new ProductVariant();
+        variant.setProduct(product);
+        variant.setSku(defaultSku);
+        variant.setPrice(product.getBasePrice());
+        variant.setStockQuantity(999); // Hoher Lagerbestand für Default-Varianten
+
+        return productVariantRepository.save(variant);
+    }
+
+    @PutMapping("/items/{itemId}")
+    public ResponseEntity<?> updateCartItem(
+            @PathVariable Long itemId,
+            @RequestBody Map<String, Object> request) {
+        try {
+            Object qtyRaw = request.get("quantity");
+            if (qtyRaw == null) throw new RuntimeException("quantity is required");
+            Integer quantity = Integer.valueOf(qtyRaw.toString());
+
+            CartItem item = cartItemRepository.findById(itemId)
+                    .orElseThrow(() -> new RuntimeException("Cart item not found"));
+
+            if (quantity <= 0) {
+                cartItemRepository.delete(item);
+                return ResponseEntity.ok(Map.of("success", true, "message", "Item removed"));
+            }
+
+            item.setQuantity(quantity);
+            cartItemRepository.save(item);
+
+            return ResponseEntity.ok(Map.of("success", true, "item", item));
+        } catch (Exception e) {
+            log.error("Error updating cart item: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    @DeleteMapping("/items/{itemId}")
+    public ResponseEntity<Void> removeCartItem(@PathVariable Long itemId) {
+        cartItemRepository.deleteById(itemId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/clear")
+    public ResponseEntity<Void> clearCart(@RequestParam Long storeId) {
+        try {
+            // MEMORY-FIX: Gezielter Lookup nach storeId statt findAll()
+            List<Cart> storeCarts = cartRepository.findByStore_Id(storeId);
+
+            if (!storeCarts.isEmpty()) {
+                Cart cart = storeCarts.get(0);
+                cartItemRepository.deleteByCartId(cart.getId());
+            }
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+}

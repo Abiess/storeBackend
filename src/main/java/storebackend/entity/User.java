@@ -1,0 +1,189 @@
+package storebackend.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import storebackend.enums.Role;
+import storebackend.util.EmailNormalizer;
+
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
+@Entity
+@Table(name = "users")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(name = "name")
+    private String name;
+
+    @JsonIgnore  // SECURITY: Niemals den Password-Hash in API-Responses zurückgeben!
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Enumerated(EnumType.STRING)
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "role")
+    private Set<Role> roles = new HashSet<>();
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "plan_id", nullable = true)  // Plan ist optional
+    private Plan plan;
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    @Column(name = "email_verified", nullable = false)
+    private Boolean emailVerified = false;
+    
+    /** Zeitpunkt des letzten Versands einer Aktivierungs-/Verifizierungs-Mail */
+    @Column(name = "activation_email_sent_at")
+    private LocalDateTime activationEmailSentAt;
+
+    @Column(name = "preferred_language", length = 5, nullable = false)
+    private String preferredLanguage = "en";
+
+    /** Telefonnummer für WhatsApp/Telegram-Auth (nullable für bestehende E-Mail-User) */
+    @Column(name = "phone_number", length = 20, nullable = true, unique = true)
+    private String phoneNumber;
+
+    /** Anzahl AI-Calls (Bildgenerierung etc.) im aktuellen Monat. */
+    @Column(name = "ai_calls_this_month", nullable = false)
+    private Integer aiCallsThisMonth = 0;
+
+    /** Wird bei Monatswechsel zurückgesetzt – speichert den ersten Tag des Zähl-Monats. */
+    @Column(name = "ai_calls_period_start")
+    private LocalDateTime aiCallsPeriodStart;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    // Explizite Getter/Setter für Lombok-Kompatibilität
+    public Long getId() {
+        return id;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    /**
+     * SECURITY/DATA-INTEGRITY: Normalisiert die E-Mail IMMER zentral über
+     * {@link EmailNormalizer#normalize(String)} (trim + lowercase), egal von
+     * wo der User erzeugt/aktualisiert wird (Registrierung, Phone-Auth,
+     * anonyme Store-Erstellung, WooCommerce-Import, ...). Verhindert
+     * Duplikate wie z.B. "essoudati@hotmail.de" vs. "Essoudati@hotmail.de".
+     */
+    public void setEmail(String email) {
+        this.email = EmailNormalizer.normalize(email);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+    }
+
+    public Plan getPlan() {
+        return plan;
+    }
+
+    public void setPlan(Plan plan) {
+        this.plan = plan;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    // Helper methods for name handling
+    public String getFirstName() {
+        if (name == null || name.trim().isEmpty()) {
+            return "User";
+        }
+        String[] parts = name.trim().split("\\s+", 2);
+        return parts[0];
+    }
+
+    public String getLastName() {
+        if (name == null || name.trim().isEmpty()) {
+            return "";
+        }
+        String[] parts = name.trim().split("\\s+", 2);
+        return parts.length > 1 ? parts[1] : "";
+    }
+
+    public String getPreferredLanguage() {
+        return preferredLanguage != null ? preferredLanguage : "en";
+    }
+
+    public void setPreferredLanguage(String preferredLanguage) {
+        if (preferredLanguage != null && Set.of("de", "en", "ar").contains(preferredLanguage.toLowerCase())) {
+            this.preferredLanguage = preferredLanguage.toLowerCase();
+        } else {
+            this.preferredLanguage = "en";
+        }
+    }
+
+    /**
+     * SECURITY: Override toString() um zu verhindern, dass Lombok's @Data
+     * den passwordHash in Logs ausgibt.
+     */
+    @Override
+    public String toString() {
+        return "User{" +
+            "id=" + id +
+            ", email='" + email + '\'' +
+            ", name='" + name + '\'' +
+            ", roles=" + roles +
+            ", emailVerified=" + emailVerified +
+            ", preferredLanguage='" + preferredLanguage + '\'' +
+            ", phoneNumber='" + (phoneNumber != null ? "[REDACTED]" : null) + '\'' +
+            '}';
+    }
+}

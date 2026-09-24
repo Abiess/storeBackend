@@ -1,0 +1,143 @@
+/* ═══════════════════════════════════════════════════════
+   Filter Bar Component – Design-Token-basiert
+   Shopify/Polaris-inspiriert
+═══════════════════════════════════════════════════════ */
+
+.filter-bar {
+  display: flex;
+  gap: var(--space-2, 0.5rem);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-6, 1.5rem);
+}
+
+/* ─── Filter Chip (Button) ─────────────────────────── */
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1, 0.25rem);
+  padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+  border-radius: var(--radius-full, 20px);
+  border: 1px solid var(--theme-border, #e1e3e5);
+  background: var(--theme-surface, white);
+  color: var(--theme-text-subdued, #6b7280);
+  font-size: var(--theme-font-size-sm, 0.8125rem);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: var(--shadow-xs);
+  white-space: nowrap;
+
+  &:hover {
+    border-color: var(--theme-primary, #667eea);
+    color: var(--theme-primary, #667eea);
+    background: var(--theme-surface-hovered, #fafbfb);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--theme-primary, #667eea);
+    outline-offset: 2px;
+  }
+}
+
+/* ─── Active State ─────────────────────────────────── */
+.filter-chip--active {
+  background: var(--theme-primary, #667eea);
+  color: var(--theme-primary-contrast, white);
+  border-color: var(--theme-primary, #667eea);
+  box-shadow: var(--shadow-sm);
+
+  &:hover {
+    background: var(--theme-primary, #667eea);
+    color: var(--theme-primary-contrast, white);
+    opacity: 0.95;
+  }
+}
+
+/* ─── Filter Chip Elemente ─────────────────────────── */
+.filter-chip__icon {
+  font-size: var(--theme-font-size-base, 0.875rem);
+  line-height: 1;
+}
+
+.filter-chip__label {
+  line-height: 1;
+}
+
+.filter-chip__count {
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* ─── Varianten (Status-spezifische Farben) ─────────── */
+
+/* Active/Success */
+.filter-chip--variant-success {
+  border-color: var(--theme-success, #16a34a);
+  color: var(--theme-success, #16a34a);
+
+  &.filter-chip--active {
+    background: var(--theme-success, #16a34a);
+    color: var(--theme-success-contrast, white);
+    border-color: var(--theme-success, #16a34a);
+  }
+}
+
+/* Draft/Subdued */
+.filter-chip--variant-subdued {
+  border-color: var(--theme-border-subdued, #9ca3af);
+  color: var(--theme-text-subdued, #6b7280);
+
+  &.filter-chip--active {
+    background: var(--theme-text-subdued, #6b7280);
+    color: white;
+    border-color: var(--theme-text-subdued, #6b7280);
+  }
+}
+
+/* Warning/Archived */
+.filter-chip--variant-warning {
+  border-color: var(--theme-warning, #d97706);
+  color: var(--theme-warning, #d97706);
+
+  &.filter-chip--active {
+    background: var(--theme-warning, #d97706);
+    color: var(--theme-warning-contrast, white);
+    border-color: var(--theme-warning, #d97706);
+  }
+}
+
+/* Info/Telegram */
+.filter-chip--variant-info {
+  border-color: var(--theme-info, #2563eb);
+  color: var(--theme-info, #2563eb);
+
+  &.filter-chip--active {
+    background: var(--theme-info, #2563eb);
+    color: var(--theme-info-contrast, white);
+    border-color: var(--theme-info, #2563eb);
+  }
+}
+
+/* Error/Review */
+.filter-chip--variant-error {
+  border-color: var(--theme-error, #dc2626);
+  color: var(--theme-error, #dc2626);
+
+  &.filter-chip--active {
+    background: var(--theme-error, #dc2626);
+    color: var(--theme-error-contrast, white);
+    border-color: var(--theme-error, #dc2626);
+  }
+}
+
+/* ─── Responsive ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  .filter-bar {
+    gap: var(--space-2, 0.5rem);
+  }
+
+  .filter-chip {
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    font-size: var(--theme-font-size-xs, 0.75rem);
+  }
+}

@@ -1,0 +1,399 @@
+package storebackend.exception;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Globaler Exception Handler für die Anwendung.
+ *
+ * WICHTIG: Reihenfolge der @ExceptionHandler-Methoden ist relevant –
+ * spezifischere Handler müssen VOR dem generischen Exception.class-Handler kommen.
+ */
+@ControllerAdvice
+@Slf4j
+public class GlobalExceptionHandler {
+
+    // ════════════════════════════════════════════════════════════════════════
+    // DHL-SPEZIFISCHE EXCEPTIONS (Phase 3A.3)
+    // ════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Behandelt ParcelAlreadyPickedUpException → HTTP 409 Conflict.
+     */
+    @ExceptionHandler(ParcelAlreadyPickedUpException.class)
+    public ResponseEntity<Map<String, Object>> handleParcelAlreadyPickedUp(ParcelAlreadyPickedUpException ex) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ex.toErrorResponse(HttpStatus.CONFLICT.value()));
+    }
+
+    /**
+     * Behandelt ParcelAlreadyStoredException → HTTP 409 Conflict.
+     */
+    @ExceptionHandler(ParcelAlreadyStoredException.class)
+    public ResponseEntity<Map<String, Object>> handleParcelAlreadyStored(ParcelAlreadyStoredException ex) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ex.toErrorResponse(HttpStatus.CONFLICT.value()));
+    }
+
+    /**
+     * Behandelt ParcelNotFoundException → HTTP 404 Not Found.
+     */
+    @ExceptionHandler(ParcelNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleParcelNotFound(ParcelNotFoundException ex) {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ex.toErrorResponse(HttpStatus.NOT_FOUND.value()));
+    }
+
+    /**
+     * Behandelt SlotFullException → HTTP 409 Conflict.
+     */
+    @ExceptionHandler(SlotFullException.class)
+    public ResponseEntity<Map<String, Object>> handleSlotFull(SlotFullException ex) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ex.toErrorResponse(HttpStatus.CONFLICT.value()));
+    }
+
+    /**
+     * Behandelt InvalidTrackingCodeException → HTTP 400 Bad Request.
+     */
+    @ExceptionHandler(InvalidTrackingCodeException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidTrackingCode(InvalidTrackingCodeException ex) {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ex.toErrorResponse(HttpStatus.BAD_REQUEST.value()));
+    }
+
+    /**
+     * Behandelt NoFreeSlotException → HTTP 409 Conflict.
+     */
+    @ExceptionHandler(NoFreeSlotException.class)
+    public ResponseEntity<Map<String, Object>> handleNoFreeSlot(NoFreeSlotException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.CONFLICT.value());
+        errorResponse.put("code", "NO_FREE_SLOT");
+        errorResponse.put("message", ex.getMessage());
+
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(errorResponse);
+    }
+    
+    /**
+     * Phase 3A.4 - Paket-Korrektur Exceptions
+     */
+    
+    @ExceptionHandler(ParcelNotStoredException.class)
+    public ResponseEntity<Map<String, Object>> handleParcelNotStored(ParcelNotStoredException ex) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ex.toErrorResponse(HttpStatus.CONFLICT.value()));
+    }
+    
+    @ExceptionHandler(ParcelAlreadyCancelledException.class)
+    public ResponseEntity<Map<String, Object>> handleParcelAlreadyCancelled(ParcelAlreadyCancelledException ex) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ex.toErrorResponse(HttpStatus.CONFLICT.value()));
+    }
+    
+    /**
+     * Phase 3A.5 - Fachverwaltung Exceptions
+     */
+    
+    @ExceptionHandler(DhlSlotException.class)
+    public ResponseEntity<Map<String, Object>> handleDhlSlotException(DhlSlotException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        
+        // Map error codes to HTTP status codes
+        HttpStatus status;
+        switch (ex.getCode()) {
+            case "SLOT_CODE_ALREADY_EXISTS":
+            case "CAPACITY_BELOW_OCCUPIED":
+            case "CANNOT_DEACTIVATE_OCCUPIED_SLOT":
+                status = HttpStatus.CONFLICT;
+                break;
+            case "SLOT_NOT_FOUND":
+                status = HttpStatus.NOT_FOUND;
+                break;
+            case "INVALID_SLOT_CAPACITY":
+            case "INVALID_BATCH_COUNT":
+                status = HttpStatus.BAD_REQUEST;
+                break;
+            default:
+                status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        
+        errorResponse.put("status", status.value());
+        errorResponse.put("code", ex.getCode());
+        errorResponse.put("message", ex.getMessage());
+        errorResponse.put("details", ex.getDetails());
+        
+        return ResponseEntity
+            .status(status)
+            .body(errorResponse);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // SECURITY EXCEPTIONS
+    // ════════════════════════════════════════════════════════════════════════
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+            fieldErrors.putIfAbsent(error.getField(), error.getDefaultMessage())
+        );
+
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
+        errorResponse.put("error", "Bad Request");
+        errorResponse.put("message", "Validierung fehlgeschlagen");
+        errorResponse.put("fieldErrors", fieldErrors);
+
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(errorResponse);
+    }
+
+    /**
+     * Behandelt MethodArgumentTypeMismatchException (z.B. ?userId=abc oder ein
+     * literales "null"/"undefined" als Query-Parameter-Wert) → HTTP 400 statt 500.
+     *
+     * WICHTIG: "null" wird NICHT als gültiger Sonderwert akzeptiert - ein Client
+     * MUSS optionale Filter-Parameter beim Fehlen vollständig weglassen statt
+     * sie mit dem String "null"/"undefined" zu senden. Dieser Handler sorgt
+     * lediglich dafür, dass ein fehlerhafter Client einen sauberen 400 statt
+     * einen 500 erhält.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
+        errorResponse.put("error", "Bad Request");
+        errorResponse.put("code", "INVALID_QUERY_PARAMETER");
+        errorResponse.put("message", "Ungültiger Wert für Parameter '" + ex.getName() + "': " + ex.getValue());
+
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(errorResponse);
+    }
+
+    /**
+     * Behandelt AccessDeniedException (403 Forbidden) – z.B. durch @PreAuthorize.
+     * MUSS vor handleGeneralException stehen!
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.FORBIDDEN.value());
+        errorResponse.put("error", "Forbidden");
+        errorResponse.put("code", "FORBIDDEN");
+        errorResponse.put("message", "Zugriff verweigert: " + ex.getMessage());
+
+        return ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(errorResponse);
+    }
+
+    /**
+     * Behandelt AuthenticationException (401 Unauthorized).
+     * MUSS vor handleGeneralException stehen!
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthenticationException(AuthenticationException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.UNAUTHORIZED.value());
+        errorResponse.put("error", "Unauthorized");
+        errorResponse.put("code", "UNAUTHORIZED");
+        errorResponse.put("message", "Authentifizierung erforderlich: " + ex.getMessage());
+
+        return ResponseEntity
+            .status(HttpStatus.UNAUTHORIZED)
+            .body(errorResponse);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // GENERAL EXCEPTIONS
+    // ════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Behandelt NoResourceFoundException (wenn kein Handler gefunden wird) → HTTP 404.
+     *
+     * Grund: Spring behandelt fehlende Controller-Mappings als "statische Ressource nicht gefunden"
+     * und wirft NoResourceFoundException, was standardmäßig zu HTTP 500 führt.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNoResourceFound(NoResourceFoundException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.NOT_FOUND.value());
+        errorResponse.put("error", "Not Found");
+        errorResponse.put("message", "The requested endpoint does not exist: " + ex.getResourcePath());
+        errorResponse.put("path", ex.getResourcePath());
+
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(errorResponse);
+    }
+
+    /**
+     * Behandelt EmailNotVerifiedException → HTTP 403.
+     */
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ResponseEntity<Map<String, Object>> handleEmailNotVerifiedException(EmailNotVerifiedException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.FORBIDDEN.value());
+        errorResponse.put("error", "Email Not Verified");
+        errorResponse.put("message", ex.getMessage());
+
+        return ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(errorResponse);
+    }
+
+    /**
+     * Behandelt EmailDeliveryException → HTTP 503 Service Unavailable.
+     * 
+     * WICHTIG: Diese Exception wird NUR geworfen, wenn eine Operation OHNE erfolgreichen
+     * E-Mail-Versand nicht fortgesetzt werden kann.
+     * 
+     * Für Registrierung wird diese Exception NICHT geworfen - dort gibt's strukturiertes Response.
+     */
+    @ExceptionHandler(EmailDeliveryException.class)
+    public ResponseEntity<Map<String, Object>> handleEmailDeliveryException(EmailDeliveryException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.SERVICE_UNAVAILABLE.value());
+        errorResponse.put("error", "Email Service Unavailable");
+        errorResponse.put("message", ex.getMessage());
+
+        return ResponseEntity
+            .status(HttpStatus.SERVICE_UNAVAILABLE)
+            .body(errorResponse);
+    }
+
+    /**
+     * Behandelt RateLimitExceededException → HTTP 429 Too Many Requests.
+     */
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleRateLimitExceededException(RateLimitExceededException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.TOO_MANY_REQUESTS.value());
+        errorResponse.put("error", "Rate Limit Exceeded");
+        errorResponse.put("message", ex.getMessage());
+
+        return ResponseEntity
+            .status(HttpStatus.TOO_MANY_REQUESTS)
+            .body(errorResponse);
+    }
+
+    /**
+     * Behandelt MissingServletRequestPartException (fehlender Multipart-Part, z.B. wenn der
+     * Client den "file"-Part nicht sendet) -> HTTP 400 statt generischem 500. Das ist ein
+     * Client-Request-Fehler (Multipart-Body unvollständig), keine Server-Störung.
+     * MUSS vor handleGeneralException stehen!
+     */
+    @ExceptionHandler(org.springframework.web.multipart.support.MissingServletRequestPartException.class)
+    public ResponseEntity<Map<String, Object>> handleMissingServletRequestPart(
+            org.springframework.web.multipart.support.MissingServletRequestPartException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
+        errorResponse.put("error", "Bad Request");
+        errorResponse.put("code", "MISSING_MULTIPART_PART");
+        errorResponse.put("message", "Erforderlicher Teil '" + ex.getRequestPartName() + "' fehlt im Request");
+
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(errorResponse);
+    }
+
+    /**
+     * Behandelt MaxUploadSizeExceededException (Datei/Request groesser als
+     * spring.servlet.multipart.max-file-size/max-request-size) -> HTTP 413 statt
+     * dem sonst durchfallenden generischen 500. Betrifft u.a. Foto-Upload via
+     * Kamera-Capture (siehe DocumentController#upload), wo Fotos in voller
+     * Sensorauflösung das Limit eher reissen als kleinere Datei-Auswahlen.
+     * MUSS vor handleGeneralException stehen!
+     */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleMaxUploadSizeExceeded(
+            org.springframework.web.multipart.MaxUploadSizeExceededException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.PAYLOAD_TOO_LARGE.value());
+        errorResponse.put("error", "Payload Too Large");
+        errorResponse.put("code", "FILE_TOO_LARGE");
+        errorResponse.put("message", "Die Datei ist zu gross für den Upload");
+
+        return ResponseEntity
+            .status(HttpStatus.PAYLOAD_TOO_LARGE)
+            .body(errorResponse);
+    }
+
+    /**
+     * Behandelt ResponseStatusException (z.B. aus DocumentService/TeamInvitationController)
+     * mit dem darin gesetzten Status statt pauschal HTTP 500 (vorher fiel dies auf
+     * handleGeneralException zurück, da kein spezifischer Handler existierte).
+     * MUSS vor handleGeneralException stehen!
+     */
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> handleResponseStatusException(org.springframework.web.server.ResponseStatusException ex) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", ex.getStatusCode().value());
+        errorResponse.put("error", ex.getStatusCode().toString());
+        errorResponse.put("message", ex.getReason());
+
+        return ResponseEntity
+            .status(ex.getStatusCode())
+            .body(errorResponse);
+    }
+
+    /**
+     * Allgemeiner Exception Handler als Fallback → HTTP 500.
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGeneralException(Exception ex) {
+        // WICHTIG: Bisher wurde die Exception hier nur in ex.getMessage() extrahiert und
+        // danach verworfen -> kein Stacktrace in den Logs (Root Cause für "500 ohne Details").
+        // Stacktrace geht NUR in die Server-Logs, NICHT an den Client (keine Exception-Details im Response-Body).
+        log.error("Unhandled exception while processing request", ex);
+
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        errorResponse.put("error", "Internal Server Error");
+        errorResponse.put("message", "Ein unerwarteter Fehler ist aufgetreten");
+
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(errorResponse);
+    }
+}

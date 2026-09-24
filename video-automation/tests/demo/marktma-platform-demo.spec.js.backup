@@ -1,0 +1,296 @@
+/**
+ * markt.ma Platform Demo - Desktop Version
+ * Duration: ~2-3 minutes
+ * Purpose: Marketing video for landing page, ads, social media
+ * 
+ * DO NOT use in production with real customer data!
+ * Only use with demo credentials from ENV variables.
+ */
+
+const { test, expect } = require('@playwright/test');
+const { FlowRecorder } = require('../utils/flow-recorder');
+
+test.describe('markt.ma Platform Demo (Desktop)', () => {
+  let recorder;
+
+  test.beforeEach(async ({ page }) => {
+    recorder = new FlowRecorder(page, 'marktma-platform-demo');
+    await recorder.start();
+  });
+
+  test('Complete platform demonstration - 2-3 minutes', async ({ page }) => {
+    // Load credentials from ENV (NEVER hardcode real credentials!)
+    const baseUrl = process.env.BASE_URL || 'https://www.markt.ma';
+    const email = process.env.DEMO_EMAIL || 'demo@markt.ma';
+    const password = process.env.DEMO_PASSWORD || 'demoatmarkt.ma';
+    const demoStoreSlug = process.env.DEMO_STORE_SLUG || 'demoshop';
+
+    console.log(`🎬 Starting Platform Demo with baseUrl: ${baseUrl}`);
+    console.log(`👤 Using demo user: ${email}`);
+
+    // ==================== 1. LANDING PAGE (15s) ====================
+    await recorder.step('Landing Page - Hero & CTA', async () => {
+      await page.goto(baseUrl);
+      await page.waitForLoadState('networkidle');
+      await recorder.pause(3000);
+
+      // Scroll down to show features (if available)
+      try {
+        await page.evaluate(() => window.scrollBy({ top: 400, behavior: 'smooth' }));
+        await recorder.pause(2000);
+        await page.evaluate(() => window.scrollBy({ top: -400, behavior: 'smooth' }));
+        await recorder.pause(1500);
+      } catch (e) {
+        console.log('Scrolling skipped');
+      }
+    });
+
+    // ==================== 2. LOGIN (10s) ====================
+    await recorder.step('Login mit Demo-User', async () => {
+      // Try to find login button
+      try {
+        const loginButton = page.getByRole('button', { name: /login/i }).first();
+        await loginButton.click();
+        await page.waitForLoadState('networkidle');
+        await recorder.pause(1000);
+
+        // Fill email
+        const emailInput = page.getByRole('textbox', { name: /email/i }).first();
+        await emailInput.click();
+        await emailInput.fill(email);
+        await recorder.pause(500);
+
+        // Fill password
+        const passwordInput = page.locator('input[type="password"]').first();
+        await passwordInput.click();
+        await passwordInput.fill(password);
+        await recorder.pause(500);
+
+        // Submit login
+        const submitButton = page.getByRole('button', { name: /login/i }).first();
+        await submitButton.click();
+        await page.waitForLoadState('networkidle');
+        await recorder.pause(2000);
+      } catch (e) {
+        console.log('Login flow skipped (already logged in?)');
+      }
+    });
+
+    // ==================== 3. DASHBOARD KURZ ZEIGEN (5s) ====================
+    await recorder.step('Dashboard Overview', async () => {
+      // Should be on dashboard now
+      try {
+        await page.waitForURL(/dashboard|stores/i, { timeout: 5000 });
+      } catch (e) {
+        console.log('Dashboard URL not detected, continuing...');
+      }
+      await recorder.pause(2000);
+    });
+
+    // ==================== 4. DEMO STORE ÖFFNEN (10s) ====================
+    await recorder.step('Demo Store öffnen', async () => {
+      // Try to find existing demo store or navigate to it
+      try {
+        // Option 1: Try to find store card by name/slug
+        const storeCard = page.locator(`text=/demo|${demoStoreSlug}/i`).first();
+        if (await storeCard.isVisible({ timeout: 3000 })) {
+          await storeCard.click();
+          await page.waitForLoadState('networkidle');
+          await recorder.pause(2000);
+        } else {
+          // Option 2: Direct navigation to store
+          await page.goto(`${baseUrl}/stores/${demoStoreSlug}/dashboard`);
+          await page.waitForLoadState('networkidle');
+          await recorder.pause(2000);
+        }
+      } catch (e) {
+        console.log('Store navigation fallback used');
+        // Fallback: just show whatever is on screen
+        await recorder.pause(2000);
+      }
+    });
+
+    // ==================== 5. PRODUKTE/KATEGORIEN ZEIGEN (10s) ====================
+    await recorder.step('Produkte & Kategorien', async () => {
+      try {
+        // Try to find Products navigation
+        const productsLink = page.locator('text=/produkte|products/i').first();
+        if (await productsLink.isVisible({ timeout: 3000 })) {
+          await productsLink.click();
+          await page.waitForLoadState('networkidle');
+          await recorder.pause(2500);
+
+          // Scroll to show product list
+          await page.evaluate(() => window.scrollBy({ top: 300, behavior: 'smooth' }));
+          await recorder.pause(1500);
+          await page.evaluate(() => window.scrollBy({ top: -300, behavior: 'smooth' }));
+          await recorder.pause(1000);
+        }
+      } catch (e) {
+        console.log('Products section skipped');
+      }
+    });
+
+    // ==================== 6. STORE SETTINGS ZEIGEN (15s) ====================
+    await recorder.step('Store Settings', async () => {
+      try {
+        // Navigate to Store Settings
+        const settingsLink = page.locator('text=/einstellungen|settings/i').first();
+        if (await settingsLink.isVisible({ timeout: 3000 })) {
+          await settingsLink.click();
+          await page.waitForLoadState('networkidle');
+          await recorder.pause(2000);
+
+          // Scroll down to show different settings sections
+          await page.evaluate(() => window.scrollBy({ top: 400, behavior: 'smooth' }));
+          await recorder.pause(2000);
+          await page.evaluate(() => window.scrollBy({ top: 400, behavior: 'smooth' }));
+          await recorder.pause(2000);
+
+          // Scroll back up
+          await page.evaluate(() => window.scrollBy({ top: -800, behavior: 'smooth' }));
+          await recorder.pause(1500);
+        }
+      } catch (e) {
+        console.log('Settings section skipped');
+      }
+    });
+
+    // ==================== 7. BOT PROTECTION (only if visible) (5s) ====================
+    await recorder.step('Bot Protection Feature (if available)', async () => {
+      try {
+        // Check if Bot Protection section exists
+        const botProtectionSection = page.locator('text=/bot.*protection|schutz/i').first();
+        if (await botProtectionSection.isVisible({ timeout: 2000 })) {
+          // Scroll to it
+          await botProtectionSection.scrollIntoViewIfNeeded();
+          await recorder.pause(2500);
+          console.log('✅ Bot Protection feature demonstrated');
+        } else {
+          console.log('⚠️ Bot Protection not visible, skipping');
+        }
+      } catch (e) {
+        console.log('Bot Protection section not found (feature may not be deployed yet)');
+      }
+    });
+
+    // ==================== 8. PUBLIC STOREFRONT ÖFFNEN (15s) ====================
+    await recorder.step('Public Storefront', async () => {
+      try {
+        // Try to find "View Store" or "Preview" button
+        const viewStoreButton = page.locator('text=/view.*store|vorschau|preview/i').first();
+        if (await viewStoreButton.isVisible({ timeout: 3000 })) {
+          // Open in new tab
+          const [newPage] = await Promise.all([
+            page.context().waitForEvent('page'),
+            viewStoreButton.click()
+          ]);
+          await newPage.waitForLoadState('networkidle');
+          
+          // Switch to new tab and continue demo there
+          await newPage.bringToFront();
+          await recorder.pause(2000);
+
+          // Scroll storefront
+          await newPage.evaluate(() => window.scrollBy({ top: 500, behavior: 'smooth' }));
+          await recorder.pause(2000);
+          await newPage.evaluate(() => window.scrollBy({ top: 500, behavior: 'smooth' }));
+          await recorder.pause(2000);
+
+          // Close storefront tab and return to main page
+          await newPage.close();
+          await page.bringToFront();
+          await recorder.pause(1000);
+        } else {
+          // Fallback: direct navigation
+          await page.goto(`${baseUrl}/${demoStoreSlug}`);
+          await page.waitForLoadState('networkidle');
+          await recorder.pause(2000);
+
+          // Scroll storefront
+          await page.evaluate(() => window.scrollBy({ top: 500, behavior: 'smooth' }));
+          await recorder.pause(2000);
+        }
+      } catch (e) {
+        console.log('Storefront view skipped');
+      }
+    });
+
+    // ==================== 9. PRODUKT DETAIL ÖFFNEN (10s) ====================
+    await recorder.step('Produktdetail öffnen', async () => {
+      try {
+        // Try to find first product card
+        const productCard = page.locator('[class*="product"]').first();
+        if (await productCard.isVisible({ timeout: 3000 })) {
+          await productCard.click();
+          await page.waitForLoadState('networkidle');
+          await recorder.pause(2500);
+
+          // Scroll product detail
+          await page.evaluate(() => window.scrollBy({ top: 300, behavior: 'smooth' }));
+          await recorder.pause(2000);
+          await page.evaluate(() => window.scrollBy({ top: -300, behavior: 'smooth' }));
+          await recorder.pause(1000);
+        }
+      } catch (e) {
+        console.log('Product detail skipped');
+      }
+    });
+
+    // ==================== 10. WHATSAPP BUTTON ZEIGEN (NICHT KLICKEN!) (5s) ====================
+    await recorder.step('WhatsApp Bestellung (Demo only)', async () => {
+      try {
+        // Find WhatsApp button but DON'T click it (no real messages!)
+        const whatsappButton = page.locator('text=/whatsapp|bestellen|order/i').first();
+        if (await whatsappButton.isVisible({ timeout: 3000 })) {
+          // Just hover to show it exists
+          await whatsappButton.scrollIntoViewIfNeeded();
+          await whatsappButton.hover();
+          await recorder.pause(2500);
+          console.log('✅ WhatsApp button demonstrated (not clicked)');
+        } else {
+          console.log('⚠️ WhatsApp button not found');
+        }
+      } catch (e) {
+        console.log('WhatsApp demo skipped');
+      }
+    });
+
+    // ==================== 11. RESTAURANT/RIAD BEISPIEL (optional, 10s) ====================
+    await recorder.step('Restaurant/Riad Features (if available)', async () => {
+      try {
+        // Try to find opening hours, special features, etc.
+        const specialFeatures = page.locator('text=/öffnungszeiten|opening|hours|booking/i').first();
+        if (await specialFeatures.isVisible({ timeout: 2000 })) {
+          await specialFeatures.scrollIntoViewIfNeeded();
+          await recorder.pause(2500);
+          console.log('✅ Special business type features demonstrated');
+        } else {
+          console.log('⚠️ Special features not visible, skipping');
+        }
+      } catch (e) {
+        console.log('Special features skipped');
+      }
+    });
+
+    // ==================== 12. ABSCHLUSS MIT CTA (5s) ====================
+    await recorder.step('Abschluss - Call to Action', async () => {
+      // Navigate back to landing page
+      await page.goto(baseUrl);
+      await page.waitForLoadState('networkidle');
+      await recorder.pause(2000);
+
+      // Scroll to CTA section
+      try {
+        await page.evaluate(() => window.scrollBy({ top: 300, behavior: 'smooth' }));
+        await recorder.pause(1500);
+      } catch (e) {
+        console.log('CTA scroll skipped');
+      }
+
+      await recorder.pause(1000);
+    });
+
+    console.log('✅ Platform Demo completed!');
+  });
+});

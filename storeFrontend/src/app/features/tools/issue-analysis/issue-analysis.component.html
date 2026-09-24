@@ -1,0 +1,85 @@
+<div class="issue-analysis-page">
+  <app-page-header
+    [title]="'issueAnalysis.title' | translate"
+    [subtitle]="'issueAnalysis.subtitle' | translate"
+    [showBackButton]="true"
+  ></app-page-header>
+
+  <div class="issue-analysis-card">
+    <h3>1. {{ 'issueAnalysis.uploadHeading' | translate }}</h3>
+
+    <!-- Wiederverwendung der bestehenden Upload-Komponente im AI-Modus -->
+    <app-image-upload
+      [aiMode]="true"
+      [multiple]="false"
+      [showPrimary]="false"
+      [showSelection]="false"
+      [showAiGenerate]="true"
+      [maxSizeMb]="10"
+      [uploadLabel]="'issueAnalysis.uploadLabel' | translate"
+      [emptyLabel]="'issueAnalysis.emptyLabel' | translate"
+      [(images)]="aiImages"
+      (aiGenerateRequest)="onAiGenerateRequest($event)"
+      (uploadError)="onUploadError($event)"
+    ></app-image-upload>
+
+    <p class="issue-analysis-hint">💡 {{ 'issueAnalysis.hint' | translate }}</p>
+
+    <div class="ai-error" *ngIf="aiError">⚠️ {{ aiError }}</div>
+  </div>
+
+  <!-- Ergebnisse pro Bild -->
+  <div class="issue-analysis-results" *ngIf="aiImages.length > 0">
+    <div class="issue-result-card" *ngFor="let imgData of aiImages">
+      <div class="issue-result-header">
+        <img [src]="imgData.preview" [alt]="imgData.filename" class="issue-result-thumb" />
+        <div class="issue-result-filename">{{ imgData.filename }}</div>
+      </div>
+
+      <div class="issue-result-status" *ngIf="imgData.aiGenerating">
+        <span class="spinner-small"></span>
+        {{ 'issueAnalysis.analyzing' | translate }}
+      </div>
+
+      <div class="issue-result-error" *ngIf="imgData.aiError && !imgData.aiGenerating">
+        ❌ {{ imgData.aiError }}
+      </div>
+
+      <div class="issue-result-body" *ngIf="getResult(imgData) as result">
+        <div class="issue-result-grid">
+          <div class="issue-result-field">
+            <label>{{ 'issueAnalysis.category' | translate }}</label>
+            <div class="issue-badge category-badge">{{ result.category }}</div>
+          </div>
+
+          <div class="issue-result-field">
+            <label>{{ 'issueAnalysis.urgency' | translate }}</label>
+            <div class="issue-badge" [ngClass]="urgencyClass(result.urgency)">{{ result.urgency }}</div>
+          </div>
+
+          <div class="issue-result-field full-width">
+            <label>{{ 'issueAnalysis.problem' | translate }}</label>
+            <div class="issue-result-value">{{ result.problem }}</div>
+          </div>
+
+          <div class="issue-result-field">
+            <label>{{ 'issueAnalysis.confidence' | translate }}</label>
+            <div class="confidence-bar-wrapper">
+              <div class="confidence-bar">
+                <div class="confidence-bar-fill" [style.width.%]="confidencePercent(imgData)"></div>
+              </div>
+              <span class="confidence-text">{{ confidencePercent(imgData) }}%</span>
+            </div>
+          </div>
+
+          <div class="issue-result-field full-width" *ngIf="result.questions && result.questions.length > 0">
+            <label>{{ 'issueAnalysis.questions' | translate }}</label>
+            <ul class="issue-questions-list">
+              <li *ngFor="let question of result.questions">{{ question }}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,340 @@
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { CategoryService } from '@app/core/services/category.service';
+import { StoreContextService } from '@app/core/services/store-context.service';
+import { Category } from '@app/core/models';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+import { TranslationService } from '@app/core/services/translation.service';
+import { PageHeaderComponent, HeaderAction } from '@app/shared/components/page-header.component';
+import { BreadcrumbItem } from '@app/shared/components/breadcrumb.component';
+import { Subscription } from 'rxjs';
+
+@Component({
+    selector: 'app-category-form',
+    imports: [CommonModule, ReactiveFormsModule, TranslatePipe, PageHeaderComponent],
+    template: `
+    <div class="category-form-container">
+      <app-page-header
+        [title]="isEditMode ? 'category.edit' : 'category.new'"
+        [breadcrumbs]="breadcrumbItems"
+        [showBackButton]="true"
+        [actions]="headerActions"
+      ></app-page-header>
+
+      <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()" class="category-form admin-form">
+        <div class="form-card">
+          <h2>{{ 'category.info' | translate }}</h2>
+          
+          <div class="form-group">
+            <label for="name">{{ 'category.name' | translate }} *</label>
+            <input 
+              id="name"
+              type="text" 
+              formControlName="name"
+              [placeholder]="'category.placeholder.name' | translate"
+              [class.error]="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched"
+            />
+            <div class="error-message" *ngIf="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched">
+              {{ 'category.required.name' | translate }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="slug">{{ 'category.slug' | translate }} *</label>
+            <input 
+              id="slug"
+              type="text" 
+              formControlName="slug"
+              [placeholder]="'category.placeholder.slug' | translate"
+              [class.error]="categoryForm.get('slug')?.invalid && categoryForm.get('slug')?.touched"
+            />
+            <p class="form-hint">{{ 'category.hint.slug' | translate }}</p>
+            <div class="error-message" *ngIf="categoryForm.get('slug')?.invalid && categoryForm.get('slug')?.touched">
+              {{ 'category.required.slug' | translate }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="description">{{ 'category.description' | translate }}</label>
+            <textarea 
+              id="description"
+              formControlName="description"
+              rows="3"
+              [placeholder]="'category.placeholder.description' | translate"
+            ></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="parentId">{{ 'category.parent.label' | translate }}</label>
+              <select id="parentId" formControlName="parentId">
+                <option [ngValue]="null">{{ 'category.parent.none' | translate }}</option>
+                <option *ngFor="let cat of availableParentCategories" [ngValue]="cat.id">
+                  {{ cat.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="sortOrder">{{ 'category.sortorder' | translate }}</label>
+              <input 
+                id="sortOrder"
+                type="number" 
+                formControlName="sortOrder"
+                min="0"
+                placeholder="0"
+              />
+              <p class="form-hint">{{ 'category.hint.sortorder' | translate }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="goBack()">
+            {{ 'common.cancel' | translate }}
+          </button>
+          <button 
+            type="submit" 
+            class="btn-primary"
+            [disabled]="categoryForm.invalid || saving"
+          >
+            {{ saving ? ('common.saving' | translate) : ((isEditMode ? 'category.update' : 'category.create') | translate) }}
+          </button>
+        </div>
+
+        <div class="success-message" *ngIf="successMessage">
+          {{ successMessage }}
+        </div>
+        <div class="error-banner" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </div>
+      </form>
+    </div>
+  `,
+    styles: [`
+    /* ═══════════════════════════════════════════════════════════
+       COMPONENT-SPECIFIC STYLES
+       Forms.scss (.admin-form) provides base form styling
+       Global buttons (.btn-primary, .btn-secondary) from styles.scss
+       ═══════════════════════════════════════════════════════════ */
+    
+    /* Container Layout (category-specific) */
+    .category-form-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    /* Form Vertical Gap (category-specific) */
+    .category-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Mobile Responsive (category-specific) */
+    @media (max-width: 768px) {
+      .category-form-container {
+        padding: 1rem;
+      }
+    }
+  `]
+})
+export class CategoryFormComponent implements OnInit, OnDestroy {
+  categoryForm: FormGroup;
+  availableParentCategories: Category[] = [];
+  private storeId: number | null = null;
+  private storeIdSubscription?: Subscription;
+  categoryId?: number;
+  isEditMode = false;
+  saving = false;
+  successMessage = '';
+  errorMessage = '';
+  headerActions: HeaderAction[] = [];
+  breadcrumbItems: BreadcrumbItem[] = [];
+
+  constructor(
+    private fb: FormBuilder,
+    private route: ActivatedRoute,
+    private router: Router,
+    private categoryService: CategoryService,
+    private translationService: TranslationService,
+    private storeContext: StoreContextService
+  ) {
+    this.categoryForm = this.fb.group({
+      name: ['', Validators.required],
+      slug: ['', [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)]],
+      description: [''],
+      parentId: [null],
+      sortOrder: [0, [Validators.min(0)]]
+    });
+
+    this.categoryForm.get('name')?.valueChanges.subscribe(name => {
+      if (!this.isEditMode && name) {
+        const slug = name.toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-');
+        this.categoryForm.patchValue({ slug }, { emitEvent: false });
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    // categoryId ist nur gesetzt bei Edit-Routen (/categories/:categoryId/edit)
+    // WICHTIG: Zuerst categoryId setzen, bevor storeId abonniert wird!
+    const categoryIdParam = this.route.snapshot.paramMap.get('categoryId');
+    this.categoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
+    this.isEditMode = !!this.categoryId;
+
+    console.log('🔧 Category Form ngOnInit:', {
+      categoryIdParam,
+      categoryId: this.categoryId,
+      isEditMode: this.isEditMode
+    });
+
+    // storeId aus Context Service abonnieren
+    this.storeIdSubscription = this.storeContext.storeId$.subscribe(id => {
+      if (id !== null) {
+        this.storeId = id;
+        this.initializeComponent();
+      }
+    });
+  }
+
+  private initializeComponent(): void {
+    if (this.storeId === null) return;
+
+    // Breadcrumbs initialisieren
+    this.breadcrumbItems = [
+      { label: 'navigation.dashboard', route: '/dashboard', icon: '🏠' },
+      { label: 'navigation.store', route: ['/dashboard/stores', this.storeId], icon: '🏪' },
+      { label: 'navigation.categories', route: ['/dashboard/stores', this.storeId, 'categories'], icon: '🏷️' },
+      { label: this.isEditMode ? 'category.edit' : 'category.new' }
+    ];
+
+    console.log('📋 Category Form Init:', {
+      storeId: this.storeId,
+      categoryId: this.categoryId,
+      isEditMode: this.isEditMode,
+      route: window.location.pathname
+    });
+
+    this.loadCategories();
+  }
+
+  ngOnDestroy(): void {
+    this.storeIdSubscription?.unsubscribe();
+  }
+
+  loadCategories(): void {
+    if (this.storeId === null) return;
+
+    this.categoryService.getCategories(this.storeId).subscribe({
+      next: (categories) => {
+        this.availableParentCategories = categories.filter(
+          cat => !this.categoryId || cat.id !== this.categoryId
+        );
+
+        if (this.isEditMode && this.categoryId) {
+          this.loadCategory(this.categoryId);
+        }
+      },
+      error: (error) => {
+        console.error(this.translationService.translate('category.error.load'), error);
+        this.errorMessage = this.translationService.translate('category.error.load');
+      }
+    });
+  }
+
+  loadCategory(categoryId: number): void {
+    if (this.storeId === null) return;
+
+    console.log('📥 Loading category for edit:', {
+      storeId: this.storeId,
+      categoryId: categoryId
+    });
+
+    // Lade die Kategorie direkt vom Service, nicht aus der gefilterten Liste
+    this.categoryService.getCategory(this.storeId, categoryId).subscribe({
+      next: (category) => {
+        console.log('✅ Category loaded successfully:', category);
+        
+        this.categoryForm.patchValue({
+          name: category.name,
+          slug: category.slug,
+          description: category.description,
+          parentId: category.parentId,
+          sortOrder: category.sortOrder
+        });
+
+        console.log('✅ Form patched with values:', this.categoryForm.value);
+      },
+      error: (error) => {
+        console.error('❌ Fehler beim Laden der Kategorie:', error);
+        this.errorMessage = this.translationService.translate('category.error.load');
+      }
+    });
+  }
+
+  onSubmit(): void {
+    if (this.categoryForm.invalid) {
+      Object.keys(this.categoryForm.controls).forEach(key => {
+        this.categoryForm.get(key)?.markAsTouched();
+      });
+      return;
+    }
+
+    if (this.storeId === null) {
+      this.errorMessage = this.translationService.translate('category.error.storeContext');
+      return;
+    }
+
+    this.saving = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    const formData = {
+      ...this.categoryForm.value,
+      parentId: this.categoryForm.value.parentId || undefined
+    };
+
+    if (this.isEditMode && this.categoryId) {
+      this.categoryService.updateCategory(this.storeId, this.categoryId, formData).subscribe({
+        next: () => {
+          this.saving = false;
+          this.successMessage = this.translationService.translate('category.success.updated');
+          setTimeout(() => this.goBack(), 1500);
+        },
+        error: (error) => {
+          this.saving = false;
+          this.errorMessage = this.translationService.translate('category.error.update');
+          console.error(error);
+        }
+      });
+    } else {
+      this.categoryService.createCategory(this.storeId, formData).subscribe({
+        next: () => {
+          this.saving = false;
+          this.successMessage = this.translationService.translate('category.success.created');
+          setTimeout(() => this.goBack(), 1500);
+        },
+        error: (error) => {
+          this.saving = false;
+          this.errorMessage = this.translationService.translate('category.error.create');
+          console.error(error);
+        }
+      });
+    }
+  }
+
+  goBack(): void {
+    if (this.storeId === null) {
+      this.router.navigate(['/dashboard']);
+      return;
+    }
+    this.router.navigate(['/dashboard/stores', this.storeId, 'categories']);
+  }
+}

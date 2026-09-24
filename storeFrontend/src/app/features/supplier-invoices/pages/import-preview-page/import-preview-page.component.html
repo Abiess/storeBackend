@@ -1,0 +1,315 @@
+<div class="import-preview-page">
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>{{ 'IMPORT_PREVIEW.LOADING' | translate }}</p>
+  </div>
+
+  <div *ngIf="error && !loading" class="error-container">
+    <p class="error-message">{{ error }}</p>
+    <button class="btn-secondary" (click)="goBack()">
+      {{ 'IMPORT_PREVIEW.BACK_TO_LINES' | translate }}
+    </button>
+  </div>
+
+  <div *ngIf="preview && !loading" class="preview-content">
+    <div class="page-header">
+      <div class="header-top">
+        <button class="btn-back" (click)="goBack()">
+          <lucide-icon name="arrow-left"></lucide-icon>
+          {{ 'IMPORT_PREVIEW.BACK_TO_LINES' | translate }}
+        </button>
+      </div>
+
+      <h1>{{ 'IMPORT_PREVIEW.TITLE' | translate }}</h1>
+
+      <div class="document-context">
+        {{ preview.supplierName || '—' }} · {{ preview.invoiceNumber || ('INVOICE_LINES.CONTEXT.INVOICE' | translate) }}
+      </div>
+
+      <div class="info-banner">
+        <lucide-icon name="info"></lucide-icon>
+        <span>{{ 'IMPORT_PREVIEW.NO_CHANGES_YET' | translate }}</span>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn-secondary" (click)="loadPreview()">
+          <lucide-icon name="refresh-cw"></lucide-icon>
+          {{ 'IMPORT_PREVIEW.RELOAD' | translate }}
+        </button>
+      </div>
+    </div>
+
+    <div class="summary-cards">
+      <div class="summary-card">
+        <div class="card-icon existing">📦</div>
+        <div class="card-content">
+          <div class="card-value">{{ preview.summary.readyToUpdate }}</div>
+          <div class="card-label">{{ 'IMPORT_PREVIEW.SUMMARY.EXISTING_PRODUCTS' | translate }}</div>
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <div class="card-icon new">✨</div>
+        <div class="card-content">
+          <div class="card-value">{{ preview.summary.readyToCreate }}</div>
+          <div class="card-label">{{ 'IMPORT_PREVIEW.SUMMARY.NEW_PRODUCTS' | translate }}</div>
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <div class="card-icon warning">⚠️</div>
+        <div class="card-content">
+          <div class="card-value">{{ preview.summary.needsDecision }}</div>
+          <div class="card-label">{{ 'IMPORT_PREVIEW.SUMMARY.NEEDS_DECISION' | translate }}</div>
+        </div>
+      </div>
+
+      <div class="summary-card">
+        <div class="card-icon skipped">🚫</div>
+        <div class="card-content">
+          <div class="card-value">{{ preview.summary.skipped }}</div>
+          <div class="card-label">{{ 'IMPORT_PREVIEW.SUMMARY.SKIPPED' | translate }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="preview.existingProducts.length > 0" class="section">
+      <h2>{{ 'IMPORT_PREVIEW.EXISTING_PRODUCTS.TITLE' | translate }}</h2>
+      <p class="section-description">{{ 'IMPORT_PREVIEW.EXISTING_PRODUCTS.DESCRIPTION' | translate }}</p>
+
+      <div class="products-table desktop-only">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-select">
+                <input
+                  type="checkbox"
+                  [checked]="selectedExistingProducts.size === totalImportableExisting && totalImportableExisting > 0"
+                  (change)="toggleAllExistingProducts()">
+              </th>
+              <th>{{ 'IMPORT_PREVIEW.TABLE.INVOICE_LINE' | translate }}</th>
+              <th>{{ 'IMPORT_PREVIEW.TABLE.STORE_PRODUCT' | translate }}</th>
+              <th>{{ 'IMPORT_PREVIEW.TABLE.MATCH_REASON' | translate }}</th>
+              <th>{{ 'IMPORT_PREVIEW.TABLE.CURRENT_STOCK' | translate }}</th>
+              <th>{{ 'IMPORT_PREVIEW.TABLE.STOCK_CHANGE' | translate }}</th>
+              <th>{{ 'IMPORT_PREVIEW.TABLE.NEW_STOCK' | translate }}</th>
+              <th>{{ 'IMPORT_PREVIEW.TABLE.PURCHASE_PRICE' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let product of preview.existingProducts">
+              <td class="col-select">
+                <input
+                  type="checkbox"
+                  [checked]="selectedExistingProducts.has(product.lineId)"
+                  (change)="toggleExistingProduct(product.lineId)"
+                  [disabled]="!product.canImport">
+              </td>
+              <td>
+                <div class="line-info">
+                  <div class="line-article">{{ product.supplierArticleNumber || '—' }}</div>
+                  <div class="line-description">{{ product.invoiceDescription }}</div>
+                </div>
+              </td>
+              <td>
+                <div class="product-info">
+                  <div class="product-title">{{ product.productTitle }}</div>
+                  <div class="product-id">#{{ product.productId }}</div>
+                </div>
+              </td>
+              <td>
+                <span class="badge badge-info">{{ getMatchReasonKey(product.matchReason) | translate }}</span>
+              </td>
+              <td class="text-right">{{ product.currentStock }}</td>
+              <td class="text-right stock-change">+{{ formatQuantity(product) }}</td>
+              <td class="text-right stock-new">{{ product.newStock }}</td>
+              <td class="text-right">{{ product.invoicePurchasePrice | number:'1.2-2' }} €</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="products-cards mobile-only">
+        <div *ngFor="let product of preview.existingProducts" class="product-card-mobile">
+          <div class="card-header">
+            <input
+              type="checkbox"
+              [checked]="selectedExistingProducts.has(product.lineId)"
+              (change)="toggleExistingProduct(product.lineId)"
+              [disabled]="!product.canImport">
+            <h4>{{ product.productTitle }}</h4>
+          </div>
+          <div class="card-body">
+            <div class="info-row">
+              <span class="label">{{ 'IMPORT_PREVIEW.TABLE.INVOICE_LINE' | translate }}:</span>
+              <span class="value">{{ product.invoiceDescription }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">{{ 'IMPORT_PREVIEW.TABLE.MATCH_REASON' | translate }}:</span>
+              <span class="badge badge-info">{{ getMatchReasonKey(product.matchReason) | translate }}</span>
+            </div>
+            <div class="stock-info">
+              <div class="stock-row">
+                <span>{{ 'IMPORT_PREVIEW.TABLE.CURRENT_STOCK' | translate }}: {{ product.currentStock }}</span>
+              </div>
+              <div class="stock-row stock-change">
+                <span>{{ 'IMPORT_PREVIEW.TABLE.STOCK_CHANGE' | translate }}: +{{ formatQuantity(product) }}</span>
+              </div>
+              <div class="stock-row stock-new">
+                <span>{{ 'IMPORT_PREVIEW.TABLE.NEW_STOCK' | translate }}: {{ product.newStock }}</span>
+              </div>
+            </div>
+            <div class="info-row">
+              <span class="label">{{ 'IMPORT_PREVIEW.TABLE.PURCHASE_PRICE' | translate }}:</span>
+              <span class="value">{{ product.invoicePurchasePrice | number:'1.2-2' }} €</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="preview.newProducts.length > 0" class="section">
+      <h2>{{ 'IMPORT_PREVIEW.NEW_PRODUCTS.TITLE' | translate }}</h2>
+      <p class="section-description">{{ 'IMPORT_PREVIEW.NEW_PRODUCTS.DESCRIPTION' | translate }}</p>
+
+      <div class="new-products-list">
+        <div
+          *ngFor="let product of preview.newProducts"
+          class="new-product-card"
+          [class.ready]="isNewProductReady(product)"
+          [class.not-ready]="!isNewProductReady(product)">
+          <div class="product-header">
+            <input
+              type="checkbox"
+              [checked]="selectedNewProducts.has(product.lineId)"
+              (change)="toggleNewProduct(product.lineId)"
+              [disabled]="!isNewProductReady(product)">
+            <h3>{{ product.suggestedTitle }}</h3>
+            <span *ngIf="isNewProductReady(product)" class="badge badge-success">
+              {{ 'IMPORT_PREVIEW.NEW_PRODUCTS.READY' | translate }}
+            </span>
+            <span *ngIf="!isNewProductReady(product)" class="badge badge-warning">
+              {{ 'IMPORT_PREVIEW.NEW_PRODUCTS.NOT_READY' | translate }}
+            </span>
+          </div>
+
+          <div class="product-details">
+            <div class="detail-row">
+              <span class="label">{{ 'IMPORT_PREVIEW.NEW_PRODUCTS.ARTICLE_NUMBER' | translate }}:</span>
+              <span class="value">{{ product.supplierArticleNumber || '—' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">{{ 'IMPORT_PREVIEW.NEW_PRODUCTS.TAX_RATE' | translate }}:</span>
+              <span class="value">{{ product.taxRate }}%</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">{{ 'IMPORT_PREVIEW.NEW_PRODUCTS.UNIT' | translate }}:</span>
+              <span class="value">{{ product.unit || '—' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">{{ 'IMPORT_PREVIEW.NEW_PRODUCTS.PACKAGING' | translate }}:</span>
+              <span class="value">{{ product.packagingUnit || '—' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">{{ 'IMPORT_PREVIEW.NEW_PRODUCTS.STOCK_ADD' | translate }}:</span>
+              <span class="value">{{ formatQuantity(product) }}</span>
+            </div>
+          </div>
+
+          <div class="price-comparison">
+            <div class="detail-row">
+              <span class="label">{{ 'IMPORT_PREVIEW.NEW_PRODUCTS.PURCHASE_PRICE' | translate }}:</span>
+              <span class="value">{{ product.purchasePrice | number:'1.2-2' }} €</span>
+            </div>
+            <div class="input-group">
+              <label>{{ 'IMPORT_PREVIEW.NEW_PRODUCTS.RETAIL_PRICE' | translate }} *</label>
+              <input
+                type="number"
+                step="0.01"
+                [(ngModel)]="product.userRetailPrice"
+                [ngModelOptions]="{ standalone: true }"
+                class="form-control">
+              <small *ngIf="product.userRetailPrice && product.purchasePrice" class="markup-hint">
+                {{ 'IMPORT_PREVIEW.NEW_PRODUCTS.MARKUP' | translate }}: {{ calculateMarkup(product) }}%
+              </small>
+              <small class="hint">{{ 'IMPORT_PREVIEW.NEW_PRODUCTS.PRICE_HINT' | translate }}</small>
+            </div>
+          </div>
+
+          <div class="product-inputs">
+            <div class="input-group">
+              <label>{{ 'IMPORT_PREVIEW.NEW_PRODUCTS.CATEGORY_ID' | translate }} *</label>
+              <select
+                [(ngModel)]="product.userCategoryId"
+                [ngModelOptions]="{ standalone: true }"
+                class="form-control">
+                <option [ngValue]="undefined">{{ 'IMPORT_PREVIEW.NEW_PRODUCTS.SELECT_CATEGORY' | translate }}</option>
+                <option *ngFor="let cat of categories" [ngValue]="cat.id">{{ cat.name }}</option>
+              </select>
+              <small class="hint">{{ 'IMPORT_PREVIEW.NEW_PRODUCTS.CATEGORY_HINT' | translate }}</small>
+            </div>
+          </div>
+
+          <div *ngIf="product.warnings.length > 0" class="product-warnings">
+            <lucide-icon name="alert-triangle"></lucide-icon>
+            <span *ngFor="let warning of product.warnings">{{ getWarningCodeKey(warning) | translate }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="preview.needsDecision.length > 0" class="section section-warning">
+      <h2>{{ 'IMPORT_PREVIEW.NEEDS_DECISION.TITLE' | translate }}</h2>
+      <p class="section-description">{{ 'IMPORT_PREVIEW.NEEDS_DECISION.DESCRIPTION' | translate }}</p>
+
+      <div class="decision-list">
+        <div *ngFor="let line of preview.needsDecision" class="decision-item">
+          <div class="decision-info">
+            <div class="decision-position">Pos. {{ getLineLabel(line) }}</div>
+            <div class="decision-article">{{ line.supplierArticleNumber || '—' }}</div>
+            <div class="decision-description">{{ line.description }}</div>
+          </div>
+          <div class="decision-reason">
+            <span class="badge badge-warning">{{ getLineReasonKey(line) | translate }}</span>
+          </div>
+          <div class="decision-action">
+            <button class="btn-small" (click)="editLine(line.lineId)">
+              {{ 'IMPORT_PREVIEW.NEEDS_DECISION.EDIT_LINE' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="preview.skippedLines.length > 0" class="section section-skipped">
+      <h2>{{ 'IMPORT_PREVIEW.SKIPPED.TITLE' | translate }}</h2>
+      <p class="section-description">{{ 'IMPORT_PREVIEW.SKIPPED.DESCRIPTION' | translate }}</p>
+
+      <div class="skipped-list">
+        <div *ngFor="let line of preview.skippedLines" class="skipped-item">
+          <div class="skipped-info">
+            <div class="skipped-position">Pos. {{ getLineLabel(line) }}</div>
+            <div class="skipped-article">{{ line.supplierArticleNumber || '—' }}</div>
+            <div class="skipped-description">{{ line.description }}</div>
+          </div>
+          <div class="skipped-reason">
+            <span class="badge badge-secondary">{{ getLineReasonKey(line) | translate }}</span>
+            <div *ngIf="line.importedAt" class="skipped-date">
+              {{ 'IMPORT_PREVIEW.SKIPPED.IMPORTED_AT' | translate }}: {{ line.importedAt | date:'short' }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="selection-summary">
+      <div class="summary-text">
+        {{ 'IMPORT_PREVIEW.SELECTION.SELECTED' | translate:{selected: totalSelected, total: totalImportableNew + totalImportableExisting} }}
+      </div>
+      <button class="btn-primary" disabled>
+        {{ 'IMPORT_PREVIEW.SELECTION.IMPORT_BUTTON' | translate }}
+      </button>
+      <small class="hint">{{ 'IMPORT_PREVIEW.SELECTION.COMING_NEXT' | translate }}</small>
+    </div>
+  </div>
+</div>

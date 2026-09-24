@@ -1,0 +1,77 @@
+.app-switcher {
+  position: relative;
+  margin-inline-start: auto;
+}
+
+.app-switcher__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.75rem;
+  border: none;
+  border-radius: 10px;
+  background: #f3f0ff;
+  color: #667eea;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.app-switcher__toggle:hover {
+  background: #ece5ff;
+}
+
+.app-switcher__toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus, 0 0 0 3px rgba(102, 126, 234, 0.35));
+}
+
+.app-switcher__caret {
+  font-size: 0.7rem;
+}
+
+/* Positionierung (oben/unten, links/rechts inkl. RTL) übernimmt seit dem
+   UI-Hardening-Pass `@angular/cdk/menu` (Overlay-Positionsstrategie relativ
+   zum Trigger) – hier nur noch das visuelle Erscheinungsbild des Panels. */
+.app-switcher__menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  padding: 0.4rem;
+}
+
+.app-switcher__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2d3748;
+  cursor: pointer;
+  text-align: start;
+}
+
+.app-switcher__item:hover {
+  background: #f3f0ff;
+  color: #667eea;
+}
+
+.app-switcher__item:focus-visible {
+  outline: none;
+  background: #f3f0ff;
+  color: #667eea;
+  box-shadow: var(--shadow-focus, 0 0 0 3px rgba(102, 126, 234, 0.35));
+}
+
+/* Handset (<=600px): kein Dropdown mehr, siehe `AppSwitcherComponent`
+   (`onToggleClick()` öffnet stattdessen `AppSwitcherSheetComponent` als
+   `MatBottomSheet` – bessere Touch-Ergonomie als ein Dropdown-Overlay). */

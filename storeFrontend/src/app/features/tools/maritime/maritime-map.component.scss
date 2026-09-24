@@ -1,0 +1,72 @@
+.maritime-map-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 0.5rem;
+  box-shadow: 0 2px 12px rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.12);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+// Mobile-first: kompakte, aber sinnvoll nutzbare Höhe (siehe Aufgabenstellung ~300-400px).
+.maritime-map-canvas {
+  width: 100%;
+  height: 320px;
+  border-radius: 12px;
+  overflow: hidden;
+  touch-action: pan-x pan-y; // Pinch-Zoom/Pan funktioniert, kein horizontaler Seiten-Overflow
+}
+
+@media (min-width: 640px) {
+  .maritime-map-canvas {
+    height: 380px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .maritime-map-canvas {
+    height: 520px;
+  }
+}
+
+// Vessel-Marker: klein, gut anklickbar (>= 30px Touch-Ziel via Icon-Wrapper-Padding),
+// keine überladene/zu bunte Darstellung – nur ein farbiger Punkt + optionaler Richtungspfeil.
+::ng-deep .mm-marker-wrap {
+  overflow: visible;
+}
+
+::ng-deep .mm-marker {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+::ng-deep .mm-arrow {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 8px solid rgba(55, 65, 81, 0.55);
+}
+
+::ng-deep .mm-popup {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  max-width: 220px;
+
+  strong {
+    display: block;
+    margin-bottom: 0.15rem;
+    font-size: 0.9rem;
+  }
+}
+
+// Leaflet-Popups dürfen auf Mobile nicht über den Bildschirmrand hinausragen.
+::ng-deep .leaflet-popup-content-wrapper {
+  border-radius: 10px;
+}

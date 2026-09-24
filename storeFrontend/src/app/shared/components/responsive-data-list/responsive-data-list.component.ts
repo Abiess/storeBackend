@@ -1,0 +1,487 @@
+import { Component, Input, Output, EventEmitter, TemplateRef, ContentChild, OnChanges, SimpleChanges, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@app/core/pipes/translate.pipe';
+
+export interface ColumnConfig {
+  key: string;
+  label: string;
+  type?: 'text' | 'image' | 'badge' | 'currency' | 'date' | 'custom' | 'number';
+  width?: string;
+  mobileLabel?: string;
+  hideOnMobile?: boolean;
+  sortable?: boolean;
+  formatFn?: (value: any, item: any) => string;
+  badgeClass?: (value: any, item: any) => string;
+}
+
+export interface ActionConfig {
+  icon: string;
+  label: string;
+  class?: string;
+  handler: (item: any) => void;
+  visible?: (item: any) => boolean;
+}
+
+export interface BulkActionConfig {
+  icon: string;
+  label: string;
+  class?: string;
+  handler: (selectedItems: any[]) => void;
+}
+
+@Component({
+    selector: 'app-responsive-data-list',
+    imports: [CommonModule, FormsModule, TranslatePipe],
+    // ChangeDetection: Default beibehalten für zuverlässiges Rendering
+    // OnPush verursachte Regression: Properties ändern sich, aber keine CD nach Events
+    template: `
+    <!-- ─── Bulk-Action Bar (erscheint wenn Einträge ausgewählt) ─── -->
+    <div class="rdl-bulk-bar" *ngIf="selectable && selectedIds.size > 0">
+      <div class="rdl-bulk-bar__info">
+        <input type="checkbox" class="rdl-cb rdl-cb--all"
+               [checked]="isAllSelected()"
+               [indeterminate]="isPartialSelected()"
+               (change)="toggleAll($event)">
+        <strong>{{ selectedIds.size }}</strong>&nbsp;{{ 'dataList.selected' | translate }}
+        <button class="rdl-bulk-bar__clear" (click)="clearSelection()">✕ {{ 'dataList.deselect' | translate }}</button>
+      </div>
+      <div class="rdl-bulk-bar__actions">
+        <button *ngFor="let ba of bulkActions"
+                class="rdl-bulk-btn"
+                [ngClass]="ba.class"
+                (click)="executeBulkAction(ba)">
+          {{ ba.icon }} {{ ba.label }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ─── Toolbar ──────────────────────────────────────────── -->
+    <div class="rdl-toolbar" *ngIf="showToolbar">
+      <div class="rdl-toolbar__left">
+        <!-- Select-All Checkbox (nur wenn kein Item ausgewählt, um Dopplung zu vermeiden) -->
+        <label *ngIf="selectable && selectedIds.size === 0" class="rdl-select-all-label">
+          <input type="checkbox"
+                 [checked]="isAllSelected()"
+                 [indeterminate]="isPartialSelected()"
+                 (change)="toggleAll($event)"
+                 class="rdl-cb">
+          {{ 'dataList.all' | translate }}
+        </label>
+        <div class="rdl-search" *ngIf="searchable">
+          <span class="rdl-search__icon">🔍</span>
+          <input
+            class="rdl-search__input"
+            type="text"
+            [placeholder]="searchPlaceholder"
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="onSearch($event)" />
+          <button *ngIf="searchQuery" class="rdl-search__clear" (click)="clearSearch()">✕</button>
+        </div>
+        <span class="rdl-count" *ngIf="filteredItems.length !== items.length">
+          {{ filteredItems.length }} / {{ items.length }} {{ 'dataList.entries' | translate }}
+        </span>
+        <span class="rdl-count" *ngIf="filteredItems.length === items.length && !loading">
+          {{ items.length }} {{ 'dataList.entries' | translate }}
+        </span>
+      </div>
+      <div class="rdl-toolbar__right">
+        <div class="rdl-view-toggle">
+          <button class="rdl-toggle-btn" [class.rdl-toggle-btn--active]="viewMode === 'table'" (click)="viewMode = 'table'" title="Tabellenansicht">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <rect x="0" y="0" width="16" height="3" rx="1"/>
+              <rect x="0" y="5" width="16" height="3" rx="1"/>
+              <rect x="0" y="10" width="16" height="3" rx="1"/>
+            </svg>
+          </button>
+          <button class="rdl-toggle-btn" [class.rdl-toggle-btn--active]="viewMode === 'cards'" (click)="viewMode = 'cards'" title="Kartenansicht">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <rect x="0" y="0" width="7" height="7" rx="1.5"/>
+              <rect x="9" y="0" width="7" height="7" rx="1.5"/>
+              <rect x="0" y="9" width="7" height="7" rx="1.5"/>
+              <rect x="9" y="9" width="7" height="7" rx="1.5"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Loading Skeleton ──────────────────────────────────── -->
+    <div *ngIf="loading" class="rdl-skeleton">
+      <div *ngFor="let _ of skeletonRows" class="rdl-skeleton__row">
+        <div class="rdl-skeleton__img"></div>
+        <div class="rdl-skeleton__lines">
+          <div class="rdl-skeleton__line rdl-skeleton__line--wide"></div>
+          <div class="rdl-skeleton__line rdl-skeleton__line--slim"></div>
+        </div>
+        <div class="rdl-skeleton__badge"></div>
+        <div class="rdl-skeleton__actions"></div>
+      </div>
+    </div>
+
+    <!-- ─── Empty State ──────────────────────────────────────── -->
+    <div *ngIf="!loading && filteredItems.length === 0" class="rdl-empty">
+      <div class="rdl-empty__icon">{{ searchQuery ? '🔍' : emptyIcon }}</div>
+      <h3 class="rdl-empty__title">{{ (searchQuery ? 'dataList.noResults' : 'dataList.emptyTitle') | translate }}</h3>
+      <p class="rdl-empty__text">
+        <ng-container *ngIf="searchQuery">{{ 'dataList.noResultsFor' | translate }} "{{ searchQuery }}"</ng-container>
+        <ng-container *ngIf="!searchQuery">{{ emptyMessage }}</ng-container>
+      </p>
+      <button *ngIf="searchQuery" class="rdl-empty__btn" (click)="clearSearch()">{{ 'dataList.resetSearch' | translate }}</button>
+    </div>
+
+    <!-- ─── TABLE VIEW ────────────────────────────────────────── -->
+    <div *ngIf="!loading && filteredItems.length > 0 && viewMode === 'table'" class="rdl-table-wrap">
+      <table class="rdl-table">
+        <thead>
+          <tr>
+            <!-- Checkbox-Spalte -->
+            <th *ngIf="selectable" class="rdl-th--cb">
+              <input type="checkbox" class="rdl-cb"
+                     [checked]="isAllSelected()"
+                     [indeterminate]="isPartialSelected()"
+                     (change)="toggleAll($event)">
+            </th>
+            <th *ngFor="let col of columns" [style.width]="col.width"
+                [class.rdl-th--sortable]="col.sortable"
+                (click)="col.sortable && sort(col.key)">
+              {{ col.label }}
+              <span *ngIf="col.sortable" class="rdl-sort-icon">
+                {{ sortKey === col.key ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}
+              </span>
+            </th>
+            <th *ngIf="actions.length > 0" class="rdl-th--actions">{{ actionsLabel }}</th>
+            <th *ngIf="rowClickable" class="rdl-th--chevron"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of sortedItems; trackBy: trackByFn"
+              [class.rdl-row--clickable]="rowClickable"
+              [class.rdl-row--selected]="isSelected(item)"
+              (click)="onRowClick(item)">
+            <!-- Checkbox-Zelle -->
+            <td *ngIf="selectable" class="rdl-td--cb" (click)="$event.stopPropagation()">
+              <input type="checkbox" class="rdl-cb"
+                     [checked]="isSelected(item)"
+                     (change)="toggleItem(item)">
+            </td>            <td *ngFor="let col of columns" [attr.data-label]="col.label">
+              <!-- Image -->
+              <div *ngIf="col.type === 'image'" class="rdl-img-cell">
+                <img *ngIf="getCellValue(item, col.key)" [src]="getCellValue(item, col.key)"
+                     loading="lazy"
+                     [alt]="col.label" class="rdl-img" (error)="onImageError($event)">
+                <div *ngIf="!getCellValue(item, col.key)" class="rdl-img-placeholder">📷</div>
+              </div>
+              <!-- Badge -->
+              <span *ngIf="col.type === 'badge'" class="rdl-badge"
+                    [ngClass]="col.badgeClass ? col.badgeClass(getCellValue(item, col.key), item) : ''">
+                {{ formatCell(item, col) }}
+              </span>
+              <!-- Currency -->
+              <span *ngIf="col.type === 'currency'" class="rdl-currency">
+                {{ getCellValue(item, col.key) | number:'1.2-2' }} €
+              </span>
+              <!-- Date -->
+              <span *ngIf="col.type === 'date'" class="rdl-date">
+                {{ getCellValue(item, col.key) | date:'dd.MM.yyyy' }}
+              </span>
+              <!-- Number -->
+              <span *ngIf="col.type === 'number'" class="rdl-number">
+                {{ getCellValue(item, col.key) | number }}
+              </span>
+              <!-- Text -->
+              <span *ngIf="!col.type || col.type === 'text'" class="rdl-text">
+                {{ formatCell(item, col) }}
+              </span>
+              <!-- Custom -->
+              <ng-container *ngIf="col.type === 'custom' && customCellTemplate">
+                <ng-container *ngTemplateOutlet="customCellTemplate!; context: { $implicit: item, column: col }">
+                </ng-container>
+              </ng-container>
+            </td>
+            <!-- Action Buttons -->
+            <td *ngIf="actions.length > 0" class="rdl-td--actions">
+              <div class="rdl-actions">
+                <button *ngFor="let action of actions"
+                        [hidden]="action.visible && !action.visible(item)"
+                        class="rdl-action-btn"
+                        [ngClass]="action.class"
+                        [title]="action.label"
+                        (click)="executeAction(action, item, $event)">
+                  {{ action.icon }}
+                </button>
+              </div>
+            </td>
+            <!-- Clickable Chevron -->
+            <td *ngIf="rowClickable" class="rdl-td--chevron">
+              <span class="rdl-chevron">›</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ─── CARDS VIEW ────────────────────────────────────────── -->
+    <div *ngIf="!loading && filteredItems.length > 0 && viewMode === 'cards'" class="rdl-cards">
+      <div *ngFor="let item of sortedItems; trackBy: trackByFn"
+           class="rdl-card"
+           [class.rdl-card--clickable]="rowClickable"
+           [class.rdl-card--selected]="isSelected(item)"
+           (click)="onRowClick(item)">
+        <!-- Card Checkbox -->
+        <div *ngIf="selectable" class="rdl-card__cb" (click)="$event.stopPropagation()">
+          <input type="checkbox" class="rdl-cb" [checked]="isSelected(item)" (change)="toggleItem(item)">
+        </div>
+        <!-- Card Image -->
+        <div *ngIf="hasImageColumn()" class="rdl-card__img-wrap">
+          <img *ngIf="getImageUrl(item)" [src]="getImageUrl(item)" 
+               loading="lazy"
+               alt="Vorschaubild" class="rdl-card__img" (error)="onImageError($event)">
+          <div *ngIf="!getImageUrl(item)" class="rdl-card__img-placeholder">📷</div>
+        </div>
+        <!-- Card Body -->
+        <div class="rdl-card__body">
+          <div *ngFor="let col of getMobileColumns()" class="rdl-card__field">
+            <span class="rdl-card__label">{{ col.mobileLabel || col.label }}</span>
+            <span *ngIf="col.type === 'badge'" class="rdl-badge rdl-card__value"
+                  [ngClass]="col.badgeClass ? col.badgeClass(getCellValue(item, col.key), item) : ''">
+              {{ formatCell(item, col) }}
+            </span>
+            <span *ngIf="col.type === 'currency'" class="rdl-currency rdl-card__value">
+              {{ getCellValue(item, col.key) | number:'1.2-2' }} €
+            </span>
+            <span *ngIf="col.type === 'date'" class="rdl-card__value">
+              {{ getCellValue(item, col.key) | date:'dd.MM.yyyy' }}
+            </span>
+            <span *ngIf="!col.type || col.type === 'text'" class="rdl-card__value">
+              {{ formatCell(item, col) }}
+            </span>
+          </div>
+        </div>
+        <!-- Card Footer -->
+        <div class="rdl-card__footer">
+          <div class="rdl-actions">
+            <button *ngFor="let action of actions"
+                    [hidden]="action.visible && !action.visible(item)"
+                    class="rdl-action-btn"
+                    [ngClass]="action.class"
+                    [title]="action.label"
+                    (click)="executeAction(action, item, $event)">
+              <span>{{ action.icon }}</span>
+              <span class="rdl-action-btn__label">{{ action.label }}</span>
+            </button>
+          </div>
+          <span *ngIf="rowClickable" class="rdl-chevron">›</span>
+        </div>
+      </div>
+    </div>
+  `,
+    styleUrls: ['./responsive-data-list.component.scss']
+})
+export class ResponsiveDataListComponent implements OnInit, OnChanges {
+  @Input() items: any[] = [];
+  @Input() columns: ColumnConfig[] = [];
+  @Input() actions: ActionConfig[] = [];
+  @Input() bulkActions: BulkActionConfig[] = [];
+  @Input() loading = false;
+  @Input() emptyMessage = 'Keine Einträge vorhanden';
+  @Input() emptyIcon = '📭';
+  @Input() loadingMessage = 'Wird geladen...';
+  @Input() actionsLabel = 'Aktionen';
+  @Input() rowClickable = false;
+  @Input() searchable = true;
+  @Input() searchPlaceholder = 'Suchen...';
+  @Input() showToolbar = true;
+  @Input() defaultView: 'table' | 'cards' = 'table';
+  @Input() selectable = false;
+  @Input() trackBy: string = 'id'; // Welches Feld als eindeutiger Key genutzt wird
+
+  @Output() rowClick = new EventEmitter<any>();
+  @Output() searchChange = new EventEmitter<string>();
+  @Output() selectionChange = new EventEmitter<any[]>();
+
+  @ContentChild('customCell') customCellTemplate: TemplateRef<any> | null = null;
+
+  viewMode: 'table' | 'cards' = 'table';
+  searchQuery = '';
+  sortKey = '';
+  sortDir: 'asc' | 'desc' = 'asc';
+  skeletonRows = [1, 2, 3, 4, 5];
+
+  // Multiselect State – Set von IDs der ausgewählten Einträge
+  selectedIds = new Set<any>();
+
+  // ── Performance: Gecachte Properties statt Getter ──
+  filteredItems: any[] = [];
+  sortedItems: any[] = [];
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Wenn items sich ändern (z.B. nach Reload), Auswahl bereinigen
+    if (changes['items']) {
+      const newIds = new Set((this.items || []).map(i => i[this.trackBy]));
+      for (const id of this.selectedIds) {
+        if (!newIds.has(id)) this.selectedIds.delete(id);
+      }
+      // Neu berechnen bei Input-Änderung
+      this.updateFilteredItems();
+      this.updateSortedItems();
+    }
+  }
+
+  ngOnInit() {
+    this.viewMode = this.defaultView;
+    if (window.innerWidth < 768) this.viewMode = 'cards';
+    // Initial berechnen
+    this.updateFilteredItems();
+    this.updateSortedItems();
+  }
+
+  /**
+   * TrackBy-Funktion für *ngFor – verwendet stabiles ID-Feld aus @Input trackBy.
+   * Verhindert unnötiges Re-Rendering von DOM-Zeilen bei Filterung/Sortierung.
+   */
+  trackByFn = (index: number, item: any): any => {
+    return item[this.trackBy] ?? index;
+  };
+
+  // ── Multiselect ────────────────────────────────────────────────────────────
+
+  isSelected(item: any): boolean {
+    return this.selectedIds.has(item[this.trackBy]);
+  }
+
+  toggleItem(item: any): void {
+    const id = item[this.trackBy];
+    if (this.selectedIds.has(id)) {
+      this.selectedIds.delete(id);
+    } else {
+      this.selectedIds.add(id);
+    }
+    this.selectedIds = new Set(this.selectedIds); // trigger change detection
+    this.selectionChange.emit(this.getSelectedItems());
+  }
+
+  isAllSelected(): boolean {
+    return this.sortedItems.length > 0 &&
+           this.sortedItems.every(i => this.selectedIds.has(i[this.trackBy]));
+  }
+
+  isPartialSelected(): boolean {
+    return this.sortedItems.some(i => this.selectedIds.has(i[this.trackBy])) &&
+           !this.isAllSelected();
+  }
+
+  toggleAll(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    if (checked) {
+      this.sortedItems.forEach(i => this.selectedIds.add(i[this.trackBy]));
+    } else {
+      this.sortedItems.forEach(i => this.selectedIds.delete(i[this.trackBy]));
+    }
+    this.selectedIds = new Set(this.selectedIds);
+    this.selectionChange.emit(this.getSelectedItems());
+  }
+
+  clearSelection(): void {
+    this.selectedIds.clear();
+    this.selectedIds = new Set();
+    this.selectionChange.emit([]);
+  }
+
+  getSelectedItems(): any[] {
+    return this.items.filter(i => this.selectedIds.has(i[this.trackBy]));
+  }
+
+  executeBulkAction(action: BulkActionConfig): void {
+    action.handler(this.getSelectedItems());
+  }
+
+  // ── Performance: Methoden statt Getter ──
+  private updateFilteredItems(): void {
+    if (!this.searchQuery.trim()) {
+      this.filteredItems = this.items;
+    } else {
+      const q = this.searchQuery.toLowerCase();
+      this.filteredItems = this.items.filter(item =>
+        this.columns.some(col => {
+          const val = this.getCellValue(item, col.key);
+          return val && String(val).toLowerCase().includes(q);
+        })
+      );
+    }
+  }
+
+  private updateSortedItems(): void {
+    if (!this.sortKey) {
+      this.sortedItems = this.filteredItems;
+    } else {
+      this.sortedItems = [...this.filteredItems].sort((a, b) => {
+        const va = this.getCellValue(a, this.sortKey);
+        const vb = this.getCellValue(b, this.sortKey);
+        const cmp = String(va ?? '').localeCompare(String(vb ?? ''), 'de', { numeric: true });
+        return this.sortDir === 'asc' ? cmp : -cmp;
+      });
+    }
+  }
+
+  sort(key: string) {
+    if (this.sortKey === key) {
+      this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortKey = key;
+      this.sortDir = 'asc';
+    }
+    this.updateSortedItems();
+  }
+
+  onSearch(q: string) {
+    this.updateFilteredItems();
+    this.updateSortedItems();
+    this.searchChange.emit(q);
+  }
+
+  clearSearch() {
+    this.searchQuery = '';
+    this.updateFilteredItems();
+    this.updateSortedItems();
+    this.searchChange.emit('');
+  }
+
+  getCellValue(item: any, key: string): any {
+    return key.split('.').reduce((v, k) => v?.[k], item);
+  }
+
+  formatCell(item: any, col: ColumnConfig): string {
+    const value = this.getCellValue(item, col.key);
+    if (col.formatFn) return col.formatFn(value, item);
+    return value ?? '-';
+  }
+
+  hasImageColumn(): boolean {
+    return this.columns.some(col => col.type === 'image');
+  }
+
+  getImageUrl(item: any): string | null {
+    const imageCol = this.columns.find(col => col.type === 'image');
+    if (!imageCol) return null;
+    return this.getCellValue(item, imageCol.key);
+  }
+
+  getMobileColumns(): ColumnConfig[] {
+    return this.columns.filter(col => col.type !== 'image' && !col.hideOnMobile);
+  }
+
+  executeAction(action: ActionConfig, item: any, event: Event): void {
+    event.stopPropagation();
+    action.handler(item);
+  }
+
+  onRowClick(item: any): void {
+    if (this.rowClickable) this.rowClick.emit(item);
+  }
+
+  onImageError(event: Event): void {
+    (event.target as HTMLImageElement).style.display = 'none';
+  }
+}
+

@@ -1,0 +1,146 @@
+<div class="address-book-container">
+  <div class="header">
+    <h2>Meine Adressen</h2>
+    <button class="btn btn-primary" (click)="showAddressForm()" *ngIf="!showAddForm">
+      <i class="fas fa-plus"></i> Neue Adresse hinzufügen
+    </button>
+  </div>
+
+  <!-- Address Form -->
+  <div class="address-form-card" *ngIf="showAddForm">
+    <h3>{{ editingAddress ? 'Adresse bearbeiten' : 'Neue Adresse hinzufügen' }}</h3>
+    <form [formGroup]="addressForm" (ngSubmit)="saveAddress()">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstName">Vorname *</label>
+          <input type="text" id="firstName" formControlName="firstName" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label for="lastName">Nachname *</label>
+          <input type="text" id="lastName" formControlName="lastName" class="form-control" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="company">Firma (optional)</label>
+        <input type="text" id="company" formControlName="company" class="form-control" />
+      </div>
+
+      <div class="form-group">
+        <label for="address1">Straße und Hausnummer *</label>
+        <input type="text" id="address1" formControlName="address1" class="form-control" />
+      </div>
+
+      <div class="form-group">
+        <label for="address2">Adresszusatz (optional)</label>
+        <input type="text" id="address2" formControlName="address2" class="form-control" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="postalCode">PLZ *</label>
+          <input type="text" id="postalCode" formControlName="postalCode" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label for="city">Stadt *</label>
+          <input type="text" id="city" formControlName="city" class="form-control" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="state">Bundesland (optional)</label>
+          <input type="text" id="state" formControlName="state" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label for="country">Land *</label>
+          <input type="text" id="country" formControlName="country" class="form-control" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="phone">Telefon (optional)</label>
+          <input type="tel" id="phone" formControlName="phone" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label for="email">E-Mail (optional)</label>
+          <input type="email" id="email" formControlName="email" class="form-control" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="addressType">Adresstyp *</label>
+        <select id="addressType" formControlName="addressType" class="form-control">
+          <option value="BOTH">Versand- & Rechnungsadresse</option>
+          <option value="SHIPPING">Nur Versandadresse</option>
+          <option value="BILLING">Nur Rechnungsadresse</option>
+        </select>
+      </div>
+
+      <div class="form-check">
+        <input type="checkbox" id="isDefault" formControlName="isDefault" class="form-check-input" />
+        <label for="isDefault" class="form-check-label">Als Standardadresse festlegen</label>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="addressForm.invalid || loading">
+          {{ loading ? 'Speichere...' : 'Speichern' }}
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="cancelEdit()">Abbrechen</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Address List -->
+  <div class="addresses-grid" *ngIf="!loading && addresses.length > 0 && !showAddForm">
+    <div class="address-card" *ngFor="let address of addresses">
+      <div class="address-header">
+        <span class="address-type-badge" [class]="'badge-' + address.addressType.toLowerCase()">
+          {{ getAddressTypeLabel(address.addressType) }}
+        </span>
+        <span class="default-badge" *ngIf="address.isDefault">Standard</span>
+      </div>
+
+      <div class="address-content">
+        <p class="address-name">{{ address.firstName }} {{ address.lastName }}</p>
+        <p class="address-company" *ngIf="address.company">{{ address.company }}</p>
+        <p>{{ address.address1 }}</p>
+        <p *ngIf="address.address2">{{ address.address2 }}</p>
+        <p>{{ address.postalCode }} {{ address.city }}</p>
+        <p *ngIf="address.state">{{ address.state }}</p>
+        <p>{{ address.country }}</p>
+        <p *ngIf="address.phone"><i class="fas fa-phone"></i> {{ address.phone }}</p>
+        <p *ngIf="address.email"><i class="fas fa-envelope"></i> {{ address.email }}</p>
+      </div>
+
+      <div class="address-actions">
+        <button class="btn btn-sm btn-outline" (click)="editAddress(address)">
+          <i class="fas fa-edit"></i> Bearbeiten
+        </button>
+        <button class="btn btn-sm btn-outline" (click)="setDefaultAddress(address)" *ngIf="!address.isDefault">
+          <i class="fas fa-star"></i> Als Standard
+        </button>
+        <button class="btn btn-sm btn-danger-outline" (click)="deleteAddress(address)">
+          <i class="fas fa-trash"></i> Löschen
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && addresses.length === 0 && !showAddForm">
+    <i class="fas fa-address-book"></i>
+    <p>Sie haben noch keine Adressen gespeichert</p>
+    <button class="btn btn-primary" (click)="showAddressForm()">
+      Erste Adresse hinzufügen
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Lade Adressen...</p>
+  </div>
+</div>
+

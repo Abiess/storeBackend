@@ -1,0 +1,1494 @@
+// ============================================
+// CURRENCY & TAX TYPES
+// ============================================
+export type CurrencyCode = 'EUR' | 'MAD' | 'USD' | 'GBP';
+export type PriceMode = 'GROSS' | 'NET';
+export type TaxCategory = 'STANDARD' | 'REDUCED' | 'ZERO' | 'EXEMPT';
+export type ShippingTaxStrategy =
+  | 'STORE_DEFINED'
+  | 'STANDARD_RATE'
+  | 'PROPORTIONAL_TO_CART';
+
+// ============================================
+// USER & AUTH
+// ============================================
+export interface User {
+  id: number;
+  email: string;
+  name?: string;
+  roles: Role[];
+  plan?: PlanDetails; // FIXED: Changed from Plan enum to PlanDetails interface
+  createdAt: string;
+  updatedAt: string;
+  /** App-Entitlement Phase 1 (additiv, optional für Rückwärtskompatibilität). */
+  appAccessMode?: AppAccessMode;
+  /** App-Entitlement Phase 1: explizite Liste der Berechtigungen (nur bei MANAGED relevant). */
+  apps?: AppEntitlement[];
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
+}
+
+// ============================================
+// APP ENTITLEMENTS (Phase 1/2 – Multi-App-Plattform)
+// ============================================
+/** Spiegelt storebackend.enums.AppKey 1:1. */
+export enum AppKey {
+  SHOP = 'SHOP',
+  DHL = 'DHL',
+  LOYALTY = 'LOYALTY',
+  MARITIME = 'MARITIME',
+  ISSUE_ANALYSIS = 'ISSUE_ANALYSIS',
+  /** Persönlicher Dokumenten-Tresor, GLOBAL-Scope (kein storeId). Siehe ARCHITECTURE_APP_FACTORY.md. */
+  DOCUMENTS = 'DOCUMENTS'
+}
+
+/** Spiegelt storebackend.enums.AppAccessMode 1:1. */
+export enum AppAccessMode {
+  LEGACY = 'LEGACY',
+  MANAGED = 'MANAGED'
+}
+
+/** Spiegelt storebackend.dto.AppEntitlementDTO 1:1. */
+export interface AppEntitlement {
+  app: AppKey;
+  storeId: number | null;
+  enabled: boolean;
+}
+
+export interface RegistrationResponse {
+  registrationSuccessful: boolean;
+  emailVerificationRequired: boolean;
+  emailSent: boolean;
+  emailStatus: string;
+  emailErrorCode?: string | null;
+  email: string;
+  message: string;
+  retryAllowed: boolean;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  name?: string;
+}
+
+// ============================================
+// AI PRODUCT SUGGESTION
+// ============================================
+export interface AiProductSuggestion {
+  title: string;
+  description: string;
+  generatedCaption: string;
+}
+
+// V2 with structured JSON output
+export interface AiProductSuggestionV2 {
+  title: string;
+  description: string;
+  category: string;
+  tags: string[];
+  seoTitle: string;
+  metaDescription: string;
+  slug: string;
+  suggestedPrice: number;
+}
+
+/**
+ * TEMP: Ergebnis der isolierten OpenRouter-Vision Issue-Analyse
+ * (Bild → mögliches Reparatur-/Schadensproblem als JSON).
+ * Erlaubte category: SANITARY, ELECTRICAL, HEATING, APPLIANCE, DOOR_WINDOW,
+ *                     WALL_CEILING, FLOOR, ROOF, OTHER
+ * Erlaubte urgency:   LOW, MEDIUM, HIGH, EMERGENCY
+ */
+export interface IssueImageAnalysisResult {
+  category: string;
+  problem: string;
+  urgency: string;
+  confidence: number | null;
+  questions: string[];
+}
+
+// ============================================
+// MARITIME (AIS Live-Schiffsdaten – MVP: Tanger Med)
+// ============================================
+/** Aktueller Live-Zustand eines Schiffs, siehe GET /api/maritime/vessels */
+export interface VesselDto {
+  mmsi: number;
+  shipName?: string;
+  latitude: number;
+  longitude: number;
+  speed?: number | null;
+  course?: number | null;
+  heading?: number | null;
+  lastSeen: string;
+  callSign?: string;
+  imo?: number;
+  shipType?: number;
+  destination?: string;
+  draught?: number;
+  // Phase 2A (Port Operations) – ebenfalls optional, nur befüllt wenn vom Backend abgeleitet/geliefert.
+  navigationStatus?: number | null;
+  /** Nur Monat/Tag/Stunde/Minute (kein Jahr in AIS enthalten), z.B. "12-25 14:30". */
+  eta?: string | null;
+  length?: number | null;
+  width?: number | null;
+  /** Einfacher, vom Backend abgeleiteter Betriebsstatus, siehe VesselPortStatus (Backend-Enum). */
+  portStatus?: string | null;
+}
+
+export interface MaritimeStatus {
+  connected: boolean;
+  configured: boolean;
+  healthy: boolean;
+  selectedPort: string;
+  lastMessageAt: string | null;
+  vesselCount: number;
+}
+
+export interface MaritimeVesselsResponse extends MaritimeStatus {
+  vessels: VesselDto[];
+}
+
+export interface MaritimePort {
+  id: string;
+  name: string;
+  /** Phase 3A (Live Map) – vom Backend als Source-of-Truth gelieferte Geometrie, siehe MaritimePortDto. */
+  center?: [number, number];
+  /** Enge interne Port-Zone {{minLat,minLon},{maxLat,maxLon}}. */
+  portZoneBox?: [[number, number], [number, number]];
+  /** Mittelgroße Anfahrtszone um den Hafen. */
+  approachZone?: [[number, number], [number, number]];
+}
+
+/** Phase 2B: ein fachliches Port Event (Statuswechsel), siehe GET /api/maritime/vessels/{mmsi}/events. */
+export interface VesselPortEventDto {
+  mmsi: number;
+  port: string;
+  /** APPROACHING | ENTERED_PORT | MOORED | DEPARTING | LEFT_PORT */
+  eventType: string;
+  eventTime: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  sog?: number | null;
+  shipName?: string | null;
+  destination?: string | null;
+}
+
+/** Phase 2B: kleine Historie + serverseitig abgeleitete Liegezeit-Ankerpunkte eines Schiffs. */
+export interface VesselPortEventsResponse {
+  mmsi: number;
+  events: VesselPortEventDto[];
+  /** Beginn des aktuellen Hafenaufenthalts, oder null (kein laufender Aufenthalt bekannt). */
+  enteredAt?: string | null;
+  mooredAt?: string | null;
+  /** Letztes bekanntes "Hafen verlassen" - falls gesetzt, ist das Schiff aktuell NICHT im Hafen. */
+  leftAt?: string | null;
+}
+
+/**
+ * Marine-Wetter-/Ozean-Modelldaten (Open-Meteo Marine API) für den aktuell ausgewählten Hafen.
+ * WICHTIG: Modell-/Forecast-Daten, keine amtlichen Hafenmessungen/Navigationsdaten
+ * (siehe maritime.weather.disclaimer). Alle Werte nullable.
+ */
+export interface MarineWeatherDto {
+  port: string;
+  latitude: number;
+  longitude: number;
+  forecastTime?: string | null;
+  waveHeightM?: number | null;
+  waveDirectionDeg?: number | null;
+  wavePeriodS?: number | null;
+  swellHeightM?: number | null;
+  swellDirectionDeg?: number | null;
+  swellPeriodS?: number | null;
+  seaSurfaceTemperatureC?: number | null;
+  currentVelocityMs?: number | null;
+  currentDirectionDeg?: number | null;
+  seaLevelHeightM?: number | null;
+  source?: string;
+  modelBased: boolean;
+  available: boolean;
+  /** Zeitpunkt des letzten erfolgreichen Ladens vom Provider (für "Last updated"-Anzeige im Frontend). */
+  fetchedAt?: string | null;
+  /** true = Refresh ist gerade fehlgeschlagen, es wird ein älterer (über-TTL) Cache-Stand angezeigt. */
+  stale?: boolean;
+}
+
+// ============================================
+// ADDRESS
+// ============================================
+export interface Address {
+  firstName: string;
+  lastName: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  phone?: string;
+}
+
+// ============================================
+// ROLES & PERMISSIONS
+// ============================================
+export enum Role {
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  STORE_OWNER = 'STORE_OWNER',
+  STORE_MANAGER = 'STORE_MANAGER',
+  STORE_EMPLOYEE = 'STORE_EMPLOYEE',
+  CUSTOMER = 'CUSTOMER'
+}
+
+export enum UserRole {
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  STORE_OWNER = 'STORE_OWNER',
+  STORE_ADMIN = 'STORE_ADMIN',
+  STORE_MANAGER = 'STORE_MANAGER',
+  STORE_STAFF = 'STORE_STAFF',
+  STORE_EMPLOYEE = 'STORE_EMPLOYEE',
+  CUSTOMER = 'CUSTOMER'
+}
+
+export enum Permission {
+  // Store
+  STORE_CREATE = 'STORE_CREATE',
+  STORE_READ = 'STORE_READ',
+  STORE_UPDATE = 'STORE_UPDATE',
+  STORE_DELETE = 'STORE_DELETE',
+  STORE_MANAGE = 'STORE_MANAGE',
+  STORE_MANAGE_SETTINGS = 'STORE_MANAGE_SETTINGS',
+  // Domain
+  DOMAIN_CREATE = 'DOMAIN_CREATE',
+  DOMAIN_READ = 'DOMAIN_READ',
+  DOMAIN_UPDATE = 'DOMAIN_UPDATE',
+  DOMAIN_DELETE = 'DOMAIN_DELETE',
+  DOMAIN_VERIFY = 'DOMAIN_VERIFY',
+  DOMAIN_MANAGE = 'DOMAIN_MANAGE',
+  // Product
+  PRODUCT_CREATE = 'PRODUCT_CREATE',
+  PRODUCT_READ = 'PRODUCT_READ',
+  PRODUCT_EDIT = 'PRODUCT_EDIT',
+  PRODUCT_UPDATE = 'PRODUCT_UPDATE',
+  PRODUCT_DELETE = 'PRODUCT_DELETE',
+  PRODUCT_VIEW = 'PRODUCT_VIEW',
+  // Category
+  CATEGORY_CREATE = 'CATEGORY_CREATE',
+  CATEGORY_READ = 'CATEGORY_READ',
+  CATEGORY_UPDATE = 'CATEGORY_UPDATE',
+  CATEGORY_DELETE = 'CATEGORY_DELETE',
+  // Order
+  ORDER_CREATE = 'ORDER_CREATE',
+  ORDER_READ = 'ORDER_READ',
+  ORDER_VIEW = 'ORDER_VIEW',
+  ORDER_UPDATE = 'ORDER_UPDATE',
+  ORDER_DELETE = 'ORDER_DELETE',
+  ORDER_MANAGE = 'ORDER_MANAGE',
+  // Staff
+  STAFF_CREATE = 'STAFF_CREATE',
+  STAFF_READ = 'STAFF_READ',
+  STAFF_UPDATE = 'STAFF_UPDATE',
+  STAFF_DELETE = 'STAFF_DELETE',
+  // Customer
+  CUSTOMER_VIEW = 'CUSTOMER_VIEW',
+  CUSTOMER_MANAGE = 'CUSTOMER_MANAGE',
+  // Settings / Reports
+  SETTINGS_VIEW = 'SETTINGS_VIEW',
+  SETTINGS_EDIT = 'SETTINGS_EDIT',
+  REPORTS_VIEW = 'REPORTS_VIEW',
+  // Media
+  MEDIA_UPLOAD = 'MEDIA_UPLOAD',
+  MEDIA_READ = 'MEDIA_READ',
+  MEDIA_DELETE = 'MEDIA_DELETE'
+}
+
+export interface UserRoleInterface {
+  userId: number;
+  role: string;
+}
+
+export type PermissionType = string;
+
+// ============================================
+// STORE ROLES & PERMISSIONS
+// ============================================
+
+/** Store-Rolle (Response vom Backend) */
+export interface StoreRole {
+  id?: number;
+  userId: number;
+  userEmail?: string;
+  userName?: string;
+  storeId: number;
+  role: string;
+  permissions: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Request zum Erstellen/Aktualisieren einer Store-Rolle */
+export interface StoreRoleRequest {
+  userId: number;
+  role: string;
+  permissions?: string[];
+}
+
+/** Request zum Erstellen einer Team-Einladung */
+export interface CreateTeamInvitationRequest {
+  email: string;
+  role: string;
+}
+
+/** Team-Einladung (Response) */
+export interface TeamInvitation {
+  id: number;
+  storeId: number;
+  email: string;
+  role: string;
+  status: InvitationStatus;
+  token?: string;
+  invitedByUserId: number;
+  invitedByUserName?: string;
+  createdAt: string;
+  expiresAt: string;
+  acceptedAt?: string;
+  revokedAt?: string;
+}
+
+export interface TeamInvitationResponse {
+  invitation: TeamInvitation;
+  emailSent: boolean;
+  emailStatus: 'SENT' | 'TEMPORARILY_FAILED' | 'PERMANENTLY_FAILED';
+  emailErrorCode?: string | null;
+  retryAllowed: boolean;
+}
+
+export enum InvitationStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  EXPIRED = 'EXPIRED',
+  REVOKED = 'REVOKED'
+}
+
+export interface DomainRole {
+  userId: number;
+  domainId: number;
+  role: string;
+  permissions: string[];
+}
+
+export interface DomainAccess {
+  id?: number;
+  userId: number;
+  domainId: number;
+  role: string;
+  canManage: boolean;
+  canVerify: boolean;
+  createdAt?: string;
+}
+
+export const ROLE_PERMISSIONS_MAP: Record<UserRole, Permission[]> = {
+  [UserRole.SUPER_ADMIN]: Object.values(Permission),
+  [UserRole.STORE_OWNER]: [
+    Permission.STORE_READ, Permission.STORE_UPDATE, Permission.STORE_MANAGE, Permission.STORE_MANAGE_SETTINGS,
+    Permission.DOMAIN_CREATE, Permission.DOMAIN_READ, Permission.DOMAIN_UPDATE, Permission.DOMAIN_DELETE, Permission.DOMAIN_VERIFY,
+    Permission.PRODUCT_CREATE, Permission.PRODUCT_READ, Permission.PRODUCT_EDIT, Permission.PRODUCT_UPDATE, Permission.PRODUCT_DELETE, Permission.PRODUCT_VIEW,
+    Permission.CATEGORY_CREATE, Permission.CATEGORY_READ, Permission.CATEGORY_UPDATE, Permission.CATEGORY_DELETE,
+    Permission.ORDER_CREATE, Permission.ORDER_READ, Permission.ORDER_VIEW, Permission.ORDER_UPDATE, Permission.ORDER_MANAGE,
+    Permission.STAFF_CREATE, Permission.STAFF_READ, Permission.STAFF_UPDATE, Permission.STAFF_DELETE,
+    Permission.CUSTOMER_VIEW, Permission.CUSTOMER_MANAGE,
+    Permission.SETTINGS_VIEW, Permission.SETTINGS_EDIT, Permission.REPORTS_VIEW,
+    Permission.MEDIA_UPLOAD, Permission.MEDIA_READ, Permission.MEDIA_DELETE
+  ],
+  [UserRole.STORE_ADMIN]: [
+    Permission.STORE_READ, Permission.STORE_UPDATE, Permission.STORE_MANAGE_SETTINGS,
+    Permission.DOMAIN_READ, Permission.DOMAIN_VERIFY,
+    Permission.PRODUCT_CREATE, Permission.PRODUCT_READ, Permission.PRODUCT_EDIT, Permission.PRODUCT_UPDATE, Permission.PRODUCT_DELETE, Permission.PRODUCT_VIEW,
+    Permission.CATEGORY_CREATE, Permission.CATEGORY_READ, Permission.CATEGORY_UPDATE, Permission.CATEGORY_DELETE,
+    Permission.ORDER_READ, Permission.ORDER_VIEW, Permission.ORDER_UPDATE, Permission.ORDER_MANAGE,
+    Permission.STAFF_READ, Permission.CUSTOMER_VIEW, Permission.CUSTOMER_MANAGE,
+    Permission.SETTINGS_VIEW, Permission.REPORTS_VIEW,
+    Permission.MEDIA_UPLOAD, Permission.MEDIA_READ, Permission.MEDIA_DELETE
+  ],
+  [UserRole.STORE_MANAGER]: [
+    Permission.STORE_READ,
+    Permission.PRODUCT_CREATE, Permission.PRODUCT_READ, Permission.PRODUCT_EDIT, Permission.PRODUCT_UPDATE, Permission.PRODUCT_VIEW,
+    Permission.CATEGORY_READ, Permission.CATEGORY_UPDATE,
+    Permission.ORDER_READ, Permission.ORDER_VIEW, Permission.ORDER_UPDATE,
+    Permission.CUSTOMER_VIEW, Permission.SETTINGS_VIEW, Permission.REPORTS_VIEW,
+    Permission.MEDIA_UPLOAD, Permission.MEDIA_READ
+  ],
+  [UserRole.STORE_STAFF]: [
+    Permission.PRODUCT_READ, Permission.PRODUCT_VIEW,
+    Permission.ORDER_READ, Permission.ORDER_VIEW,
+    Permission.CUSTOMER_VIEW, Permission.MEDIA_READ
+  ],
+  [UserRole.STORE_EMPLOYEE]: [
+    Permission.PRODUCT_READ, Permission.PRODUCT_VIEW,
+    Permission.ORDER_READ, Permission.ORDER_VIEW,
+    Permission.MEDIA_READ
+  ],
+  [UserRole.CUSTOMER]: [
+    Permission.PRODUCT_READ, Permission.PRODUCT_VIEW,
+    Permission.ORDER_CREATE, Permission.ORDER_READ, Permission.ORDER_VIEW
+  ]
+};
+
+// ============================================
+// DOMAIN
+// ============================================
+export interface Domain {
+  id: number;
+  storeId: number;
+  domain?: string;
+  host: string;
+  type: DomainType;
+  isPrimary: boolean;
+  isVerified: boolean;
+  verified?: boolean;
+  verificationToken?: string;
+  createdAt: string;
+}
+
+export enum DomainType {
+  SUBDOMAIN = 'SUBDOMAIN',
+  CUSTOM = 'CUSTOM'
+}
+
+export interface CreateDomainRequest {
+  storeId: number;
+  domain?: string;
+  host?: string;
+  type: DomainType;
+  isPrimary?: boolean;
+}
+
+// ============================================
+// CATEGORY
+// ============================================
+export interface Category {
+  id: number;
+  storeId: number;
+  name: string;
+  slug: string;
+  description?: string;
+  sortOrder?: number;
+  parentId?: number;
+  parent?: Category;
+  children?: Category[];
+  productCount?: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CreateCategoryRequest {
+  storeId: number;
+  name: string;
+  slug?: string;
+  description?: string;
+  parentId?: number;
+  sortOrder?: number;
+}
+
+// ============================================
+// PRODUCT
+// ============================================
+export interface Product {
+  id: number;
+  storeId: number;
+  name?: string;
+  title: string;
+  sku?: string;
+  barcode?: string;
+  expiryDate?: string; // ISO 8601 Date String: "2026-08-25"
+  description?: string;
+  price?: number;
+  basePrice: number;
+  comparePrice?: number; // UVP / Vergleichspreis
+  stock?: number;
+  status: ProductStatus;
+  categoryId?: number;
+  categoryName?: string;
+  category?: Category;
+  categories?: Category[];
+  // ─── Tax Configuration ────────────────────────────────────────
+  taxCategory?: TaxCategory;
+  taxRate?: number;
+  variants?: ProductVariant[];
+  media?: ProductMedia[];
+  imageUrl?: string;
+  primaryImageUrl?: string; // Haupt-Bild URL
+  discountPercentage?: number; // Rabatt in Prozent
+  originalPrice?: number;     // Originalpreis vor Rabatt
+
+  // Featured/Top Product Felder
+  isFeatured?: boolean;
+  featuredOrder?: number;
+  viewCount?: number;
+  salesCount?: number;
+
+  // Telegram-Import Felder
+  telegramSource?: string;    // Channel @username, z.B. "@meinchannel"
+  telegramMsgId?: number;     // Telegram Message-ID (für Deduplizierung)
+  priceNeedsReview?: boolean; // true = kein Preis erkannt, Standardpreis 1 gesetzt
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export enum ProductStatus {
+  DRAFT = 'DRAFT',
+  PUBLISHED = 'PUBLISHED',
+  ACTIVE = 'PUBLISHED', // Alias für PUBLISHED – rückwärtskompatibel
+  ARCHIVED = 'ARCHIVED'
+}
+
+export interface ProductVariant {
+  id: number;
+  productId: number;
+  name?: string;
+  sku: string;
+  barcode?: string;
+  price: number;
+  comparePrice?: number;
+  costPrice?: number;
+  stockQuantity: number; // Lagerbestand (einheitlich)
+  quantity?: number;     // Bestell-/Verpackungsmenge
+  weight?: number;
+  option1?: string;
+  option2?: string;
+  option3?: string;
+  attributesJson?: string;
+  attributes?: { [key: string]: string }; // Geparste Attribute für UI
+  options?: ProductOption[];
+  imageUrl?: string;   // Hauptbild der Variante
+  images?: string[];   // Alle Bilder der Variante (vom Backend als 'images' geliefert)
+  isActive?: boolean;
+}
+
+export interface CreateProductRequest {
+  storeId: number;
+  name?: string;
+  title?: string;
+  sku?: string;
+  barcode?: string;
+  expiryDate?: string; // ISO 8601 Date String: "2026-08-25"
+  description?: string;
+  price?: number;
+  basePrice?: number;
+  stock?: number;
+  status?: ProductStatus;
+  categoryId?: number;
+  isFeatured?: boolean;
+  featuredOrder?: number;
+}
+
+// ============================================
+// ORDER
+// ============================================
+export interface Order {
+  id: number;
+  orderNumber?: string;
+  storeId: number;
+  customerId?: number;
+  customer?: User;
+  status: OrderStatus;
+  totalAmount: number;
+  customerEmail: string;
+  customerName: string;
+  shippingAddress?: Address | string;
+  billingAddress?: Address | string;
+  notes?: string;
+  trackingNumber?: string;
+  trackingCarrier?: string;
+  trackingUrl?: string;
+  
+  // DHL Integration Fields
+  dhlShipmentNo?: string;
+  dhlLabelUrl?: string;
+  
+  // Shipping Provider
+  shippingProvider?: string; // "DHL", "PICKUP", "GLOBAL_DELIVERY"
+  
+  // Package Dimensions & Weight (für DHL/Versand)
+  packageWeightGrams?: number;
+  packageLengthMm?: number;
+  packageWidthMm?: number;
+  packageHeightMm?: number;
+  
+  paymentMethod?: string; // CASH_ON_DELIVERY, BANK_TRANSFER, CREDIT_CARD, PAYPAL
+  phoneVerificationId?: number;
+  phoneVerified?: boolean;
+  items?: OrderItem[];
+  statusHistory?: OrderStatusHistory[];
+  createdAt: string;
+  updatedAt: string;
+  
+  // ─── Currency & Tax Snapshot ──────────────────────────────────
+  currencyCode?: CurrencyCode | string;
+  priceMode?: PriceMode;
+  countryCode?: string;
+  vatEnabled?: boolean;
+  
+  // Subtotals (Produkte ohne Versand)
+  subtotalNet?: number;
+  subtotalGross?: number;
+  taxTotal?: number;
+  
+  // Versandkosten aufgeschlüsselt
+  shippingNet?: number;
+  shippingTax?: number;
+  shippingGross?: number;
+  
+  // Gesamtsumme aufgeschlüsselt
+  totalNet?: number;
+  totalGross?: number;
+  
+  // Rabatt aufgeschlüsselt
+  discountNet?: number;
+  discountTax?: number;
+  discountGross?: number;
+  
+  // Coupon-Snapshot
+  couponCodeSnapshot?: string;
+  discountTypeSnapshot?: string;
+  discountValueSnapshot?: number;
+}
+
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  PROCESSING = 'PROCESSING',
+  SHIPPED = 'SHIPPED',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED',
+  REFUNDED = 'REFUNDED'
+}
+
+export interface OrderItem {
+  id: number;
+  orderId: number;
+  productId: number;
+  product?: Product;
+  variantId?: number;
+  variant?: ProductVariant;
+  quantity: number;
+  price: number;
+  priceAtOrder?: number;
+  totalPrice: number;
+  productTitle?: string;
+  productName?: string;
+  name?: string;
+  variantSku?: string;
+  sku?: string;
+  
+  // ─── Tax Snapshot & Price Breakdown ───────────────────────────
+  taxRate?: number;
+  taxCategory?: string;
+  
+  // Unit-Preise (für 1 Stück)
+  unitPriceNet?: number;
+  unitPriceGross?: number;
+  
+  // Line-Totals VOR Rabatt
+  lineNetBeforeDiscount?: number;
+  lineTaxBeforeDiscount?: number;
+  lineGrossBeforeDiscount?: number;
+  
+  // Rabatt auf diesen Item
+  lineDiscountNet?: number;
+  lineDiscountTax?: number;
+  lineDiscountGross?: number;
+  
+  // Line-Totals NACH Rabatt
+  lineNet?: number;
+  lineTax?: number;
+  lineGross?: number;
+}
+
+export interface OrderStatusHistory {
+  id: number;
+  orderId: number;
+  status: OrderStatus;
+  note?: string;
+  createdAt: string;
+}
+
+// ============================================
+// DELIVERY OPTIONS
+// ============================================
+export enum DeliveryType {
+  PICKUP = 'PICKUP',
+  DELIVERY = 'DELIVERY'
+}
+
+export enum DeliveryMode {
+  STANDARD = 'STANDARD',
+  EXPRESS = 'EXPRESS'
+}
+
+export interface DeliveryOption {
+  deliveryType: DeliveryType;
+  deliveryMode?: DeliveryMode | null;
+  fee: number;
+  etaMinutes?: number | null;
+  available: boolean;
+  zoneId?: number | null;
+  zoneName?: string | null;
+  reason?: string | null;
+}
+
+export interface DeliveryOptionsRequest {
+  postalCode: string;
+  city?: string;
+  country?: string;
+}
+
+export interface DeliveryOptionsResponse {
+  pickupEnabled: boolean;
+  deliveryEnabled: boolean;
+  expressEnabled: boolean;
+  currency: string;
+  options: DeliveryOption[];
+}
+
+// ============================================
+// CART
+// ============================================
+export interface Cart {
+  id: number;
+  storeId: number;
+  sessionId: string;
+  customerId?: number;
+  items?: CartItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CartItem {
+  id: number;
+  cartId: number;
+  productId: number;
+  product?: Product;
+  variantId?: number;
+  variant?: ProductVariant;
+  quantity: number;
+}
+
+// ============================================
+// MEDIA
+// ============================================
+export interface Media {
+  id: number;
+  storeId: number;
+  filename: string;
+  originalFilename: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  type?: string;
+  createdAt: string;
+}
+
+export enum MediaType {
+  IMAGE = 'IMAGE',
+  VIDEO = 'VIDEO',
+  DOCUMENT = 'DOCUMENT',
+  AUDIO = 'AUDIO'
+}
+
+// ============================================
+// PLAN
+// ============================================
+export enum Plan {
+  FREE = 'FREE',
+  PRO = 'PRO',
+  ENTERPRISE = 'ENTERPRISE'
+}
+
+export interface PlanDetails {
+  plan: Plan;
+  name: string;
+  description: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  features: PlanFeatures;
+  popular?: boolean;
+}
+
+export interface PlanFeatures {
+  maxStores: number;
+  maxProducts: number;
+  maxOrders: number;
+  customDomain: boolean;
+  analytics: boolean;
+  priority_support: boolean;
+  api_access: boolean;
+  multiLanguage: boolean;
+  customBranding: boolean;
+}
+
+// ============================================
+// SUBSCRIPTION
+// ============================================
+export enum SubscriptionStatus {
+  ACTIVE = 'ACTIVE',
+  CANCELLED = 'CANCELLED',
+  EXPIRED = 'EXPIRED',
+  PENDING = 'PENDING',
+  TRIAL = 'TRIAL'
+}
+
+export enum PaymentMethod {
+  BANK_TRANSFER = 'BANK_TRANSFER',
+  CREDIT_CARD = 'CREDIT_CARD',
+  PAYPAL = 'PAYPAL',
+  STRIPE = 'STRIPE'
+}
+
+export interface Subscription {
+  id: number;
+  userId: number;
+  plan: Plan;
+  status: SubscriptionStatus;
+  startDate: string;
+  endDate?: string;
+  renewalDate?: string;
+  paymentMethod?: PaymentMethod;
+  amount: number;
+  billingCycle: 'MONTHLY' | 'YEARLY';
+  autoRenew: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpgradeRequest {
+  userId: number;
+  targetPlan: Plan;
+  billingCycle: 'MONTHLY' | 'YEARLY';
+  paymentMethod: PaymentMethod;
+}
+
+export interface PaymentIntent {
+  id: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'completed' | 'failed';
+  paymentMethod: PaymentMethod;
+  bankTransferDetails?: BankTransferDetails;
+  createdAt: string;
+}
+
+export interface BankTransferDetails {
+  accountHolder: string;
+  iban: string;
+  bic: string;
+  reference: string;
+  amount: number;
+  currency: string;
+}
+
+// ============================================
+// INVENTORY
+// ============================================
+export interface InventoryLog {
+  id: number;
+  variantId: number;
+  change: number;
+  reason: string;
+  userId?: number;
+  createdAt: string;
+}
+
+// ============================================
+// STORE
+// ============================================
+export enum BusinessType {
+  SHOP = 'SHOP',
+  RESTAURANT = 'RESTAURANT',
+  RIAD = 'RIAD',
+  SERVICE = 'SERVICE'
+}
+
+export interface Store {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  logoUrl?: string;
+  bannerImageUrl?: string;
+  ownerId: number;
+  owner?: User;
+  userId?: number;
+  status: StoreStatus;
+  createdAt: string;
+  updatedAt: string;
+  /** WhatsApp-Kontaktnummer im internationalen Format, z. B. +212600123456 */
+  whatsappNumber?: string;
+  /** Vorbefüllte Begrüßungsnachricht beim WhatsApp-Klick */
+  greetingMessage?: string;
+  /** Kunden automatisch per WhatsApp bei Bestellungen benachrichtigen */
+  whatsappNotificationsEnabled?: boolean;
+  expiryNotificationDays?: number; // Tage vor Ablauf für MHD-Warnung (1-365, Default: 7)
+  // ─── Social Media & Kontakt ───────────────────────────────────
+  contactEmail?: string;
+  contactPhone?: string;
+  telegramUrl?: string;
+  facebookUrl?: string;
+  instagramUrl?: string;
+  tiktokUrl?: string;
+  footerText?: string;
+  // ─── Business-Typ & Restaurant/Riad-Felder ────────────────────
+  businessType?: BusinessType | string;
+  openingHours?: string;
+  address?: string;
+  googleMapsUrl?: string;
+  reservationWhatsappText?: string;
+  // ─── Service-Website Content (About-Section) ────────────────────
+  aboutTitle?: string;
+  aboutText?: string;
+  aboutSubtitle?: string;
+  aboutImageMediaId?: number;
+  aboutImageUrl?: string;
+  // ─── Bot-Schutz (nur für Admin-Bereich, NICHT öffentlich) ──────
+  botProtectionEnabled?: boolean;
+  botProtectionMode?: 'OFF' | 'SUSPICIOUS_ONLY' | 'ALWAYS_ON';
+  // ─── Currency & Tax Configuration ──────────────────────────────
+  currencyCode?: CurrencyCode | string;
+  countryCode?: string;
+  priceMode?: PriceMode;
+  vatEnabled?: boolean;
+  defaultTaxRate?: number;
+  shippingTaxRate?: number;
+  shippingTaxStrategy?: ShippingTaxStrategy;
+  vatExemptionText?: string;
+  // ─── Loyalty-/Bonuspunkte-Konfiguration (MVP) ──────────────────
+  loyaltyEnabled?: boolean;
+  loyaltyAmountStep?: number;
+  loyaltyPointsPerStep?: number;
+  loyaltyMinimumPurchase?: number | null;
+  // ─── Legal/Impressum (Admin only) ──────────────────────────────
+  legalName?: string;
+  legalForm?: string;
+  authorizedRepresentative?: string;
+  commercialRegister?: string;
+  registerNumber?: string;
+  vatId?: string;
+  imprintComplete?: boolean;
+  legalResponsibilityAccepted?: boolean;
+  legalResponsibilityAcceptedAt?: string;
+  legalResponsibilityAcceptedByUserId?: number;
+  legalResponsibilityVersion?: string;
+  // ─── Shipping Address (Admin only, for DHL/Shipping) ──────────
+  shippingAddressStreet?: string;
+  shippingAddressHouseNumber?: string;
+  shippingAddressPostalCode?: string;
+  shippingAddressCity?: string;
+  shippingAddressCountry?: string;
+  shippingAddressEmail?: string;
+  // ─── Legal Texts & Status (Admin only) ─────────────────────────
+  termsAndConditionsText?: string;
+  termsAndConditionsStatus?: 'NOT_CONFIGURED' | 'DRAFT' | 'PUBLISHED';
+  privacyPolicyText?: string;
+  privacyPolicyStatus?: 'NOT_CONFIGURED' | 'DRAFT' | 'PUBLISHED';
+  returnPolicyText?: string;
+  returnPolicyStatus?: 'NOT_CONFIGURED' | 'DRAFT' | 'PUBLISHED';
+  shippingPolicyText?: string;
+  shippingPolicyStatus?: 'NOT_CONFIGURED' | 'DRAFT' | 'PUBLISHED';
+}
+
+export interface PublicStore {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  logoUrl?: string;
+  status: StoreStatus;
+  /** WhatsApp-Kontaktnummer (optional) */
+  whatsappNumber?: string;
+  /** Vorbefüllte WhatsApp-Begrüßungsnachricht (optional) */
+  greetingMessage?: string;
+  // ─── Social Media & Kontakt ───────────────────────────────────
+  contactEmail?: string;
+  contactPhone?: string;
+  telegramUrl?: string;
+  facebookUrl?: string;
+  instagramUrl?: string;
+  tiktokUrl?: string;
+  footerText?: string;
+  // ─── Business-Typ & Restaurant/Riad-Felder ────────────────────
+  businessType?: BusinessType | string;
+  openingHours?: string;
+  address?: string;
+  googleMapsUrl?: string;
+  reservationWhatsappText?: string;
+  // ─── Service-Website Content (About-Section) ────────────────────
+  aboutTitle?: string;
+  aboutText?: string;
+  aboutSubtitle?: string;
+  aboutImageUrl?: string;
+  // ─── DHL Shipping (Public Info Only - NO SECRETS) ────────────
+  dhlShippingEnabled?: boolean;
+  dhlShippingLabel?: string;
+  dhlShippingDescription?: string;
+  dhlShippingPrice?: number;
+  // ─── Currency & Tax (Public Info) ─────────────────────────────
+  currencyCode?: CurrencyCode | string;
+  priceMode?: PriceMode;
+  // ─── Legal/Impressum (Public) ──────────────────────────────────
+  legalName?: string;
+  legalForm?: string;
+  authorizedRepresentative?: string;
+  commercialRegister?: string;
+  registerNumber?: string;
+  vatId?: string;
+  imprintComplete?: boolean;
+  // ─── Shipping Address (Public - for Impressum) ─────────────────
+  shippingAddressStreet?: string;
+  shippingAddressHouseNumber?: string;
+  shippingAddressPostalCode?: string;
+  shippingAddressCity?: string;
+  shippingAddressCountry?: string;
+  // ─── Legal Texts (Store-specific, Public) ──────────────────────
+  termsAndConditionsText?: string;
+  privacyPolicyText?: string;
+  returnPolicyText?: string;
+  shippingPolicyText?: string;
+}
+
+export enum StoreStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  DELETED = 'DELETED'
+}
+
+export interface StoreUsage {
+  id: number;
+  storeId: number;
+  productCount: number;
+  orderCount: number;
+  storageUsed: number;
+  updatedAt: string;
+}
+
+export interface CreateStoreRequest {
+  name: string;
+  slug?: string;
+  description?: string;
+  storeType?: string; // NEW: "OWN" or "RESELLER"
+  /** Geschäftstyp: SHOP | RESTAURANT | RIAD (Default SHOP) */
+  businessType?: BusinessType | string;
+  /** Mit Starter-Pack-Beispieldaten vorbefüllen (nur RESTAURANT/RIAD) */
+  seedSampleData?: boolean;
+}
+
+// ============================================
+// PRODUCT OPTION & MEDIA
+// ============================================
+export interface ProductOption {
+  id: number;
+  productId: number;   // Zugehöriges Produkt (nicht Variante!)
+  name: string;        // z.B. "Farbe", "Größe"
+  values: string[];    // z.B. ["Rot", "Blau", "Grün"]
+  sortOrder?: number;
+}
+
+export interface ProductMedia {
+  id: number;
+  productId: number;
+  mediaId: number;
+  media?: Media;
+  sortOrder: number;
+  isPrimary?: boolean; // Ist dies das Hauptbild?
+  url?: string; // URL zum Bild
+  filename?: string; // Dateiname
+}
+
+// ============================================
+// THEMES & CUSTOMIZATION
+// ============================================
+export enum ThemeType {
+  MODERN = 'MODERN',
+  CLASSIC = 'CLASSIC',
+  MINIMAL = 'MINIMAL',
+  ELEGANT = 'ELEGANT',
+  DARK = 'DARK'
+}
+
+export enum ShopTemplate {
+  FASHION = 'FASHION',
+  ELECTRONICS = 'ELECTRONICS',
+  FOOD = 'FOOD',
+  JEWELRY = 'JEWELRY',
+  BOOKS = 'BOOKS',
+  CUSTOM = 'CUSTOM'
+}
+
+export interface ThemeColors {
+  primary: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  text: string;
+  textSecondary: string;
+  border: string;
+  success: string;
+  warning: string;
+  error: string;
+}
+
+export interface ThemeTypography {
+  fontFamily: string;
+  headingFontFamily?: string;
+  fontSize: {
+    small: string;
+    base: string;
+    large: string;
+    xl: string;
+    xxl: string;
+  };
+}
+
+export interface ThemeLayout {
+  headerStyle: 'fixed' | 'static' | 'transparent';
+  footerStyle: 'minimal' | 'full' | 'hidden';
+  productGridColumns: 2 | 3 | 4;
+  borderRadius: 'none' | 'small' | 'medium' | 'large';
+  spacing: 'compact' | 'normal' | 'spacious';
+}
+
+export interface StoreTheme {
+  id: number;
+  storeId: number;
+  name: string;
+  type: ThemeType;
+  template: ShopTemplate;
+  colors: ThemeColors;
+  typography: ThemeTypography;
+  layout: ThemeLayout;
+  customCss?: string;
+  logoUrl?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateThemeRequest {
+  storeId: number;
+  name: string;
+  type: ThemeType;
+  template: ShopTemplate;
+  colors?: Partial<ThemeColors>;
+  typography?: Partial<ThemeTypography>;
+  layout?: Partial<ThemeLayout>;
+  customCss?: string;
+  logoUrl?: string;
+}
+
+export interface ThemePreset {
+  type: ThemeType;
+  name: string;
+  description: string;
+  preview: string;
+  colors: ThemeColors;
+  typography: ThemeTypography;
+  layout: ThemeLayout;
+}
+
+// ============================================
+// HOMEPAGE SECTIONS - Homepage Builder
+// ============================================
+export type SectionType =
+  | 'HERO'
+  | 'FEATURED_PRODUCTS'
+  | 'CATEGORIES'
+  | 'BEST_SELLERS'
+  | 'BANNER'
+  | 'NEWSLETTER';
+
+export interface HomepageSection {
+  id: number;
+  storeId: number;
+  sectionType: SectionType;
+  sortOrder: number;
+  isActive: boolean;
+  settings: string; // JSON string
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateHomepageSectionRequest {
+  storeId: number;
+  sectionType: SectionType;
+  sortOrder: number;
+  isActive?: boolean;
+  settings?: string;
+}
+
+export interface HeroSectionSettings {
+  title?: string;
+  subtitle?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  backgroundImage?: string;
+}
+
+export interface FeaturedProductsSettings {
+  categoryId?: number;
+  limit?: number;
+  title?: string;
+}
+
+export interface CategoriesSettings {
+  limit?: number;
+  title?: string;
+}
+
+export interface BannerSettings {
+  imageUrl?: string;
+  link?: string;
+  title?: string;
+  subtitle?: string;
+}
+
+export interface NewsletterSettings {
+  title?: string;
+  description?: string;
+  placeholderText?: string;
+}
+
+// ============================================
+// AUDIT LOG - Änderungsprotokoll
+// ============================================
+export interface AuditLog {
+  id: number;
+  storeId: number;
+  userId: number;
+  userName: string;
+  userEmail: string;
+  userRole: Role;
+  action: AuditAction;
+  entityType: AuditEntityType;
+  entityId?: number;
+  entityName?: string;
+  changes?: AuditChange[];
+  description: string;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: string;
+}
+
+export interface AuditChange {
+  field: string;
+  fieldLabel: string;
+  oldValue: any;
+  newValue: any;
+}
+
+export enum AuditAction {
+  CREATE = 'CREATE',
+  UPDATE = 'UPDATE',
+  DELETE = 'DELETE',
+  LOGIN = 'LOGIN',
+  LOGOUT = 'LOGOUT',
+  ACTIVATE = 'ACTIVATE',
+  DEACTIVATE = 'DEACTIVATE',
+  PUBLISH = 'PUBLISH',
+  UNPUBLISH = 'UNPUBLISH',
+  EXPORT = 'EXPORT',
+  IMPORT = 'IMPORT'
+}
+
+export enum AuditEntityType {
+  STORE = 'STORE',
+  PRODUCT = 'PRODUCT',
+  CATEGORY = 'CATEGORY',
+  ORDER = 'ORDER',
+  USER = 'USER',
+  SETTINGS = 'SETTINGS',
+  THEME = 'THEME',
+  DOMAIN = 'DOMAIN',
+  MEDIA = 'MEDIA',
+  SUBSCRIPTION = 'SUBSCRIPTION'
+}
+
+export interface AuditLogFilter {
+  storeId?: number;
+  userId?: number;
+  action?: AuditAction;
+  entityType?: AuditEntityType;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  size?: number;
+}
+
+export interface AuditLogResponse {
+  logs: AuditLog[];
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+}
+
+// ============================================
+// CUSTOMER ADDRESS BOOK
+// ============================================
+export interface CustomerAddress {
+  id: number;
+  customerId: number;
+  firstName: string;
+  lastName: string;
+  company?: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  state?: string;
+  postalCode: string;
+  country: string;
+  phone?: string;
+  email?: string;
+  isDefault: boolean;
+  addressType: 'SHIPPING' | 'BILLING' | 'BOTH';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAddressRequest {
+  firstName: string;
+  lastName: string;
+  company?: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  state?: string;
+  postalCode: string;
+  country: string;
+  phone?: string;
+  email?: string;
+  isDefault?: boolean;
+  addressType: 'SHIPPING' | 'BILLING' | 'BOTH';
+}
+
+// ============================================
+// WISHLIST / FAVORITES
+// ============================================
+export interface Wishlist {
+  id: number;
+  customerId: number;
+  storeId: number;
+  name: string;
+  isDefault: boolean;
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+  items?: WishlistItem[];
+}
+
+export interface WishlistItem {
+  id: number;
+  wishlistId: number;
+  productId: number;
+  product?: Product;
+  variantId?: number;
+  variant?: ProductVariant;
+  note?: string;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+  addedAt: string;
+}
+
+export interface CreateWishlistRequest {
+  storeId: number;
+  name: string;
+  isDefault?: boolean;
+  isPublic?: boolean;
+}
+
+export interface AddToWishlistRequest {
+  wishlistId: number;
+  productId: number;
+  variantId?: number;
+  note?: string;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+}
+
+// ============================================
+// SAVED CARTS
+// ============================================
+export interface SavedCart {
+  id: number;
+  customerId: number;
+  storeId: number;
+  name: string;
+  description?: string;
+  items?: SavedCartItem[];
+  totalItems: number;
+  estimatedTotal: number;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt?: string;
+}
+
+export interface SavedCartItem {
+  id: number;
+  savedCartId: number;
+  productId: number;
+  product?: Product;
+  variantId?: number;
+  variant?: ProductVariant;
+  quantity: number;
+  priceAtSave: number;
+}
+
+export interface CreateSavedCartRequest {
+  storeId: number;
+  name: string;
+  description?: string;
+  cartId?: number; // Optional: Save existing cart
+}
+
+export interface SavedCartToCartRequest {
+  savedCartId: number;
+  mergeWithCurrent?: boolean;
+}
+
+// ============================================
+// CUSTOMER ORDER HISTORY (Enhanced)
+// ============================================
+export interface OrderHistoryFilter {
+  storeId?: number;
+  customerId?: number;
+  status?: OrderStatus;
+  startDate?: string;
+  endDate?: string;
+  searchTerm?: string;
+  page?: number;
+  size?: number;
+  sortBy?: 'date' | 'total' | 'status';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface OrderHistoryResponse {
+  orders: Order[];
+  totalElements: number;
+  totalPages: number;
+  currentPage: number;
+  totalSpent: number;
+  orderCount: number;
+}
+
+export interface OrderDetail extends Order {
+  trackingNumber?: string;
+  carrier?: string;
+  estimatedDelivery?: string;
+  canCancel: boolean;
+  canReturn: boolean;
+  canReorder: boolean;
+}

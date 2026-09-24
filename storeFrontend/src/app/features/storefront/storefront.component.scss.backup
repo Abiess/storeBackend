@@ -1,0 +1,226 @@
+/* ============================================
+   Modern Storefront Styles (idealo.de inspired)
+   ============================================ */
+
+/* ============================================
+   Global Storefront Wrapper
+   ============================================ */
+.modern-storefront {
+  background: #f9fafb;
+  min-height: 100vh;
+}
+
+/* ============================================
+   Hero Section
+   ============================================ */
+.hero-section {
+  max-width: 1400px;
+  margin: 0 auto 32px;
+  padding: 0 24px;
+}
+
+/* ============================================
+   Featured Sections
+   ============================================ */
+.featured-sections {
+  max-width: 1400px;
+  margin: 0 auto 32px;
+  padding: 0 24px;
+}
+
+/* ============================================
+   Modern Footer
+   ============================================ */
+.modern-footer {
+  background: white;
+  margin-top: 64px;
+  border-top: 2px solid #e5e7eb;
+  padding: 48px 0 24px;
+}
+
+.footer-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 48px;
+  margin-bottom: 48px;
+}
+
+.footer-col h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 16px 0;
+}
+
+.footer-tagline {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 8px 0 0 0;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links li {
+  margin-bottom: 10px;
+}
+
+.footer-links a {
+  font-size: 14px;
+  color: #6b7280;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+
+.footer-links a:hover {
+  color: #2563eb;
+}
+
+.footer-bottom {
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.footer-bottom p {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* ============================================
+   Tablet Styles (768px - 1024px)
+   ============================================ */
+@media (max-width: 1024px) {
+  .hero-section,
+  .featured-sections {
+    padding: 0 16px;
+  }
+
+  .footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+  }
+
+  .footer-container {
+    padding: 0 16px;
+  }
+}
+
+/* ============================================
+   Mobile Styles (< 768px)
+   ============================================ */
+@media (max-width: 768px) {
+  .modern-footer {
+    margin-top: 48px;
+    padding: 32px 0 16px;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .footer-col h4 {
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+
+  .footer-links li {
+    margin-bottom: 8px;
+  }
+
+  .footer-links a {
+    font-size: 13px;
+  }
+
+  .hero-section,
+  .featured-sections {
+    padding: 0 12px;
+    margin-bottom: 24px;
+  }
+
+  .footer-bottom {
+    padding-top: 16px;
+  }
+
+  .footer-bottom p {
+    font-size: 12px;
+  }
+}
+
+/* ============================================
+   Small Mobile (< 480px)
+   ============================================ */
+@media (max-width: 480px) {
+  .hero-section,
+  .featured-sections {
+    padding: 0 8px;
+    margin-bottom: 20px;
+  }
+
+  .modern-footer {
+    margin-top: 32px;
+  }
+
+  .footer-grid {
+    gap: 20px;
+  }
+}
+
+/* ============================================
+   Animations & Transitions
+   ============================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modern-storefront > * {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* ============================================
+   Smooth Scrolling
+   ============================================ */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ============================================
+   Focus States (Accessibility)
+   ============================================ */
+a:focus,
+button:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+@media print {
+  .modern-footer,
+  .hero-section,
+  .featured-sections {
+    display: none;
+  }
+}
+

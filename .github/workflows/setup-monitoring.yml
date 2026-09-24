@@ -1,0 +1,193 @@
+name: Setup Prometheus for Existing Grafana
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-prometheus:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Install Prometheus
+        run: |
+          cat > install-prometheus.sh << 'SCRIPT_EOF'
+          #!/bin/bash
+          set -e
+          
+          echo "🔧 Prometheus Installation..."
+          
+          # Prüfen ob bereits installiert
+          if systemctl is-active --quiet prometheus; then
+            echo "⚠️ Prometheus läuft bereits - überspringe Installation"
+            exit 0
+          fi
+          
+          # Prometheus herunterladen
+          cd /tmp
+          wget -q https://github.com/prometheus/prometheus/releases/download/v2.48.0/prometheus-2.48.0.linux-amd64.tar.gz
+          tar xzf prometheus-2.48.0.linux-amd64.tar.gz
+          
+          # Installation
+          mkdir -p /opt/prometheus/data
+          cp -r prometheus-2.48.0.linux-amd64/* /opt/prometheus/
+          
+          # Prometheus Config für Spring Boot
+          cat > /opt/prometheus/prometheus.yml << 'PROM_EOF'
+          global:
+            scrape_interval: 15s
+            evaluation_interval: 15s
+          
+          scrape_configs:
+            - job_name: 'spring-boot-backend'
+              metrics_path: '/actuator/prometheus'
+              static_configs:
+                - targets: ['localhost:8080']
+              relabel_configs:
+                - source_labels: [__address__]
+                  target_label: instance
+                  replacement: 'markt.ma'
+          PROM_EOF
+          
+          # Systemd Service
+          cat > /etc/systemd/system/prometheus.service << 'SERVICE_EOF'
+          [Unit]
+          Description=Prometheus Monitoring
+          After=network.target
+          
+          [Service]
+          Type=simple
+          User=root
+          ExecStart=/opt/prometheus/prometheus \
+            --config.file=/opt/prometheus/prometheus.yml \
+            --storage.tsdb.path=/opt/prometheus/data \
+            --web.listen-address=127.0.0.1:9090
+          Restart=always
+          RestartSec=10
+          
+          [Install]
+          WantedBy=multi-user.target
+          SERVICE_EOF
+          
+          # Starten
+          systemctl daemon-reload
+          systemctl enable prometheus
+          systemctl start prometheus
+          
+          echo "✅ Prometheus läuft auf Port 9090"
+          systemctl status prometheus --no-pager -l || true
+          SCRIPT_EOF
+          
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no install-prometheus.sh root@${{ secrets.VPS_HOST }}:/tmp/
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no root@${{ secrets.VPS_HOST }} "bash /tmp/install-prometheus.sh"
+
+      - name: Configure Prometheus Datasource in Grafana
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no root@${{ secrets.VPS_HOST }} << 'EOF'
+          echo "🔧 Konfiguriere Prometheus Datasource in Grafana..."
+          
+          # Warten bis Prometheus bereit ist
+          sleep 5
+          
+          # Prometheus Datasource hinzufügen (falls nicht vorhanden)
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "http://admin:${{ secrets.GRAFANA_ADMIN_PASSWORD }}@grafana.markt.ma/api/datasources" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "name": "Prometheus",
+              "type": "prometheus",
+              "url": "http://localhost:9090",
+              "access": "proxy",
+              "isDefault": true,
+              "jsonData": {
+                "httpMethod": "POST"
+              }
+            }')
+          
+          if [ "$RESPONSE" = "200" ] || [ "$RESPONSE" = "409" ]; then
+            echo "✅ Prometheus Datasource konfiguriert (Status: $RESPONSE)"
+          else
+            echo "⚠️ Warnung: Datasource API antwortete mit Status $RESPONSE"
+            echo "   Falls 409: Datasource existiert bereits - das ist OK!"
+          fi
+          EOF
+
+      - name: Upload API Monitoring Dashboard
+        run: |
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            grafana/dashboards/api-monitoring.json \
+            root@${{ secrets.VPS_HOST }}:/tmp/
+          
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no root@${{ secrets.VPS_HOST }} << 'EOF'
+          echo "📊 Lade Dashboard hoch..."
+          
+          # Dashboard-JSON für Grafana API vorbereiten
+          cat > /tmp/dashboard-import.json << 'DASH_EOF'
+          {
+            "dashboard": $(cat /tmp/api-monitoring.json | jq '.dashboard'),
+            "overwrite": true,
+            "inputs": [],
+            "folderId": 0
+          }
+          DASH_EOF
+          
+          # Dashboard hochladen
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST "http://admin:${{ secrets.GRAFANA_ADMIN_PASSWORD }}@grafana.markt.ma/api/dashboards/db" \
+            -H "Content-Type: application/json" \
+            -d @/tmp/dashboard-import.json)
+          
+          STATUS=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ Dashboard erfolgreich hochgeladen"
+            echo "$BODY" | jq -r '.url' | sed 's|^|   URL: http://grafana.markt.ma|'
+          else
+            echo "⚠️ Dashboard-Upload Status: $STATUS"
+            echo "   Manuell importieren: Dashboards → Import → Upload api-monitoring.json"
+          fi
+          EOF
+
+      - name: Verify Installation
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no root@${{ secrets.VPS_HOST }} << 'EOF'
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 MONITORING SETUP ABGESCHLOSSEN"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "📍 Grafana:    https://grafana.markt.ma"
+          echo "👤 User:       admin"
+          echo "🔑 Password:   (siehe GRAFANA_ADMIN_PASSWORD Secret)"
+          echo ""
+          echo "🔍 Service Status:"
+          systemctl is-active prometheus && echo "  ✅ Prometheus läuft" || echo "  ❌ Prometheus fehlt"
+          systemctl is-active grafana-server && echo "  ✅ Grafana läuft" || echo "  ❌ Grafana fehlt"
+          systemctl is-active storebackend && echo "  ✅ Backend läuft" || echo "  ⚠️ Backend nicht gestartet"
+          echo ""
+          echo "📊 Metriken-Test:"
+          if curl -s http://localhost:8080/actuator/prometheus | head -5 > /dev/null 2>&1; then
+            echo "  ✅ Backend sendet Metriken an /actuator/prometheus"
+            METRICS_COUNT=$(curl -s http://localhost:8080/actuator/prometheus | grep -c "^api_" || echo "0")
+            echo "  📈 API-Metriken verfügbar: $METRICS_COUNT"
+          else
+            echo "  ⚠️ Backend muss neu deployt werden (für Metriken-Endpoint)"
+          fi
+          echo ""
+          echo "🎯 Nächste Schritte:"
+          echo "  1. Backend neu deployen: git push origin main"
+          echo "  2. Grafana öffnen: https://grafana.markt.ma"
+          echo "  3. Dashboard 'markt.ma - API Monitoring' öffnen"
+          echo "  4. API-Fehler provozieren zum Testen"
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          EOF

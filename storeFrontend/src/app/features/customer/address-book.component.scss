@@ -1,0 +1,449 @@
+.address-book-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: #333;
+  }
+}
+
+.address-form-card {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+
+  h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: #333;
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #555;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+
+    &:focus {
+      outline: none;
+      border-color: #007bff;
+    }
+  }
+}
+
+.form-check {
+  margin: 1.5rem 0;
+
+  .form-check-input {
+    margin-right: 0.5rem;
+  }
+
+  .form-check-label {
+    font-weight: 500;
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.addresses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.address-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.address-header {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.address-type-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+
+  &.badge-shipping {
+    background: #e3f2fd;
+    color: #1976d2;
+  }
+
+  &.badge-billing {
+    background: #f3e5f5;
+    color: #7b1fa2;
+  }
+
+  &.badge-both {
+    background: #e8f5e9;
+    color: #388e3c;
+  }
+}
+
+.default-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  background: #fff3e0;
+  color: #e65100;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.address-content {
+  margin-bottom: 1rem;
+
+  p {
+    margin: 0.25rem 0;
+    color: #666;
+  }
+
+  .address-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 1.1rem;
+  }
+
+  .address-company {
+    color: #777;
+    font-style: italic;
+  }
+
+  i {
+    margin-right: 0.5rem;
+    color: #999;
+  }
+}
+
+.address-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+
+  &:hover:not(:disabled) {
+    background: #0056b3;
+  }
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+
+  &:hover {
+    background: #5a6268;
+  }
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid #007bff;
+  color: #007bff;
+
+  &:hover {
+    background: #007bff;
+    color: white;
+  }
+}
+
+.btn-danger-outline {
+  background: transparent;
+  border: 1px solid #dc3545;
+  color: #dc3545;
+
+  &:hover {
+    background: #dc3545;
+    color: white;
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  i {
+    font-size: 4rem;
+    color: #ccc;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.loading-state {
+  text-align: center;
+  padding: 4rem 2rem;
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  p {
+    color: #666;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AddressBookService } from '@app/core/services/address-book.service';
+import { CustomerAddress, CreateAddressRequest } from '@app/core/models';
+import { AuthService } from '@app/core/services/auth.service';
+import { SubdomainService } from '@app/core/services/subdomain.service';
+
+@Component({
+  selector: 'app-address-book',
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  templateUrl: './address-book.component.html',
+  styleUrls: ['./address-book.component.scss']
+})
+export class AddressBookComponent implements OnInit {
+  addresses: CustomerAddress[] = [];
+  loading = false;
+  editingAddress: CustomerAddress | null = null;
+  showAddForm = false;
+  addressForm: FormGroup;
+  customerId: number | null = null;
+  storeId: number | null = null;
+
+  constructor(
+    private addressBookService: AddressBookService,
+    private authService: AuthService,
+    private subdomainService: SubdomainService,
+    private fb: FormBuilder
+  ) {
+    this.addressForm = this.createAddressForm();
+  }
+
+  ngOnInit(): void {
+    this.loadCustomerAndStore();
+  }
+
+  private loadCustomerAndStore(): void {
+    this.authService.currentUser$.subscribe(user => {
+      if (user) {
+        this.customerId = user.id;
+        this.loadAddresses();
+      }
+    });
+
+    this.subdomainService.resolveStore().subscribe(info => {
+      if (info.storeId) {
+        this.storeId = info.storeId;
+      }
+    });
+  }
+
+  private createAddressForm(): FormGroup {
+    return this.fb.group({
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
+      company: [''],
+      address1: ['', Validators.required],
+      address2: [''],
+      city: ['', Validators.required],
+      state: [''],
+      postalCode: ['', Validators.required],
+      country: ['', Validators.required],
+      phone: [''],
+      email: ['', [Validators.email]],
+      isDefault: [false],
+      addressType: ['BOTH', Validators.required]
+    });
+  }
+
+  loadAddresses(): void {
+    if (!this.customerId) return;
+
+    this.loading = true;
+    this.addressBookService.getAddresses(this.customerId).subscribe({
+      next: (addresses) => {
+        this.addresses = addresses;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Adressen:', error);
+        this.loading = false;
+      }
+    });
+  }
+
+  showAddressForm(): void {
+    this.showAddForm = true;
+    this.editingAddress = null;
+    this.addressForm.reset({ addressType: 'BOTH', isDefault: false });
+  }
+
+  editAddress(address: CustomerAddress): void {
+    this.editingAddress = address;
+    this.showAddForm = true;
+    this.addressForm.patchValue(address);
+  }
+
+  saveAddress(): void {
+    if (this.addressForm.invalid || !this.customerId) return;
+
+    const formValue = this.addressForm.value as CreateAddressRequest;
+    this.loading = true;
+
+    if (this.editingAddress) {
+      // Update existing address
+      this.addressBookService.updateAddress(this.customerId, this.editingAddress.id, formValue).subscribe({
+        next: () => {
+          this.loadAddresses();
+          this.cancelEdit();
+        },
+        error: (error) => {
+          console.error('Fehler beim Aktualisieren der Adresse:', error);
+          this.loading = false;
+        }
+      });
+    } else {
+      // Create new address
+      this.addressBookService.createAddress(this.customerId, formValue).subscribe({
+        next: () => {
+          this.loadAddresses();
+          this.cancelEdit();
+        },
+        error: (error) => {
+          console.error('Fehler beim Erstellen der Adresse:', error);
+          this.loading = false;
+        }
+      });
+    }
+  }
+
+  deleteAddress(address: CustomerAddress): void {
+    if (!this.customerId) return;
+
+    if (confirm('Möchten Sie diese Adresse wirklich löschen?')) {
+      this.addressBookService.deleteAddress(this.customerId, address.id).subscribe({
+        next: () => {
+          this.loadAddresses();
+        },
+        error: (error) => {
+          console.error('Fehler beim Löschen der Adresse:', error);
+        }
+      });
+    }
+  }
+
+  setDefaultAddress(address: CustomerAddress): void {
+    if (!this.customerId) return;
+
+    this.addressBookService.setDefaultAddress(this.customerId, address.id).subscribe({
+      next: () => {
+        this.loadAddresses();
+      },
+      error: (error) => {
+        console.error('Fehler beim Setzen der Standardadresse:', error);
+      }
+    });
+  }
+
+  cancelEdit(): void {
+    this.showAddForm = false;
+    this.editingAddress = null;
+    this.addressForm.reset({ addressType: 'BOTH', isDefault: false });
+  }
+
+  getAddressTypeLabel(type: string): string {
+    const labels: { [key: string]: string } = {
+      'SHIPPING': 'Versandadresse',
+      'BILLING': 'Rechnungsadresse',
+      'BOTH': 'Versand & Rechnung'
+    };
+    return labels[type] || type;
+  }
+}
+

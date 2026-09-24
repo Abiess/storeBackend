@@ -1,0 +1,314 @@
+<!-- SERVICE PROFESSIONAL LAYOUT -->
+<div class="sp" [style.--sp-primary]="primaryColor" [style.--sp-secondary]="secondaryColor" 
+     [style.--sp-text]="textColor" [style.--sp-bg]="backgroundColor">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HEADER – Professional Business Navigation
+       ═══════════════════════════════════════════════════════════════ -->
+  <header class="sp-header">
+    <div class="sp-container">
+      <div class="sp-header__inner">
+        
+        <!-- Logo / Brand -->
+        <a href="#" class="sp-header__brand" (click)="scrollToSection('hero'); $event.preventDefault()">
+          <img *ngIf="logoUrl" [src]="logoUrl" [alt]="storeName" class="sp-header__logo">
+          <span class="sp-header__name">{{ storeName }}</span>
+        </a>
+
+        <!-- Desktop Navigation -->
+        <nav class="sp-header__nav" aria-label="Main navigation">
+          <a href="#services" class="sp-header__link" (click)="scrollToSection('services'); $event.preventDefault()">
+            {{ 'service.nav.services' | translate }}
+          </a>
+          <a href="#about" class="sp-header__link" (click)="scrollToSection('about'); $event.preventDefault()">
+            {{ 'service.nav.about' | translate }}
+          </a>
+          <a href="#gallery" class="sp-header__link" (click)="scrollToSection('gallery'); $event.preventDefault()">
+            {{ 'service.nav.gallery' | translate }}
+          </a>
+          <a href="#contact" class="sp-header__link" (click)="scrollToSection('contact'); $event.preventDefault()">
+            {{ 'service.nav.contact' | translate }}
+          </a>
+        </nav>
+
+        <!-- Kontakt CTA -->
+        <a href="#contact"
+           (click)="scrollToSection('contact'); $event.preventDefault()"
+           class="sp-header__cta">
+          <span class="sp-header__cta-text">{{ 'service.header.contact' | translate }}</span>
+        </a>
+
+        <!-- Language Selector -->
+        <div class="sp-header__language">
+          <app-language-selector></app-language-selector>
+        </div>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="sp-header__menu-btn" 
+                (click)="toggleMobileMenu()"
+                [attr.aria-expanded]="mobileMenuOpen"
+                aria-label="Menu">
+          <svg *ngIf="!mobileMenuOpen" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+          <svg *ngIf="mobileMenuOpen" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+
+      </div>
+    </div>
+
+  </header>
+
+  <!-- Mobile Menu Overlay -->
+  <div class="sp-header__mobile-menu" [class.sp-header__mobile-menu--open]="mobileMenuOpen">
+    <nav class="sp-header__mobile-nav">
+      <a href="#services" class="sp-header__mobile-link" (click)="scrollToSection('services'); $event.preventDefault()">
+        {{ 'service.nav.services' | translate }}
+      </a>
+      <a href="#about" class="sp-header__mobile-link" (click)="scrollToSection('about'); $event.preventDefault()">
+        {{ 'service.nav.about' | translate }}
+      </a>
+      <a href="#gallery" class="sp-header__mobile-link" (click)="scrollToSection('gallery'); $event.preventDefault()">
+        {{ 'service.nav.gallery' | translate }}
+      </a>
+      <a href="#contact" class="sp-header__mobile-link" (click)="scrollToSection('contact'); $event.preventDefault()">
+        {{ 'service.nav.contact' | translate }}
+      </a>
+      <a href="#contact"
+         class="sp-header__mobile-cta"
+         (click)="scrollToSection('contact'); $event.preventDefault()">
+        {{ 'service.header.contact' | translate }}
+      </a>
+      
+      <!-- Language Selector in Mobile Menu -->
+      <div class="sp-header__mobile-language">
+        <app-language-selector></app-language-selector>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HERO – Professional Business Hero Section
+       ═══════════════════════════════════════════════════════════════ -->
+  <section id="hero" class="sp-hero" [class.sp-hero--has-image]="heroImage">
+    <!-- Background Image -->
+    <div class="sp-hero__bg" *ngIf="heroImage" [style.background-image]="'url(' + heroImage + ')'"></div>
+    
+    <!-- Gradient Overlay -->
+    <div class="sp-hero__overlay"></div>
+
+    <!-- Content -->
+    <div class="sp-container">
+      <div class="sp-hero__content">
+        <h1 class="sp-hero__title">{{ storeName }}</h1>
+        <p class="sp-hero__subtitle" *ngIf="description">{{ description }}</p>
+
+        <div class="sp-hero__actions">
+          <a *ngIf="whatsappNumber"
+             [href]="buildWhatsAppLink()"
+             target="_blank"
+             rel="noopener"
+             class="sp-hero__btn sp-hero__btn--primary">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+              <path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 0 0 1.51 5.26l-.999 3.648 3.978-1.115z"/>
+            </svg>
+            {{ 'service.hero.cta.inquiry' | translate }}
+          </a>
+          <a href="#services"
+             class="sp-hero__btn sp-hero__btn--secondary"
+             (click)="scrollToSection('services'); $event.preventDefault()">
+            {{ 'service.hero.cta.services' | translate }}
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TODO: Trust Bar Section -->
+  
+  <!-- ═══════════════════════════════════════════════════════════════
+       SERVICES SECTION – Professional Service Listing
+       ═══════════════════════════════════════════════════════════════ -->
+  <section id="services" class="sp-services" *ngIf="products && products.length > 0">
+    <div class="sp-container">
+      
+      <!-- Section Header -->
+      <div class="sp-services__header">
+        <h2 class="sp-services__title">{{ 'service.services.title' | translate }}</h2>
+        <p class="sp-services__subtitle">{{ 'service.services.subtitle' | translate }}</p>
+      </div>
+
+      <!-- Category Filter (only if multiple categories) -->
+      <div class="sp-services__filter" *ngIf="showCategoryFilter">
+        <button 
+          class="sp-services__filter-btn"
+          [class.sp-services__filter-btn--active]="selectedCategoryId === null"
+          (click)="selectCategory(null)">
+          {{ 'service.services.filter.all' | translate }}
+        </button>
+        <button 
+          *ngFor="let category of relevantCategories"
+          class="sp-services__filter-btn"
+          [class.sp-services__filter-btn--active]="selectedCategoryId === category.id"
+          (click)="selectCategory(category.id)">
+          {{ category.name }}
+        </button>
+      </div>
+
+      <!-- Service Grid -->
+      <div class="sp-services__grid">
+        <article 
+          *ngFor="let service of filteredServices" 
+          class="sp-service-card"
+          [class.sp-service-card--featured]="service.isFeatured">
+          
+          <!-- Service Image -->
+          <div class="sp-service-card__image-wrapper">
+            <img 
+              [src]="getServiceImage(service)" 
+              [alt]="service.title"
+              class="sp-service-card__image"
+              loading="lazy">
+            <div *ngIf="service.isFeatured" class="sp-service-card__badge">
+              {{ 'service.services.badge.featured' | translate }}
+            </div>
+          </div>
+
+          <!-- Service Content -->
+          <div class="sp-service-card__content">
+            <h3 class="sp-service-card__title">{{ service.title }}</h3>
+            <p class="sp-service-card__description" *ngIf="service.description">
+              {{ truncateDescription(service.description, 100) }}
+            </p>
+          </div>
+
+          <!-- Service Footer -->
+          <div class="sp-service-card__footer">
+            <div class="sp-service-card__price">
+              <ng-container *ngIf="getServicePrice(service); else priceOnRequest">
+                {{ getServicePrice(service) | storeCurrency:currency }}
+              </ng-container>
+              <ng-template #priceOnRequest>
+                <span class="sp-service-card__price-note">
+                  {{ 'service.services.price.onRequest' | translate }}
+                </span>
+              </ng-template>
+            </div>
+            
+            <a 
+              [href]="whatsappNumber ? buildWhatsAppLink(service.title) : '#contact'"
+              [target]="whatsappNumber ? '_blank' : '_self'"
+              [rel]="whatsappNumber ? 'noopener' : null"
+              (click)="!whatsappNumber && scrollToSection('contact'); !whatsappNumber && $event.preventDefault()"
+              class="sp-service-card__cta-primary"
+              [attr.aria-label]="'service.services.cta.sendInquiry' | translate">
+              {{ 'service.services.cta.sendInquiry' | translate }}
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </a>
+          </div>
+        </article>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TRUST / BUSINESS INFO – Quick Business Facts
+       ═══════════════════════════════════════════════════════════════ -->
+  <section class="sp-trust" *ngIf="showTrustSection">
+    <div class="sp-container">
+      <div class="sp-trust__grid">
+        
+        <!-- Opening Hours -->
+        <div class="sp-trust__item" *ngIf="openingHours">
+          <div class="sp-trust__icon">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+            </svg>
+          </div>
+          <h3 class="sp-trust__title">{{ 'service.trust.openingHours' | translate }}</h3>
+          <p class="sp-trust__text">{{ openingHours }}</p>
+        </div>
+
+        <!-- Address -->
+        <div class="sp-trust__item" *ngIf="address">
+          <div class="sp-trust__icon">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <h3 class="sp-trust__title">{{ 'service.trust.location' | translate }}</h3>
+          <p class="sp-trust__text">{{ address }}</p>
+        </div>
+
+        <!-- Phone -->
+        <div class="sp-trust__item" *ngIf="contactPhone">
+          <div class="sp-trust__icon">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+            </svg>
+          </div>
+          <h3 class="sp-trust__title">{{ 'service.trust.phone' | translate }}</h3>
+          <a [href]="'tel:' + contactPhone" class="sp-trust__link">{{ contactPhone }}</a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- TODO: About Section -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ABOUT – Professional Two-Column About Section
+       ═══════════════════════════════════════════════════════════════ -->
+  <section id="about" class="sp-about" *ngIf="showAboutSection">
+    <div class="sp-container">
+      <div class="sp-about__grid">
+        
+        <!-- Content Column -->
+        <div class="sp-about__content">
+          <h2 class="sp-about__title">{{ aboutTitle || ('service.about.title' | translate) }}</h2>
+          <p class="sp-about__subtitle" *ngIf="aboutSubtitle">{{ aboutSubtitle }}</p>
+          <div class="sp-about__text" *ngIf="aboutText || description">
+            <p>{{ aboutText || description }}</p>
+          </div>
+        </div>
+
+        <!-- Image Column -->
+        <div class="sp-about__image-wrapper" *ngIf="aboutImageUrl">
+          <img [src]="aboutImageUrl" [alt]="storeName" class="sp-about__image">
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- TODO: Gallery Section -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       GALLERY – Reusing ImageSliderComponent
+       ═══════════════════════════════════════════════════════════════ -->
+  <section id="gallery" class="sp-gallery" *ngIf="showGallerySection">
+    <div class="sp-container">
+      
+      <!-- Section Header -->
+      <div class="sp-gallery__header">
+        <h2 class="sp-gallery__title">{{ 'service.gallery.title' | translate }}</h2>
+        <p class="sp-gallery__subtitle">{{ 'service.gallery.subtitle' | translate }}</p>
+      </div>
+
+      <!-- Image Slider -->
+      <div class="sp-gallery__slider">
+        <app-image-slider [images]="galleryImages" [autoplay]="true" [interval]="5000"></app-image-slider>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- REMOVED: Contact Section (Footer is now the main contact section) -->
+
+</div>

@@ -1,0 +1,40 @@
+# Ignore build artifacts
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Local H2 file database (must NOT be committed – contains user data)
+data/
+*.mv.db
+*.trace.db
+
+# Ignore IDE files
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# Ignore environment files
+.env
+.env.local
+.env.production
+
+# Ignore logs
+logs/
+*.log
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore temporary files
+*.tmp
+temp/
+
+# Ignore test PDFs (KUNDENDATEN!)
+src/test/resources/**/*.pdf
+
+# AI-Kontext Timestamp (lokal)
+# .ai-context-updated  ? nicht ignorieren, soll committed werden
+

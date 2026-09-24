@@ -1,0 +1,184 @@
+<div class="audit-log-container">
+  <div class="audit-log-header">
+    <div class="header-content">
+      <h2>📋 Änderungsprotokoll</h2>
+      <p class="subtitle">Alle Änderungen und Aktivitäten in Ihrem Shop</p>
+    </div>
+    <button class="btn btn-export" (click)="exportLogs()" [disabled]="loading">
+      📥 Exportieren
+    </button>
+  </div>
+
+  <!-- Filter Section -->
+  <div class="filter-section">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Aktion</label>
+        <select [(ngModel)]="selectedAction" class="form-select">
+          <option value="">Alle Aktionen</option>
+          <option *ngFor="let action of actionOptions" [value]="action">
+            {{ getActionLabel(action) }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Bereich</label>
+        <select [(ngModel)]="selectedEntityType" class="form-select">
+          <option value="">Alle Bereiche</option>
+          <option *ngFor="let entityType of entityTypeOptions" [value]="entityType">
+            {{ getEntityTypeLabel(entityType) }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Von</label>
+        <input type="date" [(ngModel)]="startDate" class="form-input">
+      </div>
+
+      <div class="filter-group">
+        <label>Bis</label>
+        <input type="date" [(ngModel)]="endDate" class="form-input">
+      </div>
+
+      <div class="filter-actions">
+        <button class="btn btn-primary" (click)="applyFilter()">
+          🔍 Filtern
+        </button>
+        <button class="btn btn-secondary" (click)="resetFilter()">
+          ↺ Zurücksetzen
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Lade Protokoll...</p>
+  </div>
+
+  <!-- Audit Logs Table -->
+  <div *ngIf="!loading" class="audit-logs-table">
+    <div class="table-info">
+      <span>{{ totalElements }} Einträge gefunden</span>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th width="40"></th>
+            <th>Datum & Zeit</th>
+            <th>Benutzer</th>
+            <th>Rolle</th>
+            <th>Aktion</th>
+            <th>Bereich</th>
+            <th>Beschreibung</th>
+            <th>IP-Adresse</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let log of auditLogs">
+            <tr class="log-row" [class.expanded]="isRowExpanded(log.id)">
+              <td>
+                <button
+                  class="expand-btn"
+                  (click)="toggleRow(log.id)"
+                  *ngIf="log.changes && log.changes.length > 0">
+                  {{ isRowExpanded(log.id) ? '▼' : '▶' }}
+                </button>
+              </td>
+              <td class="date-cell">{{ formatDate(log.createdAt) }}</td>
+              <td class="user-cell">
+                <div class="user-info">
+                  <strong>{{ log.userName }}</strong>
+                  <small>{{ log.userEmail }}</small>
+                </div>
+              </td>
+              <td>
+                <span class="role-badge">{{ getRoleLabel(log.userRole) }}</span>
+              </td>
+              <td>
+                <span class="action-badge" [class]="'badge-' + getActionColor(log.action)">
+                  {{ getActionLabel(log.action) }}
+                </span>
+              </td>
+              <td>
+                <span class="entity-badge">{{ getEntityTypeLabel(log.entityType) }}</span>
+              </td>
+              <td class="description-cell">
+                <strong *ngIf="log.entityName">{{ log.entityName }}</strong>
+                <p>{{ log.description }}</p>
+              </td>
+              <td class="ip-cell">{{ log.ipAddress || '-' }}</td>
+            </tr>
+
+            <!-- Expanded Details Row -->
+            <tr *ngIf="isRowExpanded(log.id) && log.changes && log.changes.length > 0" class="details-row">
+              <td colspan="8">
+                <div class="changes-details">
+                  <h4>🔄 Änderungen im Detail:</h4>
+                  <table class="changes-table">
+                    <thead>
+                      <tr>
+                        <th>Feld</th>
+                        <th>Alter Wert</th>
+                        <th></th>
+                        <th>Neuer Wert</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let change of log.changes">
+                        <td><strong>{{ change.fieldLabel }}</strong></td>
+                        <td class="old-value">{{ formatValue(change.oldValue) }}</td>
+                        <td class="arrow">→</td>
+                        <td class="new-value">{{ formatValue(change.newValue) }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+
+          <tr *ngIf="auditLogs.length === 0" class="empty-row">
+            <td colspan="8" class="empty-state">
+              <div class="empty-icon">📭</div>
+              <p>Keine Einträge gefunden</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button
+        class="btn btn-sm"
+        (click)="previousPage()"
+        [disabled]="currentPage === 0">
+        ← Zurück
+      </button>
+
+      <div class="page-numbers">
+        <button
+          *ngFor="let page of [].constructor(totalPages); let i = index"
+          class="page-btn"
+          [class.active]="i === currentPage"
+          (click)="goToPage(i)">
+          {{ i + 1 }}
+        </button>
+      </div>
+
+      <button
+        class="btn btn-sm"
+        (click)="nextPage()"
+        [disabled]="currentPage >= totalPages - 1">
+        Weiter →
+      </button>
+    </div>
+  </div>
+</div>
+

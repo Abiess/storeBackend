@@ -1,0 +1,173 @@
+package storebackend.config;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
+import storebackend.security.CustomAccessDeniedHandler;
+import storebackend.security.CustomAuthenticationEntryPoint;
+import storebackend.security.CustomUserDetailsService;
+import storebackend.security.JwtAuthenticationFilter;
+
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomUserDetailsService userDetailsService;
+    private final CorsConfigurationSource corsConfigurationSource;
+    private final CustomAccessDeniedHandler accessDeniedHandler;
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))  // Verwende das injizierte Feld
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                // OPTIONS requests müssen immer durchgelassen werden (CORS Preflight)
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // Auth endpoints
+                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/validate").permitAll()
+                .requestMatchers("/api/auth/verify", "/api/auth/resend-verification").permitAll()
+                .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/reset-password/validate").permitAll()
+                // Email availability check - öffentlich für Registrierung
+                .requestMatchers(HttpMethod.GET, "/api/auth/check-email").permitAll()
+                // Phone Auth (WhatsApp/Telegram Schnellstart – kein Login erforderlich)
+                .requestMatchers("/api/auth/phone/**").permitAll()
+                // Telegram Bot Webhook (empfängt Updates von Telegram)
+                .requestMatchers("/api/auth/telegram-webhook/**").permitAll()
+                // Config endpoints - Language detection muss öffentlich sein
+                .requestMatchers("/api/config", "/api/config/**").permitAll()
+                // Error endpoint - muss öffentlich sein für Spring Boot Error Handling
+                .requestMatchers("/error").permitAll()
+                // Public API endpoints
+                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/public/**").permitAll()
+                // Customer endpoints - Count endpoints müssen öffentlich sein für Gäste
+                .requestMatchers(HttpMethod.GET, "/api/customer/wishlists/count").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/customer/wishlists/default").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/customer/wishlists/shared/**").permitAll()
+                // Slug-Verfügbarkeitsprüfung - öffentlich zugänglich für Registrierung
+                .requestMatchers(HttpMethod.GET, "/api/me/stores/check-slug/**").permitAll()
+                // Subscription plans - öffentlich sichtbar
+                .requestMatchers(HttpMethod.GET, "/api/subscriptions/plans").permitAll()
+                // Storefront public endpoints - Stores und Produkte können öffentlich angesehen werden
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/public/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/public/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*").permitAll() // Allow public access to store details
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/products").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/products/expiry-list").permitAll()
+                // WICHTIG: Tier Prices benötigen Authentifizierung (Management-Endpoint)
+                .requestMatchers("/api/stores/*/products/*/tier-prices").authenticated()
+                .requestMatchers("/api/stores/*/products/*/tier-prices/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/products/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/categories").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/categories/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/slider/active").permitAll() // Slider für Storefront
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/slider/gallery").permitAll() // Galerie für Service-Storefront
+                .requestMatchers(HttpMethod.GET, "/api/stores/by-domain/**").permitAll()
+                // SEO / Redirects / Structured Data – Controller prüft Eigentümerschaft (→ 403 bei fremdem Store)
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/seo").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/seo/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/redirects").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/redirects/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/structured-data").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/structured-data/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/themes/**").permitAll()
+                // Product Reviews - Public read access for storefront
+                .requestMatchers(HttpMethod.GET, "/api/products/*/reviews").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/products/*/reviews/stats").permitAll()
+                // Delivery Partner Marketplace - GET ist öffentlich (Marktplatz durchsuchen)
+                .requestMatchers(HttpMethod.GET, "/api/delivery-partners").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/delivery-partners/featured").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/delivery-partners/*/reviews").permitAll()
+                // Global Delivery Options - öffentlich für Storefront-Checkout
+                .requestMatchers(HttpMethod.GET, "/api/public/delivery-options").permitAll()
+                // Product Options - GET ist öffentlich (für Storefront Produktansicht)
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/products/*/options").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/stores/*/products/*/options/**").permitAll()
+                // Asset suggestions (Unsplash API Proxy) - benötigt Auth (User muss eingeloggt sein)
+                .requestMatchers("/api/assets/**").authenticated()
+                // Product Variants - Authenticated users can manage their own store's variants (checked in controller)
+                .requestMatchers("/api/stores/*/products/*/variants/**").authenticated()
+                // DHL Parcel Management - requires authentication (checked in controller)
+                .requestMatchers("/api/stores/*/dhl/**").authenticated()
+                // DHL Slot Management (Phase 2) - requires authentication
+                .requestMatchers("/api/stores/*/dhl/slots/**").authenticated()
+                // Cart and Checkout - können öffentlich sein (verwenden Session)
+                .requestMatchers("/api/cart/**").permitAll()
+                .requestMatchers("/api/checkout/**").permitAll()
+                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/phone-verification/**").permitAll()
+                // h2 cosnole
+                .requestMatchers("/h2-console/**").permitAll()
+                // Health check
+                .requestMatchers("/actuator/**").permitAll()
+                // Swagger UI Endpunkte
+                .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/v3/api-docs/**", "/v3/api-docs").permitAll()
+                .requestMatchers("/swagger-resources/**").permitAll()
+                .requestMatchers("/webjars/**").permitAll()
+                // Alle anderen Anfragen benötigen Authentifizierung
+                // POST/PUT/DELETE zu /api/stores/*/products erfordert Authentifizierung (wird im Controller geprüft)
+                .anyRequest().authenticated()
+            )
+            .authenticationProvider(authenticationProvider())
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(exceptions -> exceptions
+                .accessDeniedHandler(accessDeniedHandler)
+                .authenticationEntryPoint(authenticationEntryPoint)
+            );
+        // Iframe-Embedding-Policy:
+        // - Storefront-Subdomains (xyz.markt.ma) sollen sich vom Admin-Panel
+        //   (markt.ma) als Live-Preview im Theme-Editor einbetten lassen.
+        // - 'X-Frame-Options: SAMEORIGIN' wäre zu restriktiv, weil Browser
+        //   subdomain != hauptdomain als unterschiedliche Origin behandeln.
+        // - 'Content-Security-Policy: frame-ancestors' erlaubt feingranular
+        //   alle eigenen Subdomains (*.markt.ma) plus die Hauptdomain.
+        // - X-Frame-Options wird komplett deaktiviert, weil es sonst die
+        //   neuere CSP-Direktive in alten Browsern überschreiben würde.
+        http.headers(headers -> headers
+            .frameOptions(frame -> frame.disable())
+            .contentSecurityPolicy(csp -> csp
+                .policyDirectives("frame-ancestors 'self' https://markt.ma https://*.markt.ma http://localhost:* http://127.0.0.1:*")
+            )
+        );
+        return http.build();
+    }
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+}
