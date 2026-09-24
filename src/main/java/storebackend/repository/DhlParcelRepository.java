@@ -1,12 +1,14 @@
 package storebackend.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import storebackend.entity.DhlParcel;
 import storebackend.enums.DhlParcelStatus;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -137,5 +139,41 @@ public interface DhlParcelRepository extends JpaRepository<DhlParcel, Long> {
         @Param("storeId") Long storeId,
         @Param("status") DhlParcelStatus status,
         @Param("slotIds") List<Long> slotIds
+    );
+
+    /**
+     * Bedingtes, atomares UPDATE fuer die Abholung: setzt Status und
+     * pickedUpAt NUR, wenn der Datensatz aktuell noch STORED ist.
+     *
+     * WARUM DIES FÜR NEBENLÄUFIGKEIT AUSREICHT (statt read-then-write):
+     * Die Zeile wird durch die WHERE-Klausel als Teil DESSELBEN UPDATE-
+     * Statements gesucht und geändert - die Datenbank sperrt die
+     * betroffene Zeile für die Dauer der Anweisung. Feuern zwei
+     * Transaktionen (nahezu) gleichzeitig dasselbe UPDATE, serialisiert
+     * die DB sie: die zweite Transaktion wartet, bis die erste committet
+     * hat, und sieht dann bereits status != STORED - ihr UPDATE betrifft
+     * daher 0 Zeilen. Der Aufrufer (DhlParcelService.pickupParcel) erkennt
+     * dies am Rückgabewert (0) und lädt den aktuellen Zustand nach, um
+     * zwischen "nicht gefunden" und "bereits abgeholt" zu unterscheiden -
+     * es kann also NIE zu einer doppelten Abholung/doppelten
+     * Erfolgsantwort kommen, ganz ohne zusätzlichen externen (DHL-)Aufruf
+     * oder expliziten Pessimistic-Lock.
+     *
+     * @param storeId Store ID (Multi-Tenant)
+     * @param trackingCode Normalisierter Tracking-Code
+     * @param pickedUpAt Zeitstempel der Abholung
+     * @return Anzahl geänderter Zeilen (0 oder 1 - Tracking-Code ist pro
+     *         Store unter den aktiven Status durch den Partial Unique
+     *         Index idx_dhl_parcels_active_tracking eindeutig)
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE DhlParcel p SET p.status = storebackend.enums.DhlParcelStatus.PICKED_UP, " +
+           "p.pickedUpAt = :pickedUpAt " +
+           "WHERE p.store.id = :storeId AND p.trackingCode = :trackingCode " +
+           "AND p.status = storebackend.enums.DhlParcelStatus.STORED")
+    int markPickedUpIfStored(
+        @Param("storeId") Long storeId,
+        @Param("trackingCode") String trackingCode,
+        @Param("pickedUpAt") LocalDateTime pickedUpAt
     );
 }

@@ -464,7 +464,16 @@ public class DhlParcelService {
     }
 
     /**
-     * Holt Paket ab (markiert als PICKED_UP)
+     * Holt Paket ab (markiert als PICKED_UP).
+     *
+     * SICHERHEIT/NEBENLÄUFIGKEIT: Bewusst KEIN erneuter DHL-API-Call hier
+     * (siehe DhlController.pickupParcel() Javadoc) - das Paket wurde bereits
+     * beim Einlagern authoritativ gegen DHL validiert und liegt als
+     * vertrauenswürdiger DB-Datensatz vor. Der Statusübergang
+     * STORED -> PICKED_UP erfolgt stattdessen ausschließlich über ein
+     * bedingtes, atomares UPDATE (siehe
+     * DhlParcelRepository.markPickedUpIfStored()), das unter Nebenläufigkeit
+     * garantiert nur einmal erfolgreich ist - kein read-then-write-Race.
      * 
      * @param storeId Store ID (Multi-Tenant Validierung)
      * @param rawTrackingCode Roher Tracking-Code
@@ -475,27 +484,47 @@ public class DhlParcelService {
     @Transactional
     public DhlParcel pickupParcel(Long storeId, String rawTrackingCode) {
         String normalizedCode = normalizeTrackingCode(rawTrackingCode);
-        
-        DhlParcel parcel = findActiveParcel(storeId, normalizedCode)
-            .orElseThrow(() -> new ParcelNotFoundException(normalizedCode));
-        
-        if (parcel.getStatus() == DhlParcelStatus.PICKED_UP) {
-            log.warn("Parcel already picked up: store={}, tracking={}, pickedUpAt={}", 
-                storeId, normalizedCode, parcel.getPickedUpAt());
-            throw new ParcelAlreadyPickedUpException(
-                normalizedCode,
-                parcel.getShelfLocation(),
-                parcel.getPickedUpAt()
-            );
+
+        int updatedRows = parcelRepository.markPickedUpIfStored(storeId, normalizedCode, LocalDateTime.now());
+
+        if (updatedRows == 0) {
+            // Kein STORED-Datensatz mit diesem Tracking-Code veraendert -
+            // entweder nie eingelagert/CANCELLED, oder (Race mit einer
+            // anderen, bereits committeten Abholung) inzwischen schon
+            // PICKED_UP. Nachladen, um die beiden Faelle sauber zu
+            // unterscheiden (siehe Query-Javadoc).
+            DhlParcel current = findActiveParcel(storeId, normalizedCode)
+                .orElseThrow(() -> new ParcelNotFoundException(normalizedCode));
+
+            if (current.getStatus() == DhlParcelStatus.PICKED_UP) {
+                log.warn("Parcel already picked up: store={}, tracking={}, pickedUpAt={}",
+                    storeId, normalizedCode, current.getPickedUpAt());
+                throw new ParcelAlreadyPickedUpException(
+                    normalizedCode,
+                    current.getShelfLocation(),
+                    current.getPickedUpAt()
+                );
+            }
+
+            // Sollte praktisch nicht erreichbar sein (STORED/PICKED_UP sind
+            // die einzigen von markPickedUpIfStored beruecksichtigten
+            // Zustaende) - fail closed statt eine falsche Erfolgsantwort zu
+            // riskieren.
+            throw new ParcelNotFoundException(normalizedCode);
         }
-        
-        parcel.setStatus(DhlParcelStatus.PICKED_UP);
-        parcel.setPickedUpAt(LocalDateTime.now());
-        
-        DhlParcel updated = parcelRepository.save(parcel);
-        log.info("✅ Parcel picked up: id={}, store={}, tracking={}", 
+
+        // updatedRows == 1: das UPDATE war erfolgreich. Der Entity-Zustand
+        // im Persistence-Context wurde durch clearAutomatically=true bereits
+        // verworfen - ein frischer Read spiegelt daher zuverlaessig den
+        // neuen Status wider (kein stale Read der alten STORED-Zeile).
+        DhlParcel updated = findActiveParcel(storeId, normalizedCode)
+            .orElseThrow(() -> new IllegalStateException(
+                "DHL parcel pickup succeeded but no active parcel found for store=" + storeId +
+                ", trackingCode=" + normalizedCode));
+
+        log.info("✅ Parcel picked up: id={}, store={}, tracking={}",
             updated.getId(), storeId, normalizedCode);
-        
+
         return updated;
     }
 

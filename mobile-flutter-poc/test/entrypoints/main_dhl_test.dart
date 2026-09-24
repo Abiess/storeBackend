@@ -12,7 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:markt_ma_documents_poc/core/auth_gate.dart';
 import 'package:markt_ma_documents_poc/entrypoints/main_dhl.dart' as dhl_entrypoint;
-import 'package:markt_ma_documents_poc/features/dhl/dhl_home_screen.dart';
+import 'package:markt_ma_documents_poc/features/dhl/dhl_dashboard_screen.dart';
 import 'package:markt_ma_documents_poc/features/dhl/dhl_login_screen.dart';
 import 'package:markt_ma_documents_poc/features/maritime/maritime_home_screen.dart';
 import 'package:markt_ma_documents_poc/features/maritime/maritime_login_screen.dart';
@@ -20,7 +20,6 @@ import 'package:markt_ma_documents_poc/screens/documents_screen.dart';
 import 'package:markt_ma_documents_poc/screens/login_screen.dart';
 import 'package:markt_ma_documents_poc/services/auth_service.dart';
 import 'package:markt_ma_documents_poc/services/dhl_service.dart';
-import 'package:markt_ma_documents_poc/widgets/shared/markt_profile_menu.dart';
 
 void main() {
   const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
@@ -55,13 +54,13 @@ void main() {
     expect(find.byType(MaritimeLoginScreen), findsNothing);
     expect(find.byType(DocumentsScreen), findsNothing);
     expect(find.byType(MaritimeHomeScreen), findsNothing);
-    expect(find.byType(DhlHomeScreen), findsNothing);
+    expect(find.byType(DhlDashboardScreen), findsNothing);
 
     // DHL-Branding aus MarktLoginScreen bleibt sichtbar.
     expect(find.text('DHL Paketshop'), findsWidgets);
   });
 
-  testWidgets('DHL-Konfiguration (AuthGate mit Token) zeigt den DHL-Home-Screen mit aufgeloester storeId', (tester) async {
+  testWidgets('DHL-Konfiguration (AuthGate mit Token) zeigt das DHL-Dashboard mit aufgeloester storeId', (tester) async {
     // Bewusst direkt ueber AuthGate + dieselben Builder wie `main_dhl.dart`
     // gepumpt (statt erneut `main()` aufzurufen) - ein zweiter `runApp`-
     // Aufruf im selben Test-File fuehrt sonst zu Ticker-/Animation-
@@ -70,7 +69,7 @@ void main() {
     // Seit der Auth-Persistenz-Korrektur vom 23.09. ruft `AuthGate` bei
     // vorhandenem Token `GET /auth/me` auf; hier ueber einen injizierten
     // `MockClient` mit einem aktivierten DHL-Entitlement simuliert, damit
-    // `DhlHomeScreen` eine echte (aufgeloeste) `storeId` erhaelt - kein
+    // `DhlDashboardScreen` eine echte (aufgeloeste) `storeId` erhaelt - kein
     // echter Netzwerk-Request im Test. Der Pakete-Abruf selbst wird
     // zusaetzlich ueber einen injizierten `DhlService`/`MockClient`
     // gestubbt (analog `test/features/dhl/dhl_home_screen_test.dart`).
@@ -89,7 +88,7 @@ void main() {
       MaterialApp(
         home: AuthGate(
           loginBuilder: (context) => const DhlLoginScreen(),
-          homeBuilder: (context, user) => DhlHomeScreen(
+          homeBuilder: (context, user) => DhlDashboardScreen(
             storeId: user?.storeIdForApp('DHL'),
             dhlService: DhlService(client: dhlClient),
             user: user,
@@ -100,27 +99,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Mit Token muss AuthGate DhlHomeScreen zeigen - kein Login, kein
+    // Mit Token muss AuthGate DhlDashboardScreen zeigen - kein Login, kein
     // Documents/Maritime, und der Kein-Zugriff-Zustand darf NICHT
     // erscheinen (storeId wurde aus /me erfolgreich aufgeloest).
-    expect(find.byType(DhlHomeScreen), findsOneWidget);
+    expect(find.byType(DhlDashboardScreen), findsOneWidget);
     expect(find.byType(DhlLoginScreen), findsNothing);
     expect(find.byType(DocumentsScreen), findsNothing);
     expect(find.byType(MaritimeHomeScreen), findsNothing);
     expect(find.text('Kein DHL-Zugriff'), findsNothing);
 
-    // MarktAppShell-Titel + generische Shared Widgets (MarktCard/
-    // MarktIconBadge) werden wiederverwendet, keine Fake-Fachdaten.
-    expect(find.text('DHL Paketshop'), findsWidgets);
-
-    // MarktProfileMenu-Kopfzeile zeigt Name + E-Mail des geladenen Users,
-    // ohne die bestehende storeId-Aufloesung zu beeintraechtigen - Inhalt
-    // erscheint erst nach dem Oeffnen des Popup-Menues.
-    await tester.tap(find.byType(MarktProfileMenu));
-    await tester.pumpAndSettle();
-
-    expect(find.text('DHL User'), findsOneWidget);
-    expect(find.text('dhl-user@example.com'), findsOneWidget);
+    // Dashboard-Header ("Paketshop") + Begruessung mit dem geladenen
+    // Nutzernamen - keine Fake-Fachdaten.
+    expect(find.text('Paketshop'), findsOneWidget);
+    expect(find.text('Guten Tag, DHL User'), findsOneWidget);
   });
 
   testWidgets(
@@ -157,14 +148,14 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Anmelden'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(DhlHomeScreen), findsOneWidget);
+    expect(find.byType(DhlDashboardScreen), findsOneWidget);
     expect(find.byType(DhlLoginScreen), findsNothing);
     expect(find.text('Kein DHL-Zugriff'), findsNothing);
 
-    await tester.tap(find.byType(MarktProfileMenu));
-    await tester.pumpAndSettle();
-
-    expect(find.text('DHL User'), findsOneWidget);
-    expect(find.text('dhl-user@example.com'), findsOneWidget);
+    // Name aus der Login-Response erscheint direkt in der Begruessung des
+    // neuen Dashboards - kein Tippen auf ein Profilmenue noetig (Bugfix
+    // 23.09. bleibt sinngemaess erhalten: `user` wird ohne App-Neustart
+    // durchgereicht).
+    expect(find.text('Guten Tag, DHL User'), findsOneWidget);
   });
 }

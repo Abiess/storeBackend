@@ -16,6 +16,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:markt_ma_documents_poc/config/api_config.dart';
+import 'package:markt_ma_documents_poc/models/dhl_find_parcel_request.dart';
+import 'package:markt_ma_documents_poc/models/dhl_pickup_parcel_request.dart';
 import 'package:markt_ma_documents_poc/models/dhl_store_parcel_request.dart';
 import 'package:markt_ma_documents_poc/services/dhl_service.dart';
 import 'package:markt_ma_documents_poc/services/token_storage.dart';
@@ -206,6 +208,118 @@ void main() {
           isA<ApiException>()
               .having((e) => e.statusCode, 'statusCode', 409)
               .having((e) => e.message, 'message', 'Paket bereits eingelagert'),
+        ),
+      );
+    });
+  });
+
+  group('findParcel', () {
+    test('ruft exakt POST /stores/{storeId}/dhl/parcels/find mit dem Tracking-Code auf und parst das Paket',
+        () async {
+      late Uri calledUri;
+      late String? calledMethod;
+      late Map<String, dynamic> calledBody;
+      final mockClient = MockClient((request) async {
+        calledUri = request.url;
+        calledMethod = request.method;
+        calledBody = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(
+          '{"id":9,"storeId":7,"trackingCode":"JVGL0605379700518040","shelfLocation":"A3","receivedAt":"2026-01-15T10:00:00","status":"STORED"}',
+          200,
+        );
+      });
+
+      final service = DhlService(client: mockClient);
+      final parcel = await service.findParcel(
+        7,
+        const DhlFindParcelRequest(trackingCode: 'JVGL0605379700518040'),
+      );
+
+      expect(calledMethod, 'POST');
+      expect(calledUri.toString(), '${ApiConfig.baseUrl}/stores/7/dhl/parcels/find');
+      expect(calledBody['trackingCode'], 'JVGL0605379700518040');
+      expect(parcel.shelfLocation, 'A3');
+      expect(parcel.status, 'STORED');
+    });
+
+    test('wirft ApiException mit code PARCEL_NOT_FOUND bei 404', () async {
+      final mockClient = MockClient(
+        (request) async => http.Response('{"code":"PARCEL_NOT_FOUND","message":"Kein Paket gefunden"}', 404),
+      );
+
+      final service = DhlService(client: mockClient);
+
+      expect(
+        () => service.findParcel(7, const DhlFindParcelRequest(trackingCode: 'X')),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.statusCode, 'statusCode', 404)
+              .having((e) => e.message, 'message', 'Kein Paket gefunden')
+              .having((e) => e.code, 'code', 'PARCEL_NOT_FOUND'),
+        ),
+      );
+    });
+  });
+
+  group('pickupParcel', () {
+    test('ruft exakt POST /stores/{storeId}/dhl/parcels/pickup mit dem Tracking-Code auf und parst das Paket',
+        () async {
+      late Uri calledUri;
+      late Map<String, dynamic> calledBody;
+      final mockClient = MockClient((request) async {
+        calledUri = request.url;
+        calledBody = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(
+          '{"id":9,"storeId":7,"trackingCode":"JVGL0605379700518040","shelfLocation":"A3","receivedAt":"2026-01-15T10:00:00","status":"PICKED_UP"}',
+          200,
+        );
+      });
+
+      final service = DhlService(client: mockClient);
+      final parcel = await service.pickupParcel(
+        7,
+        const DhlPickupParcelRequest(trackingCode: 'JVGL0605379700518040'),
+      );
+
+      expect(calledUri.toString(), '${ApiConfig.baseUrl}/stores/7/dhl/parcels/pickup');
+      expect(calledBody['trackingCode'], 'JVGL0605379700518040');
+      expect(parcel.status, 'PICKED_UP');
+    });
+
+    test('wirft ApiException mit code PARCEL_ALREADY_PICKED_UP bei 409', () async {
+      final mockClient = MockClient(
+        (request) async =>
+            http.Response('{"code":"PARCEL_ALREADY_PICKED_UP","message":"Bereits abgeholt"}', 409),
+      );
+
+      final service = DhlService(client: mockClient);
+
+      expect(
+        () => service.pickupParcel(7, const DhlPickupParcelRequest(trackingCode: 'X')),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.statusCode, 'statusCode', 409)
+              .having((e) => e.code, 'code', 'PARCEL_ALREADY_PICKED_UP'),
+        ),
+      );
+    });
+
+    test('wirft ApiException bei 422 wenn DHL die Sendung nicht mehr bestaetigt', () async {
+      final mockClient = MockClient(
+        (request) async => http.Response(
+          '{"code":"DHL_TRACKING_NOT_FOUND","message":"DHL bestaetigt die Sendung nicht mehr"}',
+          422,
+        ),
+      );
+
+      final service = DhlService(client: mockClient);
+
+      expect(
+        () => service.pickupParcel(7, const DhlPickupParcelRequest(trackingCode: 'X')),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.statusCode, 'statusCode', 422)
+              .having((e) => e.code, 'code', 'DHL_TRACKING_NOT_FOUND'),
         ),
       );
     });

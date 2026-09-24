@@ -8,30 +8,34 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import storebackend.dto.DhlPickupParcelRequest;
-import storebackend.dto.dhl.DhlTrackingValidationResult;
-import storebackend.dto.dhl.DhlTrackingValidationResult.DhlTrackingValidationStatus;
 import storebackend.entity.DhlParcel;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.enums.DhlParcelStatus;
-import storebackend.exception.DhlTrackingException;
-import storebackend.exception.DhlTrackingException.DhlTrackingErrorCode;
+import storebackend.exception.ParcelAlreadyPickedUpException;
+import storebackend.exception.ParcelNotFoundException;
 import storebackend.service.DhlActivityLogService;
 import storebackend.service.DhlParcelService;
 import storebackend.service.dhl.DhlTrackingClient;
 import storebackend.util.StoreAccessChecker;
+
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * DHL Controller - Pickup Parcel Endpoint Security Tests (Teil C)
+ * DHL Controller - Pickup Parcel Endpoint Tests
  *
- * Sicherheits-Fix: POST /api/stores/{storeId}/dhl/parcels/pickup darf ein Paket
- * NUR als PICKED_UP markieren, wenn die (backend-seitige) DHL-Tracking-Validierung
- * status == VALID zurückliefert. Fail closed bei NOT_FOUND und technischen Fehlern.
- * Ein direkter curl/Postman-Aufruf ohne DHL-Bestätigung darf NICHT zur Abholung führen.
+ * Seit der Entfernung der redundanten DHL-Neuvalidierung bei der Abholung
+ * (siehe Klassendoku von DhlController.pickupParcel()) ruft der Endpoint
+ * NIEMALS die externe DHL-API auf ({@link DhlTrackingClient} wird hier NUR
+ * noch injiziert, weil andere Endpunkte desselben Controllers ihn brauchen -
+ * für /parcels/pickup bleibt er komplett unbenutzt). Die Fachlogik
+ * (gefunden/bereits abgeholt/nicht gefunden) liegt vollständig bei
+ * {@link DhlParcelService#pickupParcel(Long, String)} (atomares, lokales
+ * UPDATE) - dieser Test stubbt daher ausschließlich {@link DhlParcelService}.
  */
 @ExtendWith(MockitoExtension.class)
 class DhlControllerPickupParcelTest {
@@ -79,100 +83,14 @@ class DhlControllerPickupParcelTest {
     }
 
     // ════════════════════════════════════════════════════════════════════
-    // Fantasiecode → DHL NOT_FOUND → KEINE Abholung
+    // Erfolgreiche Abholung: rein lokaler Aufruf, KEIN DHL-API-Call
     // ════════════════════════════════════════════════════════════════════
 
     @Test
-    void testPickupParcel_FabricatedCode_NotFound_DeniesPickup() {
-        Long storeId = 1L;
-        String trackingCode = "VDBDBJDJDUD";
-        when(storeAccessChecker.hasStoreAccess(storeId)).thenReturn(true);
-
-        DhlTrackingValidationResult notFound = DhlTrackingValidationResult.builder()
-            .status(DhlTrackingValidationStatus.NOT_FOUND)
-            .trackingCode(trackingCode)
-            .dhlResponseCode("100")
-            .dhlErrorMessage("Tracking code not found in DHL system")
-            .build();
-        when(dhlTrackingClient.validateTrackingCode(storeId, trackingCode)).thenReturn(notFound);
-
-        ResponseEntity<?> response = dhlController.pickupParcel(storeId, pickupRequest(trackingCode), mockUser);
-
-        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
-        verify(parcelService, never()).pickupParcel(anyLong(), anyString());
-    }
-
-    // ════════════════════════════════════════════════════════════════════
-    // Technischer DHL Fehler → KEINE Abholung (fail closed)
-    // ════════════════════════════════════════════════════════════════════
-
-    @Test
-    void testPickupParcel_DhlTechnicalError_DeniesPickup() {
-        Long storeId = 1L;
-        String trackingCode = "00340434664988418341";
-        when(storeAccessChecker.hasStoreAccess(storeId)).thenReturn(true);
-
-        when(dhlTrackingClient.validateTrackingCode(storeId, trackingCode))
-            .thenThrow(new DhlTrackingException(DhlTrackingErrorCode.DHL_TECHNICAL_ERROR,
-                "DHL Tracking API technical error", "dhl.tracking.technicalError"));
-
-        ResponseEntity<?> response = dhlController.pickupParcel(storeId, pickupRequest(trackingCode), mockUser);
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        verify(parcelService, never()).pickupParcel(anyLong(), anyString());
-    }
-
-    @Test
-    void testPickupParcel_DhlConnectivityError_DeniesPickup() {
-        Long storeId = 1L;
-        String trackingCode = "00340434664988418341";
-        when(storeAccessChecker.hasStoreAccess(storeId)).thenReturn(true);
-
-        when(dhlTrackingClient.validateTrackingCode(storeId, trackingCode))
-            .thenThrow(new DhlTrackingException(DhlTrackingErrorCode.CONNECTIVITY_ERROR,
-                "DHL Tracking API not reachable", "dhl.tracking.connectivityError"));
-
-        ResponseEntity<?> response = dhlController.pickupParcel(storeId, pickupRequest(trackingCode), mockUser);
-
-        assertEquals(HttpStatus.GATEWAY_TIMEOUT, response.getStatusCode());
-        verify(parcelService, never()).pickupParcel(anyLong(), anyString());
-    }
-
-    @Test
-    void testPickupParcel_DhlValidationError_DeniesPickupWith422() {
-        Long storeId = 1L;
-        String trackingCode = "14411111114";
-        when(storeAccessChecker.hasStoreAccess(storeId)).thenReturn(true);
-
-        when(dhlTrackingClient.validateTrackingCode(storeId, trackingCode))
-            .thenThrow(new DhlTrackingException(DhlTrackingErrorCode.DHL_VALIDATION_ERROR,
-                "DHL Tracking API returned an unrecognized response code: 40",
-                "dhl.tracking.validationError", "40"));
-
-        ResponseEntity<?> response = dhlController.pickupParcel(storeId, pickupRequest(trackingCode), mockUser);
-
-        // DHL_VALIDATION_ERROR ist ein fachlicher 4xx-Fehler, KEIN 500 (DHL hat geantwortet)
-        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
-        verify(parcelService, never()).pickupParcel(anyLong(), anyString());
-    }
-
-    // ════════════════════════════════════════════════════════════════════
-    // VALID → lokale Suche mit dem vom Service zurückgegebenen Ergebnis
-    // ════════════════════════════════════════════════════════════════════
-
-    @Test
-    void testPickupParcel_ValidCode_ProceedsToLocalLookup() {
+    void testPickupParcel_Success_NeverCallsDhl() {
         Long storeId = 1L;
         String trackingCode = "JVGL0605379700518040";
         when(storeAccessChecker.hasStoreAccess(storeId)).thenReturn(true);
-
-        DhlTrackingValidationResult valid = DhlTrackingValidationResult.builder()
-            .status(DhlTrackingValidationStatus.VALID)
-            .trackingCode(trackingCode)
-            .pieceCode(trackingCode)
-            .dhlResponseCode("0")
-            .build();
-        when(dhlTrackingClient.validateTrackingCode(storeId, trackingCode)).thenReturn(valid);
 
         DhlParcel pickedUp = new DhlParcel();
         pickedUp.setId(1L);
@@ -185,86 +103,65 @@ class DhlControllerPickupParcelTest {
         ResponseEntity<?> response = dhlController.pickupParcel(storeId, pickupRequest(trackingCode), mockUser);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(dhlTrackingClient).validateTrackingCode(storeId, trackingCode);
         verify(parcelService).pickupParcel(storeId, trackingCode);
+        verifyNoInteractions(dhlTrackingClient);
     }
 
     // ════════════════════════════════════════════════════════════════════
-    // VALID mit canonical pieceCode → lokale Suche verwendet den kanonischen Code,
-    // NICHT den rohen Client-Input
+    // Nicht gefundenes Paket → 404, kein DHL-Call
     // ════════════════════════════════════════════════════════════════════
 
     @Test
-    void testPickupParcel_ValidCode_UsesCanonicalPieceCodeForLookup() {
+    void testPickupParcel_ParcelNotFound_ReturnsWithoutCallingDhl() {
         Long storeId = 1L;
-        String rawTrackingCode = "(00)340434664988418341";
-        String canonicalPieceCode = "00340434664988418341";
+        String trackingCode = "UNKNOWN0000000000000";
         when(storeAccessChecker.hasStoreAccess(storeId)).thenReturn(true);
+        when(parcelService.pickupParcel(storeId, trackingCode))
+            .thenThrow(new ParcelNotFoundException(trackingCode));
 
-        DhlTrackingValidationResult valid = DhlTrackingValidationResult.builder()
-            .status(DhlTrackingValidationStatus.VALID)
-            .trackingCode(rawTrackingCode)
-            .pieceCode(canonicalPieceCode)
-            .dhlResponseCode("0")
-            .build();
-        when(dhlTrackingClient.validateTrackingCode(storeId, rawTrackingCode)).thenReturn(valid);
+        assertThrows(ParcelNotFoundException.class,
+            () -> dhlController.pickupParcel(storeId, pickupRequest(trackingCode), mockUser));
 
-        DhlParcel pickedUp = new DhlParcel();
-        pickedUp.setId(2L);
-        pickedUp.setStore(storeWithId(storeId));
-        pickedUp.setTrackingCode(canonicalPieceCode);
-        pickedUp.setShelfLocation("A2");
-        pickedUp.setStatus(DhlParcelStatus.PICKED_UP);
-        when(parcelService.pickupParcel(storeId, canonicalPieceCode)).thenReturn(pickedUp);
-
-        ResponseEntity<?> response = dhlController.pickupParcel(storeId, pickupRequest(rawTrackingCode), mockUser);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(parcelService).pickupParcel(storeId, canonicalPieceCode);
-        verify(parcelService, never()).pickupParcel(storeId, rawTrackingCode);
+        verify(parcelService).pickupParcel(storeId, trackingCode);
+        verifyNoInteractions(dhlTrackingClient);
     }
 
     // ════════════════════════════════════════════════════════════════════
-    // Direkter curl/Postman-Aufruf ohne vorherige Frontend-Validierung darf die
-    // DHL-Prüfung nicht umgehen: der Controller validiert IMMER selbst.
+    // Bereits abgeholtes Paket → 409, kein DHL-Call (auch nicht bei einem
+    // zweiten, nahezu gleichzeitigen Abholversuch - das atomare UPDATE in
+    // DhlParcelService entscheidet, nicht der Controller)
     // ════════════════════════════════════════════════════════════════════
 
     @Test
-    void testPickupParcel_DirectApiCall_CannotBypassDhlValidation() {
+    void testPickupParcel_AlreadyPickedUp_ReturnsWithoutCallingDhl() {
         Long storeId = 1L;
-        String trackingCode = "hdhsj27373";
+        String trackingCode = "JVGL0605379700518040";
         when(storeAccessChecker.hasStoreAccess(storeId)).thenReturn(true);
+        when(parcelService.pickupParcel(storeId, trackingCode))
+            .thenThrow(new ParcelAlreadyPickedUpException(trackingCode, "A1", LocalDateTime.now()));
 
-        DhlTrackingValidationResult notFound = DhlTrackingValidationResult.builder()
-            .status(DhlTrackingValidationStatus.NOT_FOUND)
-            .trackingCode(trackingCode)
-            .dhlResponseCode("100")
-            .build();
-        when(dhlTrackingClient.validateTrackingCode(storeId, trackingCode)).thenReturn(notFound);
+        assertThrows(ParcelAlreadyPickedUpException.class,
+            () -> dhlController.pickupParcel(storeId, pickupRequest(trackingCode), mockUser));
 
-        // Direkter Aufruf des Controllers ohne vorherige /tracking/validate Anfrage -
-        // der Controller MUSS trotzdem selbst gegen DHL validieren.
-        ResponseEntity<?> response = dhlController.pickupParcel(storeId, pickupRequest(trackingCode), mockUser);
-
-        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
-        verify(dhlTrackingClient).validateTrackingCode(storeId, trackingCode);
-        verify(parcelService, never()).pickupParcel(anyLong(), anyString());
+        verify(parcelService).pickupParcel(storeId, trackingCode);
+        verifyNoInteractions(dhlTrackingClient);
     }
 
     // ════════════════════════════════════════════════════════════════════
-    // Fehlende Berechtigung / fehlende Authentifizierung
+    // Fehlende Berechtigung / fehlende Authentifizierung / leerer Code:
+    // parcelService/DhlTrackingClient duerfen erst gar nicht aufgerufen werden
     // ════════════════════════════════════════════════════════════════════
 
     @Test
-    void testPickupParcel_NoAccess_DeniesWithoutCallingDhl() {
+    void testPickupParcel_NoAccess_DeniesWithoutCallingService() {
         Long storeId = 1L;
         when(storeAccessChecker.hasStoreAccess(storeId)).thenReturn(false);
 
         ResponseEntity<?> response = dhlController.pickupParcel(storeId, pickupRequest("JVGL0605379700518040"), mockUser);
 
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        verify(dhlTrackingClient, never()).validateTrackingCode(anyLong(), anyString());
         verify(parcelService, never()).pickupParcel(anyLong(), anyString());
+        verifyNoInteractions(dhlTrackingClient);
     }
 
     @Test
@@ -274,7 +171,19 @@ class DhlControllerPickupParcelTest {
         ResponseEntity<?> response = dhlController.pickupParcel(storeId, pickupRequest("JVGL0605379700518040"), null);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        verify(dhlTrackingClient, never()).validateTrackingCode(anyLong(), anyString());
         verify(parcelService, never()).pickupParcel(anyLong(), anyString());
+        verifyNoInteractions(dhlTrackingClient);
+    }
+
+    @Test
+    void testPickupParcel_BlankTrackingCode_ReturnsBadRequestWithoutCallingService() {
+        Long storeId = 1L;
+        when(storeAccessChecker.hasStoreAccess(storeId)).thenReturn(true);
+
+        ResponseEntity<?> response = dhlController.pickupParcel(storeId, pickupRequest("  "), mockUser);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(parcelService, never()).pickupParcel(anyLong(), anyString());
+        verifyNoInteractions(dhlTrackingClient);
     }
 }

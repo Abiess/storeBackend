@@ -67,4 +67,17 @@ class ApiConfig {
   /// `POST /api/stores/{storeId}/dhl/parcels/store` (siehe
   /// DHL-Einlagerungs-Audit vom 23.09., `DhlController.storeParcel`).
   static String dhlStoreParcelPath(int storeId) => '/stores/$storeId/dhl/parcels/store';
+
+  /// Bestehender, unveraenderter Endpoint
+  /// `POST /api/stores/{storeId}/dhl/parcels/find` (siehe
+  /// `DhlController.findParcel`) - sucht ein bereits eingelagertes Paket
+  /// anhand des Tracking-Codes (kein DHL-API-Call, reine DB-Suche).
+  static String dhlFindParcelPath(int storeId) => '/stores/$storeId/dhl/parcels/find';
+
+  /// Bestehender, unveraenderter Endpoint
+  /// `POST /api/stores/{storeId}/dhl/parcels/pickup` (siehe
+  /// `DhlController.pickupParcel`) - markiert ein Paket als abgeholt. Das
+  /// Backend validiert den Tracking-Code dabei selbst erneut autoritativ
+  /// gegen die DHL Tracking API (siehe Controller-Kommentar dort).
+  static String dhlPickupParcelPath(int storeId) => '/stores/$storeId/dhl/parcels/pickup';
 }

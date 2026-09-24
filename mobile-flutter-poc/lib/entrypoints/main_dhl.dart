@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_bootstrap.dart';
-import '../features/dhl/dhl_home_screen.dart';
+import '../features/dhl/dhl_dashboard_screen.dart';
 import '../features/dhl/dhl_login_screen.dart';
 import '../models/auth_response.dart';
 
@@ -38,8 +38,10 @@ Widget _buildLogin(BuildContext context) => const DhlLoginScreen();
 /// `storeId` `null` und `DhlHomeScreen` zeigt selbst den Kein-Zugriff-Zustand.
 ///
 /// Zusaetzlich wird [user] selbst (nicht nur die daraus abgeleitete
-/// `storeId`) durchgereicht, damit `DhlHomeScreen` Name/E-Mail in der
-/// zentralen, app-uebergreifenden Current-User-Anzeige (`MarktProfileMenu`)
-/// zeigen kann - ohne die bestehende Store-Aufloesung zu veraendern.
+/// `storeId`) durchgereicht, damit `DhlDashboardScreen` Name/E-Mail/Rolle im
+/// neuen "Guten Tag, ..."-Layout zeigen kann - ohne die bestehende
+/// Store-Aufloesung zu veraendern. Der bisherige `DhlHomeScreen`
+/// ("Pakete im Laden"-Liste) bleibt unveraendert bestehen und wird vom
+/// Dashboard aus verlinkt (siehe `DhlDashboardScreen`-Klassendoku).
 Widget _buildHome(BuildContext context, AuthUser? user) =>
-    DhlHomeScreen(storeId: user?.storeIdForApp('DHL'), user: user);
+    DhlDashboardScreen(storeId: user?.storeIdForApp('DHL'), user: user);

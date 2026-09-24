@@ -483,20 +483,24 @@ public class DhlController {
      *   "trackingCode": "JVGL0605379700518040"
      * }
      * 
-     * SECURITY (Teil C):
-     * Wie bei /parcels/store ist das Backend die verbindliche Sicherheitsinstanz.
-     * Ein Frontend-Aufruf von /tracking/validate ist reine UX-Vorprüfung. Deshalb
-     * MUSS auch hier - VOR dem irreversiblen Setzen von status=PICKED_UP - erneut
-     * gegen die DHL Tracking API validiert werden. Fail closed: nur status == VALID
-     * darf zur Abholung führen. Ein direkter curl/Postman-Aufruf kann diese Prüfung
-     * NICHT umgehen.
+     * SICHERHEIT:
+     * Anders als bei /parcels/store wird hier bewusst KEINE erneute DHL-
+     * Tracking-Validierung durchgeführt: das Paket wurde bereits beim
+     * Einlagern (storeParcel()) authoritativ gegen DHL bestätigt und liegt
+     * bereits als vertrauenswürdiger DB-Datensatz (Status STORED) vor - die
+     * Abholung erzeugt KEINE neuen, unvalidierten Daten, sondern führt nur
+     * einen lokalen, atomaren Statusübergang STORED -> PICKED_UP durch
+     * (siehe DhlParcelService.pickupParcel() /
+     * DhlParcelRepository.markPickedUpIfStored() - bedingtes UPDATE, das
+     * unter Nebenläufigkeit garantiert nur einmal erfolgreich ist). Ein
+     * zusätzlicher DHL-API-Call würde hier nur unnötige Latenz/Quota kosten,
+     * ohne einen zusätzlichen Sicherheitsgewinn zu bringen.
      * 
      * Response:
      * - 200: Pickup successful (DhlParcelResponse with pickedUpAt + status=PICKED_UP)
-     * - 400: Invalid code or already picked up
+     * - 400: Invalid code
      * - 404: Parcel not found
-     * - 422: DHL shipment not found (DHL_TRACKING_NOT_FOUND)
-     * - 503/504/500: Technische DHL-Fehler (fail closed, keine Abholung)
+     * - 409: Parcel already picked up
      */
     @PostMapping("/parcels/pickup")
     public ResponseEntity<?> pickupParcel(
@@ -527,78 +531,9 @@ public class DhlController {
 
             String trackingCode = request.getTrackingCode();
 
-            // 3b. AUTHORITATIVE DHL VALIDATION (Teil C - fail closed, wie bei /parcels/store)
-            storebackend.dto.dhl.DhlTrackingValidationResult trackingValidation;
-            try {
-                trackingValidation = dhlTrackingClient.validateTrackingCode(storeId, trackingCode);
-            } catch (storebackend.exception.DhlTrackingException e) {
-                log.error("❌ DHL pickup denied: DHL validation error, store={}, trackingCode={}, errorCode={}, message={}",
-                    storeId, trackingCode, e.getErrorCode(), e.getMessage());
-                logStoreValidationFailure(storeId, user, trackingCode, "DHL_" + e.getErrorCode().name(), startNanos);
-
-                HttpStatus status;
-                switch (e.getErrorCode()) {
-                    case AUTHENTICATION_ERROR:
-                        status = HttpStatus.SERVICE_UNAVAILABLE;
-                        break;
-                    case CONNECTIVITY_ERROR:
-                        status = HttpStatus.GATEWAY_TIMEOUT;
-                        break;
-                    case DHL_VALIDATION_ERROR:
-                        // DHL wurde erreicht, Code aber nicht als gültige Sendung
-                        // bestätigt - fachlicher 4xx-Fehler, KEIN 5xx-Serverfehler.
-                        status = HttpStatus.UNPROCESSABLE_ENTITY;
-                        break;
-                    case DHL_TECHNICAL_ERROR:
-                    case UNKNOWN_DHL_ERROR:
-                    case XML_PARSING_ERROR:
-                    case HTTP_ERROR:
-                    default:
-                        status = HttpStatus.INTERNAL_SERVER_ERROR;
-                        break;
-                }
-
-                return ResponseEntity.status(status).body(Map.of(
-                    "error", "DHL tracking validation failed",
-                    "code", "DHL_" + e.getErrorCode().name(),
-                    "messageKey", e.getMessageKey(),
-                    "message", e.getMessage()
-                ));
-            } catch (storebackend.exception.DhlConfigurationException e) {
-                log.error("❌ DHL pickup denied: DHL not configured, store={}", storeId);
-                logStoreValidationFailure(storeId, user, trackingCode, "DHL_NOT_CONFIGURED", startNanos);
-
-                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
-                    "error", "DHL integration not configured",
-                    "code", "DHL_NOT_CONFIGURED",
-                    "messageKey", e.getMessageKey(),
-                    "message", e.getMessage()
-                ));
-            }
-
-            if (trackingValidation.getStatus() != storebackend.dto.dhl.DhlTrackingValidationResult.DhlTrackingValidationStatus.VALID) {
-                log.warn("⚠️ DHL pickup denied: tracking code not confirmed by DHL (NOT_FOUND), store={}, trackingCode={}",
-                    storeId, trackingCode);
-                logStoreValidationFailure(storeId, user, trackingCode, "DHL_TRACKING_NOT_FOUND", startNanos);
-
-                return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of(
-                    "error", "DHL shipment not found",
-                    "code", "DHL_TRACKING_NOT_FOUND",
-                    "message", "Keine gültige DHL-Sendung gefunden."
-                ));
-            }
-
-            // Kanonischen, von DHL bestätigten pieceCode bevorzugen für die lokale Suche
-            // (analog zu /parcels/store) - nicht blind dem Client-Wert vertrauen.
-            String validatedTrackingCode = (trackingValidation.getPieceCode() != null && !trackingValidation.getPieceCode().isBlank())
-                ? trackingValidation.getPieceCode()
-                : trackingCode;
-
-            log.info("✅ DHL tracking code confirmed VALID by DHL API for pickup: store={}, trackingCode={}, pieceCode={}",
-                storeId, trackingCode, validatedTrackingCode);
-
-            // 4. Pickup Parcel - lokale Suche mit dem von DHL bestätigten (kanonischen) Code
-            DhlParcel parcel = parcelService.pickupParcel(storeId, validatedTrackingCode);
+            // 4. Pickup Parcel - rein lokaler, atomarer Statusübergang (siehe
+            // Klassendoku oben) - KEIN erneuter DHL-API-Call.
+            DhlParcel parcel = parcelService.pickupParcel(storeId, trackingCode);
             DhlParcelResponse response = DhlParcelResponse.fromEntity(parcel);
 
             log.info("✅ DHL parcel picked up: user={}, store={}, tracking={}", 
