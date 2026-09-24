@@ -10,6 +10,7 @@ import '../../services/dhl_scan_feedback_service.dart';
 import '../../services/dhl_service.dart';
 import '../../services/token_storage.dart';
 import '../../theme/markt_theme.dart';
+import '../../widgets/markt_barcode_camera_scanner.dart';
 
 /// Abhol-Flow "Paket ausgeben" - nutzt die BESTEHENDEN Endpunkte
 /// `POST /parcels/find` und `POST /parcels/pickup`
@@ -45,6 +46,7 @@ class DhlPickupParcelScreen extends StatefulWidget {
     required this.storeId,
     this.dhlService,
     this.scanFeedback,
+    this.cameraScanner,
   });
 
   final int storeId;
@@ -53,6 +55,7 @@ class DhlPickupParcelScreen extends StatefulWidget {
   /// (analog zum bestehenden Injection-Muster in `DhlStoreParcelScreen`).
   final DhlService? dhlService;
   final DhlScanFeedback? scanFeedback;
+  final BarcodeCameraScanLauncher? cameraScanner;
 
   @override
   State<DhlPickupParcelScreen> createState() => _DhlPickupParcelScreenState();
@@ -136,6 +139,22 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
         SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
       }
     });
+  }
+
+  Future<void> _scanWithCamera() async {
+    if (_searching || _foundParcel != null) return;
+    final launcher = widget.cameraScanner ?? showMarktBarcodeCameraScanner;
+    final scanned = await launcher(context);
+    if (!mounted) return;
+
+    final code = scanned?.trim();
+    if (code == null || code.isEmpty) return;
+
+    _trackingController.value = TextEditingValue(
+      text: code,
+      selection: TextSelection.collapsed(offset: code.length),
+    );
+    _onTrackingChanged(code);
   }
 
   /// Reagiert auf jede Eingabe (Tastatur ODER Scanner-Zeichenstrom) im EINEN
@@ -390,28 +409,53 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
           ),
         ),
         const SizedBox(height: MarktSpacing.sm),
-        TextField(
-          key: const ValueKey('dhlPickupParcel.trackingField'),
-          controller: _trackingController,
-          focusNode: _focusNode,
-          autofocus: true,
-          enabled: !_searching && _foundParcel == null,
-          autocorrect: false,
-          enableSuggestions: false,
-          inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
-          textCapitalization: TextCapitalization.characters,
-          decoration: _trackingInputDecoration().copyWith(
-            suffixIcon: _trackingMode == 'scanner'
-                ? const Tooltip(
-                    message: 'Scanner-Modus aktiv',
-                    child: Icon(Icons.sensors, color: Color(0xFF667EEA)),
-                  )
-                : const Tooltip(
-                    message: 'Manuelle Eingabe aktiv',
-                    child: Icon(Icons.keyboard_alt_outlined),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: TextField(
+                        key: const ValueKey('dhlPickupParcel.trackingField'),
+                        controller: _trackingController,
+                        focusNode: _focusNode,
+                        autofocus: true,
+                        enabled: !_searching && _foundParcel == null,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+                        textCapitalization: TextCapitalization.characters,
+                        decoration: _trackingInputDecoration().copyWith(
+                          suffixIcon: _trackingMode == 'scanner'
+                              ? const Tooltip(
+                                  message: 'Scanner-Modus aktiv',
+                                  child: Icon(Icons.sensors, color: Color(0xFF667EEA)),
+                                )
+                              : const Tooltip(
+                                  message: 'Manuelle Eingabe aktiv',
+                                  child: Icon(Icons.keyboard_alt_outlined),
+                                ),
+                        ),
+                        onChanged: _onTrackingChanged,
+              ),
+            ),
+            if (_trackingMode == 'scanner') ...[
+              const SizedBox(width: MarktSpacing.sm),
+              SizedBox(
+                width: 56,
+                height: 56,
+                child: OutlinedButton(
+                  key: const ValueKey('dhlPickupParcel.cameraButton'),
+                  onPressed: (_searching || _foundParcel != null) ? null : _scanWithCamera,
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    foregroundColor: const Color(0xFF667EEA),
+                    side: const BorderSide(color: Color(0xFF667EEA), width: 2),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-          ),
-          onChanged: _onTrackingChanged,
+                  child: const Icon(Icons.camera_alt_outlined),
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: MarktSpacing.sm),
         Text(
