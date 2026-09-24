@@ -8,6 +8,8 @@
 // der eigentliche HTTP-Aufruf ueber einen in `DhlService` injizierten
 // `MockClient` - es wird NIE ein echter Netzwerk-Request ausgefuehrt und
 // NIE die externe DHL-API direkt kontaktiert.
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,6 +41,7 @@ void main() {
   const submitButton = ValueKey('dhlStoreParcel.submitButton');
   const nextButton = ValueKey('dhlStoreParcel.nextButton');
   const backButton = ValueKey('dhlStoreParcel.backButton');
+  const manualModeButton = ValueKey('dhlStoreParcel.slotModeManual');
 
   const validResponse = '{"status":"VALID","trackingCode":"JVGL0605379700518040","pieceCode":"JVGL0605379700518040"}';
   const storedResponse = '{"id":9,"storeId":7,"trackingCode":"JVGL0605379700518040","shelfLocation":"A3",'
@@ -74,6 +77,68 @@ void main() {
     expect(find.text('Sendung von DHL bestaetigt'), findsOneWidget);
     final button = tester.widget<FilledButton>(find.byKey(submitButton));
     expect(button.onPressed, isNotNull);
+  });
+
+  testWidgets('manueller Lagerplatz verlangt Slot-Auswahl und sendet slotCode', (tester) async {
+    late Map<String, dynamic> storeBody;
+    final mockClient = MockClient((request) async {
+      if (request.url.path.endsWith('/tracking/validate')) {
+        return http.Response(validResponse, 200);
+      }
+      if (request.url.path.endsWith('/dhl/slots')) {
+        return http.Response(
+          '[{"id":1,"code":"A1","capacity":3,"sortOrder":1,"active":true,"occupiedCount":1},'
+          '{"id":2,"code":"A2","capacity":1,"sortOrder":2,"active":true,"occupiedCount":1}]',
+          200,
+        );
+      }
+      if (request.url.path.endsWith('/parcels/store')) {
+        storeBody = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(storedResponse, 200);
+      }
+      return http.Response('{}', 404);
+    });
+
+    await tester.pumpWidget(wrap(DhlStoreParcelScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
+    await enterAndDebounce(tester, 'JVGL0605379700518040');
+    await tester.tap(find.byKey(manualModeButton));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('dhlStoreParcel.slot.A1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('dhlStoreParcel.slot.A2')), findsOneWidget);
+    expect(tester.widget<FilledButton>(find.byKey(submitButton)).onPressed, isNull);
+
+    await tester.tap(find.byKey(const ValueKey('dhlStoreParcel.slot.A1')));
+    await tester.pump();
+    expect(tester.widget<FilledButton>(find.byKey(submitButton)).onPressed, isNotNull);
+
+    await tester.tap(find.byKey(submitButton));
+    await tester.pumpAndSettle();
+
+    expect(storeBody['mode'], 'manual');
+    expect(storeBody['slotCode'], 'A1');
+  });
+
+  testWidgets('volles Fach ist im manuellen Modus nicht auswaehlbar', (tester) async {
+    final mockClient = MockClient((request) async {
+      if (request.url.path.endsWith('/tracking/validate')) return http.Response(validResponse, 200);
+      if (request.url.path.endsWith('/dhl/slots')) {
+        return http.Response(
+          '[{"id":2,"code":"A2","capacity":1,"sortOrder":2,"active":true,"occupiedCount":1}]',
+          200,
+        );
+      }
+      return http.Response('{}', 404);
+    });
+
+    await tester.pumpWidget(wrap(DhlStoreParcelScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
+    await enterAndDebounce(tester, 'JVGL0605379700518040');
+    await tester.tap(find.byKey(manualModeButton));
+    await tester.pumpAndSettle();
+
+    final fullSlot = tester.widget<OutlinedButton>(find.byKey(const ValueKey('dhlStoreParcel.slot.A2')));
+    expect(fullSlot.onPressed, isNull);
+    expect(tester.widget<FilledButton>(find.byKey(submitButton)).onPressed, isNull);
   });
 
   testWidgets('NOT_FOUND (HTTP 200) verhindert Einlagern', (tester) async {
