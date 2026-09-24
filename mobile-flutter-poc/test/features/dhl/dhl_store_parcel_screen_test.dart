@@ -43,6 +43,9 @@ void main() {
   const backButton = ValueKey('dhlStoreParcel.backButton');
   const manualModeButton = ValueKey('dhlStoreParcel.slotModeManual');
   const notesField = ValueKey('dhlStoreParcel.notesField');
+  const scannerModeButton = ValueKey('dhlStoreParcel.trackingModeScanner');
+  const manualTrackingModeButton = ValueKey('dhlStoreParcel.trackingModeManual');
+  const trackingModeHint = ValueKey('dhlStoreParcel.trackingModeHint');
 
   const validResponse = '{"status":"VALID","trackingCode":"JVGL0605379700518040","pieceCode":"JVGL0605379700518040"}';
   const storedResponse = '{"id":9,"storeId":7,"trackingCode":"JVGL0605379700518040","shelfLocation":"A3",'
@@ -80,6 +83,27 @@ void main() {
     expect(button.onPressed, isNotNull);
   });
 
+  testWidgets('Tracking-Modus kann zwischen Scanner und Manuell wechseln ohne Code zu verlieren', (tester) async {
+    final mockClient = MockClient((request) async => http.Response(validResponse, 200));
+
+    await tester.pumpWidget(wrap(DhlStoreParcelScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
+    expect(find.byKey(scannerModeButton), findsOneWidget);
+    expect(find.text('Hardware-/Bluetooth-Scanner bereit. Der Scan landet direkt in diesem Feld.'), findsOneWidget);
+
+    await tester.enterText(find.byKey(trackingField), 'JVGL0605379700518040');
+    await tester.tap(find.byKey(manualTrackingModeButton));
+    await tester.pump();
+
+    final field = tester.widget<TextField>(find.byKey(trackingField));
+    expect(field.controller?.text, 'JVGL0605379700518040');
+    expect(find.text('Trackingnummer manuell eingeben. Mindestens 10 Zeichen.'), findsOneWidget);
+    expect(find.byKey(trackingModeHint), findsOneWidget);
+
+    await tester.tap(find.byKey(scannerModeButton));
+    await tester.pump();
+    expect(find.text('Hardware-/Bluetooth-Scanner bereit. Der Scan landet direkt in diesem Feld.'), findsOneWidget);
+  });
+
   testWidgets('manueller Lagerplatz verlangt Slot-Auswahl und sendet slotCode', (tester) async {
     late Map<String, dynamic> storeBody;
     final mockClient = MockClient((request) async {
@@ -113,6 +137,8 @@ void main() {
     await tester.pump();
     expect(tester.widget<FilledButton>(find.byKey(submitButton)).onPressed, isNotNull);
 
+    await tester.ensureVisible(find.byKey(submitButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(submitButton));
     await tester.pumpAndSettle();
 
@@ -158,6 +184,8 @@ void main() {
     await tester.pumpWidget(wrap(DhlStoreParcelScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
     await enterAndDebounce(tester, 'JVGL0605379700518040');
     await tester.enterText(find.byKey(notesField), '  Paket beschaedigt  ');
+    await tester.ensureVisible(find.byKey(submitButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(submitButton));
     await tester.pumpAndSettle();
 
@@ -180,6 +208,8 @@ void main() {
     await tester.pumpWidget(wrap(DhlStoreParcelScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
     await enterAndDebounce(tester, 'JVGL0605379700518040');
     await tester.enterText(find.byKey(notesField), '   ');
+    await tester.ensureVisible(find.byKey(submitButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(submitButton));
     await tester.pumpAndSettle();
 
@@ -234,6 +264,8 @@ void main() {
     await tester.pumpWidget(wrap(DhlStoreParcelScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
     await enterAndDebounce(tester, 'JVGL0605379700518040');
 
+    await tester.ensureVisible(find.byKey(submitButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(submitButton));
     await tester.pump(); // Frame direkt nach dem Tap: Button ist jetzt disabled/Ladezustand
     await tester.tap(find.byKey(submitButton)); // Doppel-Tap waehrend Submit laeuft - darf nichts ausloesen
@@ -255,11 +287,15 @@ void main() {
 
     await tester.pumpWidget(wrap(DhlStoreParcelScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
     await enterAndDebounce(tester, 'JVGL0605379700518040');
+    await tester.ensureVisible(find.byKey(submitButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(submitButton));
     await tester.pumpAndSettle();
 
     expect(find.text('Paket eingelagert'), findsOneWidget);
 
+    await tester.ensureVisible(find.byKey(nextButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(nextButton));
     await tester.pump();
 
@@ -270,6 +306,7 @@ void main() {
     expect(notes.controller?.text, isEmpty);
     final button = tester.widget<FilledButton>(find.byKey(submitButton));
     expect(button.onPressed, isNull); // zurueck auf IDLE - fail closed
+    expect(find.text('Hardware-/Bluetooth-Scanner bereit. Der Scan landet direkt in diesem Feld.'), findsOneWidget);
   });
 
   testWidgets('Zur Uebersicht schliesst den Screen (Navigator.pop)', (tester) async {
@@ -303,9 +340,13 @@ void main() {
     await tester.pumpAndSettle();
 
     await enterAndDebounce(tester, 'JVGL0605379700518040');
+    await tester.ensureVisible(find.byKey(submitButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(submitButton));
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.byKey(backButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(backButton));
     await tester.pumpAndSettle();
 
