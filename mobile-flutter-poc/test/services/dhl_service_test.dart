@@ -169,6 +169,27 @@ void main() {
     });
   });
 
+  group('getSlots', () {
+    test('laedt Slots inkl. Kapazitaet/Belegung und sortiert nach sortOrder', () async {
+      late Uri calledUri;
+      final mockClient = MockClient((request) async {
+        calledUri = request.url;
+        return http.Response(
+          '[{"id":2,"code":"A2","capacity":2,"sortOrder":2,"active":true,"occupiedCount":2},'
+          '{"id":1,"code":"A1","capacity":3,"sortOrder":1,"active":true,"occupiedCount":1}]',
+          200,
+        );
+      });
+
+      final slots = await DhlService(client: mockClient).getSlots(7);
+
+      expect(calledUri.toString(), '${ApiConfig.baseUrl}/stores/7/dhl/slots');
+      expect(slots.map((s) => s.code).toList(), ['A1', 'A2']);
+      expect(slots.first.isSelectable, isTrue);
+      expect(slots.last.isFull, isTrue);
+    });
+  });
+
   group('storeParcel', () {
     test('ruft exakt POST /stores/{storeId}/dhl/parcels/store mit mode=auto auf und parst das Paket', () async {
       late Uri calledUri;
@@ -193,6 +214,25 @@ void main() {
       expect(calledBody['mode'], 'auto');
       expect(calledBody.containsKey('slotCode'), isFalse);
       expect(parcel.shelfLocation, 'A3');
+    });
+
+    test('sendet mode=manual und slotCode bei manueller Auswahl', () async {
+      late Map<String, dynamic> calledBody;
+      final mockClient = MockClient((request) async {
+        calledBody = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(
+          '{"id":9,"storeId":7,"trackingCode":"X","shelfLocation":"A1","status":"STORED"}',
+          200,
+        );
+      });
+
+      await DhlService(client: mockClient).storeParcel(
+        7,
+        const DhlStoreParcelRequest(trackingCode: 'X', mode: 'manual', slotCode: 'A1'),
+      );
+
+      expect(calledBody['mode'], 'manual');
+      expect(calledBody['slotCode'], 'A1');
     });
 
     test('wirft ApiException mit Backend-message bei 409 (bereits eingelagert)', () async {
