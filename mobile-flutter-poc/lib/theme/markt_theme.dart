@@ -1,7 +1,6 @@
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Zentrale markt.ma Spacing-Tokens (Shared UI Primitive).
 ///
@@ -88,14 +87,17 @@ class MarktTheme {
 
   static ThemeData _build(Brightness brightness) {
     final colorScheme = ColorScheme.fromSeed(seedColor: _seedColor, brightness: brightness);
-    final textTheme = _textTheme(
-      GoogleFonts.interTextTheme(ThemeData(brightness: brightness).textTheme),
+    final baseTheme = ThemeData(
+      brightness: brightness,
+      fontFamily: 'Inter',
     );
+    final textTheme = _textTheme(baseTheme.textTheme);
 
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
       colorScheme: colorScheme,
+      fontFamily: 'Inter',
       scaffoldBackgroundColor: colorScheme.surfaceContainerLowest,
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
