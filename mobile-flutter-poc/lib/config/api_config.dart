@@ -68,6 +68,9 @@ class ApiConfig {
   /// DHL-Einlagerungs-Audit vom 23.09., `DhlController.storeParcel`).
   static String dhlStoreParcelPath(int storeId) => '/stores/$storeId/dhl/parcels/store';
 
+  /// Bestehender Slot-Endpoint fuer manuelle Lagerplatz-Auswahl.
+  static String dhlSlotsPath(int storeId) => '/stores/$storeId/dhl/slots';
+
   /// Bestehender, unveraenderter Endpoint
   /// `POST /api/stores/{storeId}/dhl/parcels/find` (siehe
   /// `DhlController.findParcel`) - sucht ein bereits eingelagertes Paket

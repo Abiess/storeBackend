@@ -6,6 +6,7 @@ import '../config/api_config.dart';
 import '../models/dhl_find_parcel_request.dart';
 import '../models/dhl_parcel_dto.dart';
 import '../models/dhl_pickup_parcel_request.dart';
+import '../models/dhl_slot_dto.dart';
 import '../models/dhl_store_parcel_request.dart';
 import '../models/dhl_tracking_validation_dto.dart';
 import 'token_storage.dart';
@@ -88,6 +89,29 @@ class DhlService {
     }
 
     throw ApiException(response.statusCode, _extractMessage(response.body));
+  }
+
+  /// GET /api/stores/{storeId}/dhl/slots
+  ///
+  /// Liefert die bestehenden Lagerfaecher inkl. Kapazitaet und Belegung.
+  /// Der Client nutzt die Daten nur fuer die Auswahl; ob ein Fach beim
+  /// Speichern tatsaechlich noch verfuegbar ist, entscheidet das Backend.
+  Future<List<DhlSlotDto>> getSlots(int storeId) async {
+    final token = await TokenStorage.instance.readToken();
+    final uri = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.dhlSlotsPath(storeId)}');
+
+    final response = await _client.get(uri, headers: _authHeaders(token));
+    if (response.statusCode != 200) {
+      throw ApiException(response.statusCode, _extractMessage(response.body));
+    }
+
+    final list = jsonDecode(response.body) as List<dynamic>;
+    final slots = list
+        .whereType<Map<String, dynamic>>()
+        .map(DhlSlotDto.fromJson)
+        .toList()
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    return slots;
   }
 
   /// POST /api/stores/{storeId}/dhl/parcels/store

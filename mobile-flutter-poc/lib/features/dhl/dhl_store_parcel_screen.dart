@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../models/dhl_parcel_dto.dart';
+import '../../models/dhl_slot_dto.dart';
 import '../../models/dhl_store_parcel_request.dart';
 import '../../models/dhl_tracking_validation_dto.dart';
 import '../../services/dhl_service.dart';
@@ -29,7 +30,8 @@ enum TrackingValidationState { idle, validating, valid, invalid, technicalError 
 ///   → Debounce
 ///   → POST /tracking/validate (UX-Vorpruefung)
 ///   → nur bei VALID: [Einlagern] aktiv
-///   → POST /parcels/store { trackingCode, mode: "auto" }
+///   → Lagerplatz automatisch oder manuell waehlen
+///   → POST /parcels/store { trackingCode, mode, slotCode? }
 ///     (Backend validiert dabei selbst ERNEUT autoritativ gegen DHL)
 ///   → Erfolg: Lagerplatz gross anzeigen
 ///   → [Naechstes Paket] (Zustand zuruecksetzen, Feld fokussieren) oder
@@ -37,7 +39,7 @@ enum TrackingValidationState { idle, validating, valid, invalid, technicalError 
 ///     Zurueckkehren aktualisiert, siehe dort)
 ///
 /// Bewusst NOCH NICHT Teil dieses Screens (siehe Aufgabenstellung):
-/// Kamera-Scanner, manuelles Slot-Grid, Paketabholung. Das
+/// Kamera-Scanner und Paketabholung. Das
 /// Trackingnummer-Feld unterstuetzt gleichermassen manuelle Eingabe UND
 /// Hardware-/USB-/Bluetooth-HID-Scanner (die wie eine Tastatur in ein
 /// fokussiertes Textfeld "tippen") - beide Eingabewege durchlaufen exakt
@@ -77,6 +79,12 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
   bool _submitting = false;
   Object? _storeError;
 
+  String _slotMode = 'auto';
+  List<DhlSlotDto> _slots = const [];
+  DhlSlotDto? _selectedSlot;
+  bool _loadingSlots = false;
+  Object? _slotsError;
+
   bool _success = false;
   DhlParcelDto? _storedParcel;
 
@@ -88,7 +96,43 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
     super.dispose();
   }
 
-  bool get _canSubmit => _validationState == TrackingValidationState.valid && !_submitting;
+  bool get _canSubmit =>
+      _validationState == TrackingValidationState.valid &&
+      !_submitting &&
+      (_slotMode == 'auto' || _selectedSlot != null);
+
+  Future<void> _setSlotMode(String mode) async {
+    if (_submitting || mode == _slotMode) return;
+    setState(() {
+      _slotMode = mode;
+      _selectedSlot = null;
+      _slotsError = null;
+    });
+    if (mode == 'manual' && _slots.isEmpty) {
+      await _loadSlots();
+    }
+  }
+
+  Future<void> _loadSlots() async {
+    setState(() {
+      _loadingSlots = true;
+      _slotsError = null;
+    });
+    try {
+      final slots = await _dhlService.getSlots(widget.storeId);
+      if (!mounted) return;
+      setState(() {
+        _slots = slots;
+        _loadingSlots = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingSlots = false;
+        _slotsError = e;
+      });
+    }
+  }
 
   void _onTrackingChanged(String raw) {
     _debounceTimer?.cancel();
@@ -169,7 +213,11 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
     });
 
     try {
-      final request = DhlStoreParcelRequest(trackingCode: _trackingController.text.trim(), mode: 'auto');
+      final request = DhlStoreParcelRequest(
+        trackingCode: _trackingController.text.trim(),
+        mode: _slotMode,
+        slotCode: _slotMode == 'manual' ? _selectedSlot?.code : null,
+      );
       final parcel = await _dhlService.storeParcel(widget.storeId, request);
       if (!mounted) return;
       setState(() {
@@ -199,6 +247,9 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
       _validationMessage = null;
       _submitting = false;
       _storeError = null;
+      _slotMode = 'auto';
+      _selectedSlot = null;
+      _slotsError = null;
       _success = false;
       _storedParcel = null;
     });
@@ -329,6 +380,8 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
           _buildStoreErrorBanner(context),
         ],
         const SizedBox(height: MarktSpacing.xl),
+        _buildSlotModeSection(context),
+        const SizedBox(height: MarktSpacing.xl),
         _gradientFilledButton(
           key: const ValueKey('dhlStoreParcel.submitButton'),
           enabled: _canSubmit,
@@ -338,10 +391,154 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
         ),
         const SizedBox(height: MarktSpacing.sm),
         Text(
-          'Der Button wird erst aktiv, wenn DHL die Sendung bestaetigt hat.',
+          _slotMode == 'manual'
+              ? 'Der Button wird aktiv, wenn DHL bestaetigt hat und ein freies Fach gewaehlt ist.'
+              : 'Der Button wird erst aktiv, wenn DHL die Sendung bestaetigt hat.',
           style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
         ),
       ],
+    );
+  }
+
+  Widget _buildSlotModeSection(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Lagerplatz',
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF333333),
+          ),
+        ),
+        const SizedBox(height: MarktSpacing.sm),
+        Row(
+          children: [
+            Expanded(
+              child: _modeButton(
+                key: const ValueKey('dhlStoreParcel.slotModeAuto'),
+                label: 'Automatisch',
+                icon: Icons.auto_awesome,
+                selected: _slotMode == 'auto',
+                onPressed: () => _setSlotMode('auto'),
+              ),
+            ),
+            const SizedBox(width: MarktSpacing.sm),
+            Expanded(
+              child: _modeButton(
+                key: const ValueKey('dhlStoreParcel.slotModeManual'),
+                label: 'Manuell',
+                icon: Icons.touch_app_outlined,
+                selected: _slotMode == 'manual',
+                onPressed: () => _setSlotMode('manual'),
+              ),
+            ),
+          ],
+        ),
+        if (_slotMode == 'manual') ...[
+          const SizedBox(height: MarktSpacing.md),
+          _buildSlotGrid(context),
+        ],
+      ],
+    );
+  }
+
+  Widget _modeButton({
+    required Key key,
+    required String label,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onPressed,
+  }) {
+    return OutlinedButton.icon(
+      key: key,
+      onPressed: _submitting ? null : onPressed,
+      icon: Icon(icon),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(52),
+        foregroundColor: selected ? const Color(0xFF667EEA) : const Color(0xFF333333),
+        backgroundColor: selected ? const Color(0x14667EEA) : Colors.white,
+        side: BorderSide(
+          color: selected ? const Color(0xFF667EEA) : const Color(0xFFDDDDDD),
+          width: 2,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
+  Widget _buildSlotGrid(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    if (_loadingSlots) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_slotsError != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Lagerfaecher konnten nicht geladen werden.',
+            style: textTheme.bodyMedium?.copyWith(color: const Color(0xFFDC3545)),
+          ),
+          TextButton(onPressed: _loadSlots, child: const Text('Erneut laden')),
+        ],
+      );
+    }
+    if (_slots.isEmpty) {
+      return Text(
+        'Keine Lagerfaecher vorhanden.',
+        style: textTheme.bodyMedium?.copyWith(color: const Color(0xFF666666)),
+      );
+    }
+
+    return Wrap(
+      spacing: MarktSpacing.sm,
+      runSpacing: MarktSpacing.sm,
+      children: _slots.map((slot) {
+        final selected = _selectedSlot?.id == slot.id;
+        final full = slot.isFull;
+        final borderColor = selected
+            ? const Color(0xFF667EEA)
+            : full
+                ? const Color(0xFFDC3545)
+                : slot.occupiedCount == 0
+                    ? const Color(0xFF28A745)
+                    : const Color(0xFFFFC107);
+        final backgroundColor = selected
+            ? const Color(0x14667EEA)
+            : full
+                ? const Color(0xFFF8D7DA)
+                : slot.occupiedCount == 0
+                    ? const Color(0xFFD4EDDA)
+                    : const Color(0xFFFFF3CD);
+
+        return SizedBox(
+          width: 104,
+          child: OutlinedButton(
+            key: ValueKey('dhlStoreParcel.slot.${slot.code}'),
+            onPressed: slot.isSelectable && !_submitting
+                ? () => setState(() => _selectedSlot = slot)
+                : null,
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+              foregroundColor: const Color(0xFF333333),
+              backgroundColor: backgroundColor,
+              disabledBackgroundColor: backgroundColor,
+              side: BorderSide(color: borderColor, width: selected ? 3 : 2),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Column(
+              children: [
+                Text(slot.code, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                const SizedBox(height: 2),
+                Text('${slot.occupiedCount} / ${slot.capacity}', style: textTheme.bodySmall),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
