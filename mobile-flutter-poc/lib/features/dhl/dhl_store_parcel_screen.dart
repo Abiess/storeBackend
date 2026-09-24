@@ -416,6 +416,7 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
   /// zur bestehenden Angular-Fehlerklassifizierung.
   Widget _buildStoreErrorBanner(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(MarktSpacing.md),
@@ -425,7 +426,7 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
       ),
       child: Text(
         _friendlyStoreErrorMessage(_storeError),
-        style: TextStyle(color: colorScheme.onErrorContainer),
+        style: textTheme.bodyMedium?.copyWith(color: colorScheme.onErrorContainer),
       ),
     );
   }
@@ -483,24 +484,39 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
             style: textTheme.bodyMedium?.copyWith(fontFamily: 'monospace', color: colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: MarktSpacing.xl),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton(
-                  key: const ValueKey('dhlStoreParcel.nextButton'),
-                  onPressed: _resetForNextParcel,
-                  child: const Text('Naechstes Paket'),
-                ),
-              ),
-              const SizedBox(width: MarktSpacing.md),
-              Expanded(
-                child: OutlinedButton(
-                  key: const ValueKey('dhlStoreParcel.backButton'),
-                  onPressed: _backToOverview,
-                  child: const Text('Zur Uebersicht'),
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked = constraints.maxWidth < 420;
+              final nextButton = FilledButton(
+                key: const ValueKey('dhlStoreParcel.nextButton'),
+                onPressed: _resetForNextParcel,
+                child: const Text('Naechstes Paket'),
+              );
+              final backButton = OutlinedButton(
+                key: const ValueKey('dhlStoreParcel.backButton'),
+                onPressed: _backToOverview,
+                child: const Text('Zur Uebersicht'),
+              );
+
+              if (stacked) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    nextButton,
+                    const SizedBox(height: MarktSpacing.sm),
+                    backButton,
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: nextButton),
+                  const SizedBox(width: MarktSpacing.md),
+                  Expanded(child: backButton),
+                ],
+              );
+            },
           ),
         ],
       ),

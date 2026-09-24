@@ -449,6 +449,7 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
 
   Widget _buildErrorBanner(BuildContext context, String message) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(MarktSpacing.md),
@@ -456,7 +457,10 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
         color: colorScheme.errorContainer.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(message, style: TextStyle(color: colorScheme.onErrorContainer)),
+      child: Text(
+        message,
+        style: textTheme.bodyMedium?.copyWith(color: colorScheme.onErrorContainer),
+      ),
     );
   }
 
@@ -521,24 +525,39 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
             style: textTheme.bodyMedium?.copyWith(fontFamily: 'monospace', color: colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: MarktSpacing.xl),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton(
-                  key: const ValueKey('dhlPickupParcel.nextButton'),
-                  onPressed: _resetForNextPickup,
-                  child: const Text('Naechste Abholung'),
-                ),
-              ),
-              const SizedBox(width: MarktSpacing.md),
-              Expanded(
-                child: OutlinedButton(
-                  key: const ValueKey('dhlPickupParcel.backButton'),
-                  onPressed: _backToOverview,
-                  child: const Text('Zur Uebersicht'),
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked = constraints.maxWidth < 420;
+              final nextButton = FilledButton(
+                key: const ValueKey('dhlPickupParcel.nextButton'),
+                onPressed: _resetForNextPickup,
+                child: const Text('Naechste Abholung'),
+              );
+              final backButton = OutlinedButton(
+                key: const ValueKey('dhlPickupParcel.backButton'),
+                onPressed: _backToOverview,
+                child: const Text('Zur Uebersicht'),
+              );
+
+              if (stacked) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    nextButton,
+                    const SizedBox(height: MarktSpacing.sm),
+                    backButton,
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: nextButton),
+                  const SizedBox(width: MarktSpacing.md),
+                  Expanded(child: backButton),
+                ],
+              );
+            },
           ),
         ],
       ),
