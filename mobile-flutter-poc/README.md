@@ -85,7 +85,7 @@ flutter pub get
 **iOS** — `ios/Runner/Info.plist`:
 ```xml
 <key>NSCameraUsageDescription</key>
-<string>markt.ma benoetigt die Kamera, um Dokumente zu fotografieren.</string>
+<string>markt.ma benoetigt die Kamera, um Dokumente zu fotografieren und Barcodes zu scannen.</string>
 ```
 
 ### Backend-URL
