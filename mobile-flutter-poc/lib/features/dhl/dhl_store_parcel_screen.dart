@@ -40,13 +40,10 @@ enum TrackingValidationState { idle, validating, valid, invalid, technicalError 
 ///     [Zur Uebersicht] (zurueck zu `DhlHomeScreen`, das die Liste beim
 ///     Zurueckkehren aktualisiert, siehe dort)
 ///
-/// Bewusst NOCH NICHT Teil dieses Screens (siehe Aufgabenstellung):
-/// Kamera-Scanner und Paketabholung. Das
-/// Trackingnummer-Feld unterstuetzt gleichermassen manuelle Eingabe UND
-/// Hardware-/USB-/Bluetooth-HID-Scanner (die wie eine Tastatur in ein
-/// fokussiertes Textfeld "tippen") - beide Eingabewege durchlaufen exakt
-/// denselben `onChanged`-Handler, kein Bypass moeglich (analog zum
-/// bestehenden Angular-Flow, siehe Audit).
+/// Das Trackingnummer-Feld unterstuetzt manuelle Eingabe,
+/// Hardware-/USB-/Bluetooth-HID-Scanner und jetzt auch Kamera-Scanning.
+/// Alle drei Eingabewege laufen danach durch denselben `onChanged`-Handler
+/// und dieselbe DHL-Validierung; der Kamera-Scanner baut keinen Bypass ein.
 class DhlStoreParcelScreen extends StatefulWidget {
   const DhlStoreParcelScreen({
     super.key,
