@@ -21,7 +21,29 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:markt_ma_documents_poc/features/dhl/dhl_pickup_parcel_screen.dart';
+import 'package:markt_ma_documents_poc/services/dhl_scan_feedback_service.dart';
 import 'package:markt_ma_documents_poc/services/dhl_service.dart';
+
+class _FakeScanFeedback implements DhlScanFeedback {
+  _FakeScanFeedback({this.initialEnabled = true});
+
+  final bool initialEnabled;
+  final List<bool> savedValues = [];
+  final List<DhlScanFeedbackState> playedStates = [];
+
+  @override
+  Future<bool> loadEnabled() async => initialEnabled;
+
+  @override
+  Future<void> setEnabled(bool enabled) async {
+    savedValues.add(enabled);
+  }
+
+  @override
+  Future<void> playForState(DhlScanFeedbackState state) async {
+    playedStates.add(state);
+  }
+}
 
 void main() {
   const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
@@ -50,6 +72,7 @@ void main() {
   const searchAgainButton = ValueKey('dhlPickupParcel.searchAgainButton');
   const scannerModeButton = ValueKey('dhlPickupParcel.trackingModeScanner');
   const manualModeButton = ValueKey('dhlPickupParcel.trackingModeManual');
+  const scanSoundsToggle = ValueKey('dhlPickupParcel.scanSoundsToggle');
 
   const storedParcelResponse = '{"id":9,"storeId":7,"trackingCode":"JVGL0605379700518040","shelfLocation":"A3",'
       '"receivedAt":"2026-01-15T10:00:00","status":"STORED"}';
@@ -64,6 +87,84 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
   }
+
+  testWidgets('Scan-Toene Einstellung wird geladen und kann umgeschaltet werden', (tester) async {
+    final feedback = _FakeScanFeedback(initialEnabled: false);
+    final mockClient = MockClient((request) async => http.Response(storedParcelResponse, 200));
+
+    await tester.pumpWidget(
+      wrap(
+        DhlPickupParcelScreen(
+          storeId: 7,
+          dhlService: DhlService(client: mockClient),
+          scanFeedback: feedback,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(scanSoundsToggle), findsOneWidget);
+    expect(find.text('Toene: Aus'), findsOneWidget);
+
+    await tester.tap(find.byKey(scanSoundsToggle));
+    await tester.pump();
+
+    expect(find.text('Toene: An'), findsOneWidget);
+    expect(feedback.savedValues, [true]);
+  });
+
+  testWidgets('DB-Suchergebnis spielt passendes Feedback ohne DHL-Validierungsaufruf', (tester) async {
+    final feedback = _FakeScanFeedback(initialEnabled: true);
+    var validateCalls = 0;
+    final mockClient = MockClient((request) async {
+      if (request.url.path.endsWith('/tracking/validate')) validateCalls++;
+      if (request.url.path.endsWith('/parcels/find')) {
+        return http.Response(storedParcelResponse, 200);
+      }
+      return http.Response('{}', 404);
+    });
+
+    await tester.pumpWidget(
+      wrap(
+        DhlPickupParcelScreen(
+          storeId: 7,
+          dhlService: DhlService(client: mockClient),
+          scanFeedback: feedback,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await enterAndDebounce(tester, 'JVGL0605379700518040');
+    await tester.pumpAndSettle();
+
+    expect(validateCalls, 0);
+    expect(feedback.playedStates, [DhlScanFeedbackState.valid]);
+  });
+
+  testWidgets('nicht gefundenes Paket spielt Fehler-Feedback', (tester) async {
+    final feedback = _FakeScanFeedback(initialEnabled: true);
+    final mockClient = MockClient((request) async {
+      if (request.url.path.endsWith('/parcels/find')) {
+        return http.Response('{"code":"PARCEL_NOT_FOUND","message":"Kein Paket gefunden"}', 404);
+      }
+      return http.Response('{}', 404);
+    });
+
+    await tester.pumpWidget(
+      wrap(
+        DhlPickupParcelScreen(
+          storeId: 7,
+          dhlService: DhlService(client: mockClient),
+          scanFeedback: feedback,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await enterAndDebounce(tester, 'JVGL0605379700518040');
+    await tester.pumpAndSettle();
+
+    expect(feedback.playedStates, [DhlScanFeedbackState.invalid]);
+  });
 
   testWidgets('zu kurzer Code loest keine Suche aus und Suchen bleibt disabled', (tester) async {
     var findCalls = 0;
