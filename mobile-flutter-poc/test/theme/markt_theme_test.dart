@@ -2,9 +2,9 @@
 //
 // Deckt ab: Light/Dark liefern jeweils ein sinnvolles ColorScheme mit der
 // richtigen Brightness, `MarktBadgeTheme` ist in beiden als Extension
-// registriert, und `MaterialApp` mit `themeMode: ThemeMode.system` wendet
-// tatsaechlich das jeweils passende Theme an (kein "immer nur hell", wie
-// vor der Umstellung).
+// registriert, die zentrale Typografie nutzt Inter, und `MaterialApp` mit
+// `themeMode: ThemeMode.system` wendet tatsaechlich das jeweils passende
+// Theme an.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:markt_ma_documents_poc/theme/markt_theme.dart';
@@ -25,6 +25,13 @@ void main() {
     expect(theme.brightness, Brightness.dark);
     expect(theme.colorScheme.brightness, Brightness.dark);
     expect(theme.extension<MarktBadgeTheme>(), isNotNull);
+  });
+
+  test('MarktTheme nutzt Inter zentral fuer Fliesstext und AppBar-Titel', () {
+    final theme = MarktTheme.light();
+
+    expect(theme.textTheme.bodyMedium?.fontFamily, 'Inter');
+    expect(theme.appBarTheme.titleTextStyle?.fontFamily, 'Inter');
   });
 
   testWidgets('MaterialApp mit themeMode.light rendert MarktTheme.light()', (tester) async {
