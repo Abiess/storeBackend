@@ -137,6 +137,8 @@ void main() {
     await tester.pump();
     expect(tester.widget<FilledButton>(find.byKey(submitButton)).onPressed, isNotNull);
 
+    await tester.ensureVisible(find.byKey(submitButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(submitButton));
     await tester.pumpAndSettle();
 
@@ -182,6 +184,8 @@ void main() {
     await tester.pumpWidget(wrap(DhlStoreParcelScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
     await enterAndDebounce(tester, 'JVGL0605379700518040');
     await tester.enterText(find.byKey(notesField), '  Paket beschaedigt  ');
+    await tester.ensureVisible(find.byKey(submitButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(submitButton));
     await tester.pumpAndSettle();
 
@@ -204,6 +208,8 @@ void main() {
     await tester.pumpWidget(wrap(DhlStoreParcelScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
     await enterAndDebounce(tester, 'JVGL0605379700518040');
     await tester.enterText(find.byKey(notesField), '   ');
+    await tester.ensureVisible(find.byKey(submitButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(submitButton));
     await tester.pumpAndSettle();
 
@@ -258,6 +264,8 @@ void main() {
     await tester.pumpWidget(wrap(DhlStoreParcelScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
     await enterAndDebounce(tester, 'JVGL0605379700518040');
 
+    await tester.ensureVisible(find.byKey(submitButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(submitButton));
     await tester.pump(); // Frame direkt nach dem Tap: Button ist jetzt disabled/Ladezustand
     await tester.tap(find.byKey(submitButton)); // Doppel-Tap waehrend Submit laeuft - darf nichts ausloesen
@@ -279,11 +287,15 @@ void main() {
 
     await tester.pumpWidget(wrap(DhlStoreParcelScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
     await enterAndDebounce(tester, 'JVGL0605379700518040');
+    await tester.ensureVisible(find.byKey(submitButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(submitButton));
     await tester.pumpAndSettle();
 
     expect(find.text('Paket eingelagert'), findsOneWidget);
 
+    await tester.ensureVisible(find.byKey(nextButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(nextButton));
     await tester.pump();
 
@@ -328,9 +340,13 @@ void main() {
     await tester.pumpAndSettle();
 
     await enterAndDebounce(tester, 'JVGL0605379700518040');
+    await tester.ensureVisible(find.byKey(submitButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(submitButton));
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.byKey(backButton));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(backButton));
     await tester.pumpAndSettle();
 
