@@ -9,8 +9,6 @@ import '../../models/dhl_tracking_validation_dto.dart';
 import '../../services/dhl_service.dart';
 import '../../services/token_storage.dart';
 import '../../theme/markt_theme.dart';
-import '../../widgets/shared/markt_card.dart';
-import '../../widgets/shared/markt_icon_badge.dart';
 
 /// Fachlicher Validierungszustand des Tracking-Codes gegen die DHL Tracking
 /// API - 1:1 dieselbe Zustandsmaschine wie im bestehenden Angular-Flow
@@ -216,17 +214,76 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Paket einlagern')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
+            constraints: const BoxConstraints(maxWidth: 800),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(MarktSpacing.lg),
-              child: _success ? _buildSuccess(context) : _buildForm(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextButton.icon(
+                    onPressed: _backToOverview,
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Zurueck'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: MarktSpacing.sm),
+                      foregroundColor: const Color(0xFF667EEA),
+                    ),
+                  ),
+                  const SizedBox(height: MarktSpacing.sm),
+                  _buildPageTitle(context),
+                  const SizedBox(height: 32),
+                  _success ? _buildSuccess(context) : _buildForm(context),
+                ],
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPageTitle(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        const Icon(Icons.inventory_2_outlined, size: 32, color: Color(0xFF667EEA)),
+        const SizedBox(width: MarktSpacing.sm),
+        Expanded(
+          child: Text(
+            'Paket einlagern',
+            style: textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF333333),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  InputDecoration _trackingInputDecoration() {
+    const borderColor = Color(0xFFDDDDDD);
+    const focusColor = Color(0xFF667EEA);
+    return const InputDecoration(
+      hintText: 'z.B. JVGL0605379700518040',
+      prefixIcon: Icon(Icons.qr_code_scanner),
+      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      filled: true,
+      fillColor: Colors.white,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderSide: BorderSide(color: borderColor, width: 2),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderSide: BorderSide(color: focusColor, width: 2),
+      ),
+      disabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderSide: BorderSide(color: borderColor, width: 2),
       ),
     );
   }
@@ -235,102 +292,73 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return MarktCard(
-      padding: const EdgeInsets.all(MarktSpacing.xl),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              MarktIconBadge(
-                icon: Icon(Icons.inventory_2_outlined, color: colorScheme.primary),
-                accentColor: colorScheme.primary,
-              ),
-              const SizedBox(width: MarktSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Paket einlagern', style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Trackingnummer scannen oder eingeben',
-                      style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Trackingnummer',
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF333333),
           ),
-          const SizedBox(height: MarktSpacing.xl),
-          // EIN fokussiertes Textfeld fuer BEIDE Eingabewege: manuelle
-          // Tastatureingabe UND Hardware-/USB-/Bluetooth-HID-Scanner (der
-          // wie eine Tastatur in das fokussierte Feld "tippt") - siehe
-          // Klassendoku. Kamera-Scan ist bewusst noch nicht Teil dieses
-          // Schritts.
-          TextField(
-            key: const ValueKey('dhlStoreParcel.trackingField'),
-            controller: _trackingController,
-            focusNode: _focusNode,
-            autofocus: true,
-            enabled: !_submitting,
-            autocorrect: false,
-            enableSuggestions: false,
-            inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
-            textCapitalization: TextCapitalization.characters,
-            decoration: const InputDecoration(
-              labelText: 'Trackingnummer',
-              hintText: 'z.B. JVGL0605379700518040',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.qr_code_scanner),
-            ),
-            onChanged: _onTrackingChanged,
-          ),
+        ),
+        const SizedBox(height: MarktSpacing.sm),
+        TextField(
+          key: const ValueKey('dhlStoreParcel.trackingField'),
+          controller: _trackingController,
+          focusNode: _focusNode,
+          autofocus: true,
+          enabled: !_submitting,
+          autocorrect: false,
+          enableSuggestions: false,
+          inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+          textCapitalization: TextCapitalization.characters,
+          decoration: _trackingInputDecoration(),
+          onChanged: _onTrackingChanged,
+        ),
+        const SizedBox(height: MarktSpacing.sm),
+        Text(
+          'Trackingnummer scannen oder manuell eingeben. Mindestens $_minTrackingCodeLength Zeichen.',
+          style: textTheme.bodySmall?.copyWith(color: const Color(0xFF666666)),
+        ),
+        const SizedBox(height: MarktSpacing.sm),
+        _buildValidationStatus(context),
+        if (_storeError != null) ...[
           const SizedBox(height: MarktSpacing.md),
-          _buildValidationStatus(context),
-          if (_storeError != null) ...[
-            const SizedBox(height: MarktSpacing.md),
-            _buildStoreErrorBanner(context),
-          ],
-          const SizedBox(height: MarktSpacing.xl),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              key: const ValueKey('dhlStoreParcel.submitButton'),
-              onPressed: _canSubmit ? _submit : null,
-              child: _submitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2.5),
-                    )
-                  : const Text('Einlagern'),
-            ),
-          ),
+          _buildStoreErrorBanner(context),
         ],
-      ),
+        const SizedBox(height: MarktSpacing.xl),
+        _gradientFilledButton(
+          key: const ValueKey('dhlStoreParcel.submitButton'),
+          enabled: _canSubmit,
+          onPressed: _submit,
+          loading: _submitting,
+          label: 'Einlagern',
+        ),
+        const SizedBox(height: MarktSpacing.sm),
+        Text(
+          'Der Button wird erst aktiv, wenn DHL die Sendung bestaetigt hat.',
+          style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+        ),
+      ],
     );
   }
 
   Widget _buildValidationStatus(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     switch (_validationState) {
       case TrackingValidationState.idle:
-        return Text(
-          'Mindestens $_minTrackingCodeLength Zeichen fuer die automatische Pruefung.',
-          style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-        );
+        return const SizedBox.shrink();
       case TrackingValidationState.validating:
         return _statusBox(
           context,
-          color: colorScheme.onSurfaceVariant,
+          backgroundColor: const Color(0xFFE6F3FF),
+          borderColor: const Color(0xFF667EEA),
+          textColor: const Color(0xFF333333),
           icon: const SizedBox(
             width: 16,
             height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
+            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF667EEA)),
           ),
           title: 'Sendung wird geprueft...',
         );
@@ -342,19 +370,21 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
         ].join(' · ');
         return _statusBox(
           context,
-          color: colorScheme.primary,
-          icon: Icon(Icons.check_circle, color: colorScheme.primary, size: 20),
+          backgroundColor: const Color(0xFFD4EDDA),
+          borderColor: const Color(0xFF28A745),
+          textColor: const Color(0xFF155724),
+          icon: const Icon(Icons.check_circle, color: Color(0xFF28A745), size: 20),
           title: 'Sendung von DHL bestaetigt',
           subtitle: details.isEmpty ? null : details,
         );
       case TrackingValidationState.invalid:
         return _statusBox(
           context,
-          color: colorScheme.error,
-          icon: Icon(Icons.error_outline, color: colorScheme.error, size: 20),
+          backgroundColor: const Color(0xFFF8D7DA),
+          borderColor: const Color(0xFFDC3545),
+          textColor: const Color(0xFF721C24),
+          icon: const Icon(Icons.error_outline, color: Color(0xFFDC3545), size: 20),
           title: 'Keine gueltige DHL-Sendung gefunden',
-          // Roher DHL-Backend-Text (siehe [_validationMessage]-Doku), falls
-          // vorhanden - sonst generischer Hinweistext.
           subtitle: (_validationMessage != null && _validationMessage!.isNotEmpty)
               ? _validationMessage
               : 'Bitte Trackingnummer pruefen oder erneut scannen.',
@@ -362,8 +392,10 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
       case TrackingValidationState.technicalError:
         return _statusBox(
           context,
-          color: colorScheme.error,
-          icon: Icon(Icons.wifi_off, color: colorScheme.error, size: 20),
+          backgroundColor: const Color(0xFFFFF3CD),
+          borderColor: const Color(0xFFFFC107),
+          textColor: const Color(0xFF856404),
+          icon: const Icon(Icons.wifi_off, color: Color(0xFF856404), size: 20),
           title: 'DHL-Dienst aktuell nicht erreichbar',
           subtitle: (_validationMessage != null && _validationMessage!.isNotEmpty)
               ? _validationMessage
@@ -374,7 +406,9 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
 
   Widget _statusBox(
     BuildContext context, {
-    required Color color,
+    required Color backgroundColor,
+    required Color borderColor,
+    required Color textColor,
     required Widget icon,
     required String title,
     String? subtitle,
@@ -382,11 +416,11 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
     final textTheme = Theme.of(context).textTheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(MarktSpacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.lg, vertical: 14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.24)),
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor, width: 2),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,10 +431,10 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: textTheme.bodyMedium?.copyWith(color: color, fontWeight: FontWeight.w600)),
+                Text(title, style: textTheme.bodyMedium?.copyWith(color: textColor, fontWeight: FontWeight.w600)),
                 if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: textTheme.bodySmall?.copyWith(color: color)),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: textTheme.bodySmall?.copyWith(color: textColor)),
                 ],
               ],
             ),
@@ -410,7 +444,51 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
     );
   }
 
-  /// Fehlerbanner NUR fuer Fehler des Einlagern-Aufrufs selbst (`/parcels/store`)
+  Widget _gradientFilledButton({
+    required Key key,
+    required bool enabled,
+    required VoidCallback onPressed,
+    required bool loading,
+    required String label,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: enabled
+            ? const LinearGradient(
+                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
+        color: enabled ? null : const Color(0xFFCCCCCC),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: FilledButton(
+        key: key,
+        onPressed: enabled ? onPressed : null,
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(56),
+          backgroundColor: Colors.transparent,
+          disabledBackgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          disabledForegroundColor: const Color(0xFF777777),
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        child: loading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+              )
+            : Text(label),
+      ),
+    );
+  }
+
+  /// Fehlerbanner NUR fuer Fehler des Einlagern-Aufrufs selbst  /// Fehlerbanner NUR fuer Fehler des Einlagern-Aufrufs selbst (`/parcels/store`)
   /// - bewusst gefiltert/nutzerfreundlich formuliert je nach HTTP-Status statt
   /// der rohen technischen Backend-Antwort (siehe Aufgabenstellung), analog
   /// zur bestehenden Angular-Fehlerklassifizierung.
@@ -455,71 +533,90 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
   }
 
   Widget _buildSuccess(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final parcel = _storedParcel;
 
-    return MarktCard(
-      padding: const EdgeInsets.all(MarktSpacing.xl),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          MarktIconBadge(
-            icon: Icon(Icons.check_circle, color: colorScheme.primary),
-            accentColor: colorScheme.primary,
-            size: 64,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.check_circle, size: 80, color: Color(0xFF28A745)),
+        const SizedBox(height: MarktSpacing.lg),
+        Text(
+          'Paket eingelagert',
+          style: textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF28A745),
           ),
-          const SizedBox(height: MarktSpacing.lg),
-          Text('Paket eingelagert', style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: MarktSpacing.lg),
-          Text('Lagerplatz', style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
-          const SizedBox(height: 4),
-          Text(
+        ),
+        const SizedBox(height: MarktSpacing.xl),
+        Text('Lagerplatz', style: textTheme.bodyMedium?.copyWith(color: const Color(0xFF666666))),
+        const SizedBox(height: MarktSpacing.sm),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0x1A667EEA), Color(0x1A764BA2)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
             parcel?.shelfLocation?.trim().isNotEmpty == true ? parcel!.shelfLocation! : '-',
-            style: textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w800, color: colorScheme.primary),
+            textAlign: TextAlign.center,
+            style: textTheme.displaySmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF667EEA),
+            ),
           ),
-          const SizedBox(height: MarktSpacing.md),
-          Text(
-            parcel?.trackingCode ?? '',
-            style: textTheme.bodyMedium?.copyWith(fontFamily: 'monospace', color: colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: MarktSpacing.xl),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final stacked = constraints.maxWidth < 420;
-              final nextButton = FilledButton(
-                key: const ValueKey('dhlStoreParcel.nextButton'),
-                onPressed: _resetForNextParcel,
-                child: const Text('Naechstes Paket'),
-              );
-              final backButton = OutlinedButton(
-                key: const ValueKey('dhlStoreParcel.backButton'),
-                onPressed: _backToOverview,
-                child: const Text('Zur Uebersicht'),
-              );
+        ),
+        const SizedBox(height: MarktSpacing.md),
+        Text(
+          parcel?.trackingCode ?? '',
+          style: textTheme.bodyMedium?.copyWith(fontFamily: 'monospace', color: const Color(0xFF666666)),
+        ),
+        const SizedBox(height: MarktSpacing.xl),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final stacked = constraints.maxWidth < 420;
+            final nextButton = _gradientFilledButton(
+              key: const ValueKey('dhlStoreParcel.nextButton'),
+              enabled: true,
+              onPressed: _resetForNextParcel,
+              loading: false,
+              label: 'Naechstes Paket',
+            );
+            final backButton = OutlinedButton(
+              key: const ValueKey('dhlStoreParcel.backButton'),
+              onPressed: _backToOverview,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(56),
+                foregroundColor: const Color(0xFF667EEA),
+                side: const BorderSide(color: Color(0xFF667EEA), width: 2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Zur Uebersicht'),
+            );
 
-              if (stacked) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    nextButton,
-                    const SizedBox(height: MarktSpacing.sm),
-                    backButton,
-                  ],
-                );
-              }
-
-              return Row(
-                children: [
-                  Expanded(child: nextButton),
-                  const SizedBox(width: MarktSpacing.md),
-                  Expanded(child: backButton),
-                ],
+            if (stacked) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [nextButton, const SizedBox(height: MarktSpacing.sm), backButton],
               );
-            },
-          ),
-        ],
-      ),
+            }
+
+            return Row(
+              children: [
+                Expanded(child: nextButton),
+                const SizedBox(width: MarktSpacing.md),
+                Expanded(child: backButton),
+              ],
+            );
+          },
+        ),
+      ],
     );
   }
+
 }

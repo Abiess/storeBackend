@@ -164,7 +164,7 @@ void main() {
 
     expect(find.byKey(const ValueKey('dhlStoreParcel.trackingField')), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Back'));
+    await tester.tap(find.text('Zurueck'));
     await tester.pumpAndSettle();
 
     expect(listCalls, 2);

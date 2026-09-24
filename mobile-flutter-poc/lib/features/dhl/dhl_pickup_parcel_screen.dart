@@ -9,8 +9,6 @@ import '../../models/dhl_pickup_parcel_request.dart';
 import '../../services/dhl_service.dart';
 import '../../services/token_storage.dart';
 import '../../theme/markt_theme.dart';
-import '../../widgets/shared/markt_card.dart';
-import '../../widgets/shared/markt_icon_badge.dart';
 
 /// Abhol-Flow "Paket ausgeben" - nutzt die BESTEHENDEN Endpunkte
 /// `POST /parcels/find` und `POST /parcels/pickup`
@@ -206,204 +204,222 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Paket ausgeben')),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
+            constraints: const BoxConstraints(maxWidth: 800),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(MarktSpacing.lg),
-              child: _success ? _buildSuccess(context) : _buildForm(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextButton.icon(
+                    onPressed: _backToOverview,
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Zurueck'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: MarktSpacing.sm),
+                      foregroundColor: const Color(0xFF667EEA),
+                    ),
+                  ),
+                  const SizedBox(height: MarktSpacing.sm),
+                  _buildPageTitle(context),
+                  const SizedBox(height: 32),
+                  _success ? _buildSuccess(context) : _buildForm(context),
+                ],
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPageTitle(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        const Icon(Icons.outbox_outlined, size: 32, color: Color(0xFF667EEA)),
+        const SizedBox(width: MarktSpacing.sm),
+        Expanded(
+          child: Text(
+            'Paket ausgeben',
+            style: textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF333333),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  InputDecoration _trackingInputDecoration() {
+    const borderColor = Color(0xFFDDDDDD);
+    const focusColor = Color(0xFF667EEA);
+    return const InputDecoration(
+      hintText: 'z.B. JVGL0605379700518040',
+      prefixIcon: Icon(Icons.qr_code_scanner),
+      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      filled: true,
+      fillColor: Colors.white,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderSide: BorderSide(color: borderColor, width: 2),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderSide: BorderSide(color: focusColor, width: 2),
+      ),
+      disabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderSide: BorderSide(color: borderColor, width: 2),
       ),
     );
   }
 
   Widget _buildForm(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return MarktCard(
-      padding: const EdgeInsets.all(MarktSpacing.xl),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              MarktIconBadge(
-                icon: Icon(Icons.outbox_outlined, color: colorScheme.primary),
-                accentColor: colorScheme.primary,
-              ),
-              const SizedBox(width: MarktSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Paket ausgeben', style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Trackingnummer scannen oder eingeben',
-                      style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Trackingnummer',
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF333333),
           ),
-          const SizedBox(height: MarktSpacing.xl),
-          // EIN fokussiertes Textfeld fuer BEIDE Eingabewege - siehe
-          // Klassendoku, identisches Muster wie [DhlStoreParcelScreen].
-          TextField(
-            key: const ValueKey('dhlPickupParcel.trackingField'),
-            controller: _trackingController,
-            focusNode: _focusNode,
-            autofocus: true,
-            enabled: !_searching && _foundParcel == null,
-            autocorrect: false,
-            enableSuggestions: false,
-            inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
-            textCapitalization: TextCapitalization.characters,
-            decoration: const InputDecoration(
-              labelText: 'Trackingnummer',
-              hintText: 'z.B. JVGL0605379700518040',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.qr_code_scanner),
-            ),
-            onChanged: _onTrackingChanged,
-          ),
+        ),
+        const SizedBox(height: MarktSpacing.sm),
+        TextField(
+          key: const ValueKey('dhlPickupParcel.trackingField'),
+          controller: _trackingController,
+          focusNode: _focusNode,
+          autofocus: true,
+          enabled: !_searching && _foundParcel == null,
+          autocorrect: false,
+          enableSuggestions: false,
+          inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+          textCapitalization: TextCapitalization.characters,
+          decoration: _trackingInputDecoration(),
+          onChanged: _onTrackingChanged,
+        ),
+        const SizedBox(height: MarktSpacing.sm),
+        Text(
+          'Trackingnummer scannen oder manuell eingeben. Mindestens $_minTrackingCodeLength Zeichen.',
+          style: textTheme.bodySmall?.copyWith(color: const Color(0xFF666666)),
+        ),
+        const SizedBox(height: MarktSpacing.sm),
+        _buildSearchStatus(context),
+        if (_findError != null) ...[
           const SizedBox(height: MarktSpacing.md),
-          _buildSearchStatus(context),
-          if (_findError != null) ...[
-            const SizedBox(height: MarktSpacing.md),
-            _buildErrorBanner(context, _friendlyFindErrorMessage(_findError)),
-          ],
-          if (_foundParcel != null) ...[
-            const SizedBox(height: MarktSpacing.md),
-            _buildFoundParcel(context),
-          ],
-          if (_pickupError != null) ...[
-            const SizedBox(height: MarktSpacing.md),
-            _buildErrorBanner(context, _friendlyPickupErrorMessage(_pickupError)),
-          ],
-          const SizedBox(height: MarktSpacing.xl),
+          _buildErrorBanner(context, _friendlyFindErrorMessage(_findError)),
+        ],
+        if (_foundParcel != null) ...[
+          const SizedBox(height: MarktSpacing.md),
+          _buildFoundParcel(context),
+        ],
+        if (_pickupError != null) ...[
+          const SizedBox(height: MarktSpacing.md),
+          _buildErrorBanner(context, _friendlyPickupErrorMessage(_pickupError)),
+        ],
+        const SizedBox(height: MarktSpacing.xl),
+        if (_foundParcel == null)
+          _gradientFilledButton(
+            key: const ValueKey('dhlPickupParcel.searchButton'),
+            enabled: _canSearch,
+            onPressed: _search,
+            loading: _searching,
+            label: 'Suchen',
+          )
+        else
+          _gradientFilledButton(
+            key: const ValueKey('dhlPickupParcel.confirmButton'),
+            enabled: _canConfirmPickup,
+            onPressed: _confirmPickup,
+            loading: _confirming,
+            label: 'Abholung bestaetigen',
+          ),
+        if (_foundParcel != null) ...[
+          const SizedBox(height: MarktSpacing.sm),
           SizedBox(
             width: double.infinity,
-            child: _foundParcel == null
-                ? FilledButton(
-                    key: const ValueKey('dhlPickupParcel.searchButton'),
-                    onPressed: _canSearch ? () => _search() : null,
-                    child: _searching
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2.5),
-                          )
-                        : const Text('Suchen'),
-                  )
-                : FilledButton(
-                    key: const ValueKey('dhlPickupParcel.confirmButton'),
-                    onPressed: _canConfirmPickup ? _confirmPickup : null,
-                    child: _confirming
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2.5),
-                          )
-                        : const Text('Abholung bestaetigen'),
-                  ),
-          ),
-          if (_foundParcel != null) ...[
-            const SizedBox(height: MarktSpacing.sm),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                key: const ValueKey('dhlPickupParcel.searchAgainButton'),
-                onPressed: _resetForNextPickup,
-                child: const Text('Andere Trackingnummer'),
+            child: OutlinedButton(
+              key: const ValueKey('dhlPickupParcel.searchAgainButton'),
+              onPressed: _resetForNextPickup,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(52),
+                foregroundColor: const Color(0xFF667EEA),
+                side: const BorderSide(color: Color(0xFF667EEA), width: 2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
+              child: const Text('Andere Trackingnummer'),
             ),
-          ],
+          ),
         ],
-      ),
+      ],
     );
   }
 
-  /// Ersetzt die vormalige DHL-Validierungsanzeige: zeigt lediglich den
-  /// Fortschritt der lokalen Datenbank-Suche (`/parcels/find`) - KEIN
-  /// DHL-Status mehr, da hier kein DHL-Aufruf mehr stattfindet.
   Widget _buildSearchStatus(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     if (_searching) {
       return _statusBox(
         context,
-        color: colorScheme.onSurfaceVariant,
+        backgroundColor: const Color(0xFFE6F3FF),
+        borderColor: const Color(0xFF667EEA),
+        textColor: const Color(0xFF333333),
         icon: const SizedBox(
           width: 16,
           height: 16,
-          child: CircularProgressIndicator(strokeWidth: 2),
+          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF667EEA)),
         ),
         title: 'Lager wird durchsucht...',
-      );
-    }
-
-    if (_foundParcel == null && _findError == null) {
-      return Text(
-        'Mindestens $_minTrackingCodeLength Zeichen fuer die automatische Suche im Lager.',
-        style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
       );
     }
 
     return const SizedBox.shrink();
   }
 
-  /// Zeigt das per `/parcels/find` gefundene Paket - unterscheidet
-  /// zwischen noch abholbereiten (`STORED`) und bereits abgeholten
-  /// (`PICKED_UP`) Sendungen (siehe [DhlParcelDto.status]).
   Widget _buildFoundParcel(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final parcel = _foundParcel!;
     final alreadyPickedUp = parcel.status == 'PICKED_UP';
+    final backgroundColor = alreadyPickedUp ? const Color(0xFFF8D7DA) : const Color(0xFFD4EDDA);
+    final borderColor = alreadyPickedUp ? const Color(0xFFDC3545) : const Color(0xFF28A745);
+    final textColor = alreadyPickedUp ? const Color(0xFF721C24) : const Color(0xFF155724);
 
     return Container(
       key: const ValueKey('dhlPickupParcel.foundParcel'),
       width: double.infinity,
-      padding: const EdgeInsets.all(MarktSpacing.md),
+      padding: const EdgeInsets.all(MarktSpacing.lg),
       decoration: BoxDecoration(
-        color: (alreadyPickedUp ? colorScheme.error : colorScheme.primary).withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: (alreadyPickedUp ? colorScheme.error : colorScheme.primary).withValues(alpha: 0.24),
-        ),
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor, width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             parcel.trackingCode,
-            style: textTheme.bodyMedium?.copyWith(fontFamily: 'monospace', fontWeight: FontWeight.w600),
+            style: textTheme.bodyMedium?.copyWith(
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             'Lagerplatz: ${parcel.shelfLocation?.trim().isNotEmpty == true ? parcel.shelfLocation! : '-'}',
-            style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+            style: textTheme.bodyMedium?.copyWith(color: textColor),
           ),
           const SizedBox(height: MarktSpacing.sm),
-          if (alreadyPickedUp)
-            Text(
-              'Dieses Paket wurde bereits abgeholt.',
-              style: textTheme.bodyMedium?.copyWith(color: colorScheme.error, fontWeight: FontWeight.w600),
-            )
-          else
-            Text(
-              'Bereit zur Abholung.',
-              style: textTheme.bodyMedium?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
-            ),
+          Text(
+            alreadyPickedUp ? 'Dieses Paket wurde bereits abgeholt.' : 'Bereit zur Abholung.',
+            style: textTheme.bodyMedium?.copyWith(color: textColor, fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );
@@ -411,7 +427,9 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
 
   Widget _statusBox(
     BuildContext context, {
-    required Color color,
+    required Color backgroundColor,
+    required Color borderColor,
+    required Color textColor,
     required Widget icon,
     required String title,
     String? subtitle,
@@ -419,11 +437,11 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
     final textTheme = Theme.of(context).textTheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(MarktSpacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: MarktSpacing.lg, vertical: 14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.24)),
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor, width: 2),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,10 +452,10 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: textTheme.bodyMedium?.copyWith(color: color, fontWeight: FontWeight.w600)),
+                Text(title, style: textTheme.bodyMedium?.copyWith(color: textColor, fontWeight: FontWeight.w600)),
                 if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: textTheme.bodySmall?.copyWith(color: color)),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: textTheme.bodySmall?.copyWith(color: textColor)),
                 ],
               ],
             ),
@@ -447,24 +465,71 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
     );
   }
 
-  Widget _buildErrorBanner(BuildContext context, String message) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+  Widget _gradientFilledButton({
+    required Key key,
+    required bool enabled,
+    required VoidCallback onPressed,
+    required bool loading,
+    required String label,
+  }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(MarktSpacing.md),
       decoration: BoxDecoration(
-        color: colorScheme.errorContainer.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(12),
+        gradient: enabled
+            ? const LinearGradient(
+                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
+        color: enabled ? null : const Color(0xFFCCCCCC),
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(
-        message,
-        style: textTheme.bodyMedium?.copyWith(color: colorScheme.onErrorContainer),
+      child: FilledButton(
+        key: key,
+        onPressed: enabled ? onPressed : null,
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(56),
+          backgroundColor: Colors.transparent,
+          disabledBackgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          disabledForegroundColor: const Color(0xFF777777),
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        child: loading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+              )
+            : Text(label),
       ),
     );
   }
 
-  /// Ordnet bekannte Statuscodes von `/parcels/find` (siehe
+  Widget _buildErrorBanner(BuildContext context, String message) {
+    final textTheme = Theme.of(context).textTheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(MarktSpacing.lg),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFE6E6),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFDC3545), width: 2),
+      ),
+      child: Text(
+        message,
+        style: textTheme.bodyMedium?.copyWith(
+          color: const Color(0xFFDC3545),
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  /// Ordnet bekannte Statuscodes von `/parcels/find`  /// Ordnet bekannte Statuscodes von `/parcels/find` (siehe
   /// `DhlController.findParcel`) einer klaren Meldung zu.
   String _friendlyFindErrorMessage(Object? error) {
     if (error is ApiException) {
@@ -503,64 +568,67 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
   }
 
   Widget _buildSuccess(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final parcel = _pickedUpParcel;
 
-    return MarktCard(
-      padding: const EdgeInsets.all(MarktSpacing.xl),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          MarktIconBadge(
-            icon: Icon(Icons.check_circle, color: colorScheme.primary),
-            accentColor: colorScheme.primary,
-            size: 64,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.check_circle, size: 80, color: Color(0xFF28A745)),
+        const SizedBox(height: MarktSpacing.lg),
+        Text(
+          'Paket ausgegeben',
+          style: textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF28A745),
           ),
-          const SizedBox(height: MarktSpacing.lg),
-          Text('Paket ausgegeben', style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: MarktSpacing.lg),
-          Text(
-            parcel?.trackingCode ?? '',
-            style: textTheme.bodyMedium?.copyWith(fontFamily: 'monospace', color: colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: MarktSpacing.xl),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final stacked = constraints.maxWidth < 420;
-              final nextButton = FilledButton(
-                key: const ValueKey('dhlPickupParcel.nextButton'),
-                onPressed: _resetForNextPickup,
-                child: const Text('Naechste Abholung'),
-              );
-              final backButton = OutlinedButton(
-                key: const ValueKey('dhlPickupParcel.backButton'),
-                onPressed: _backToOverview,
-                child: const Text('Zur Uebersicht'),
-              );
+        ),
+        const SizedBox(height: MarktSpacing.lg),
+        Text(
+          parcel?.trackingCode ?? '',
+          style: textTheme.bodyMedium?.copyWith(fontFamily: 'monospace', color: const Color(0xFF666666)),
+        ),
+        const SizedBox(height: MarktSpacing.xl),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final stacked = constraints.maxWidth < 420;
+            final nextButton = _gradientFilledButton(
+              key: const ValueKey('dhlPickupParcel.nextButton'),
+              enabled: true,
+              onPressed: _resetForNextPickup,
+              loading: false,
+              label: 'Naechste Abholung',
+            );
+            final backButton = OutlinedButton(
+              key: const ValueKey('dhlPickupParcel.backButton'),
+              onPressed: _backToOverview,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(56),
+                foregroundColor: const Color(0xFF667EEA),
+                side: const BorderSide(color: Color(0xFF667EEA), width: 2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Zur Uebersicht'),
+            );
 
-              if (stacked) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    nextButton,
-                    const SizedBox(height: MarktSpacing.sm),
-                    backButton,
-                  ],
-                );
-              }
-
-              return Row(
-                children: [
-                  Expanded(child: nextButton),
-                  const SizedBox(width: MarktSpacing.md),
-                  Expanded(child: backButton),
-                ],
+            if (stacked) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [nextButton, const SizedBox(height: MarktSpacing.sm), backButton],
               );
-            },
-          ),
-        ],
-      ),
+            }
+
+            return Row(
+              children: [
+                Expanded(child: nextButton),
+                const SizedBox(width: MarktSpacing.md),
+                Expanded(child: backButton),
+              ],
+            );
+          },
+        ),
+      ],
     );
   }
+
 }
