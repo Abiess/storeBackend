@@ -35,12 +35,9 @@ import '../../theme/markt_theme.dart';
 /// gegen unsere eigene Datenbank - sowohl bei automatischer Debounce-Suche
 /// als auch bei manueller Eingabe/Scan ueber denselben [_search]-Aufruf.
 ///
-/// Wie beim Einlagern unterstuetzt das EINE Trackingnummer-Feld
-/// gleichermassen manuelle Eingabe UND Hardware-/USB-/Bluetooth-HID-Scanner
-/// (siehe [DhlStoreParcelScreen]-Klassendoku) - kein separater
-/// Scan-/Manuell-Modus-Umschalter, bewusst konsistent zum bestehenden
-/// Einlagerungs-Screen statt der Angular-Referenz mit getrenntem
-/// Scanner-/Manuell-Tab.
+/// Wie beim Einlagern gibt es einen sichtbaren Scanner-/Manuell-Modus.
+/// Beide Modi nutzen bewusst dasselbe Trackingfeld und denselben DB-Suchpfad;
+/// der Scanner-Modus ist fuer Hardware-/USB-/Bluetooth-HID-Scanner gedacht.
 class DhlPickupParcelScreen extends StatefulWidget {
   const DhlPickupParcelScreen({super.key, required this.storeId, this.dhlService});
 
@@ -68,6 +65,8 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
 
   Timer? _debounceTimer;
 
+  String _trackingMode = 'scanner';
+
   bool _searching = false;
   Object? _findError;
   DhlParcelDto? _foundParcel;
@@ -91,6 +90,20 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
 
   bool get _canConfirmPickup =>
       _foundParcel != null && _foundParcel!.status == 'STORED' && !_confirming;
+
+  void _setTrackingMode(String mode) {
+    if (_searching || _confirming || _foundParcel != null || mode == _trackingMode) return;
+    setState(() {
+      _trackingMode = mode;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _focusNode.requestFocus();
+      if (mode == 'scanner') {
+        SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+      }
+    });
+  }
 
   /// Reagiert auf jede Eingabe (Tastatur ODER Scanner-Zeichenstrom) im EINEN
   /// Trackingnummer-Feld. Sobald die Mindestlaenge erreicht ist, wird
@@ -184,6 +197,7 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
     _debounceTimer?.cancel();
     _trackingController.clear();
     setState(() {
+      _trackingMode = 'scanner';
       _searching = false;
       _findError = null;
       _foundParcel = null;
@@ -286,6 +300,38 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
+          'Tracking-Erfassung',
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF333333),
+          ),
+        ),
+        const SizedBox(height: MarktSpacing.sm),
+        Row(
+          children: [
+            Expanded(
+              child: _modeButton(
+                key: const ValueKey('dhlPickupParcel.trackingModeScanner'),
+                label: 'Scanner',
+                icon: Icons.qr_code_scanner,
+                selected: _trackingMode == 'scanner',
+                onPressed: () => _setTrackingMode('scanner'),
+              ),
+            ),
+            const SizedBox(width: MarktSpacing.sm),
+            Expanded(
+              child: _modeButton(
+                key: const ValueKey('dhlPickupParcel.trackingModeManual'),
+                label: 'Manuell',
+                icon: Icons.keyboard_alt_outlined,
+                selected: _trackingMode == 'manual',
+                onPressed: () => _setTrackingMode('manual'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: MarktSpacing.lg),
+        Text(
           'Trackingnummer',
           style: textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
@@ -303,12 +349,25 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
           enableSuggestions: false,
           inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
           textCapitalization: TextCapitalization.characters,
-          decoration: _trackingInputDecoration(),
+          decoration: _trackingInputDecoration().copyWith(
+            suffixIcon: _trackingMode == 'scanner'
+                ? const Tooltip(
+                    message: 'Scanner-Modus aktiv',
+                    child: Icon(Icons.sensors, color: Color(0xFF667EEA)),
+                  )
+                : const Tooltip(
+                    message: 'Manuelle Eingabe aktiv',
+                    child: Icon(Icons.keyboard_alt_outlined),
+                  ),
+          ),
           onChanged: _onTrackingChanged,
         ),
         const SizedBox(height: MarktSpacing.sm),
         Text(
-          'Trackingnummer scannen oder manuell eingeben. Mindestens $_minTrackingCodeLength Zeichen.',
+          _trackingMode == 'scanner'
+              ? 'Hardware-/Bluetooth-Scanner bereit. Die Suche erfolgt nur in unserer Datenbank.'
+              : 'Trackingnummer manuell eingeben. Die Suche erfolgt nur in unserer Datenbank.',
+          key: const ValueKey('dhlPickupParcel.trackingModeHint'),
           style: textTheme.bodySmall?.copyWith(color: const Color(0xFF666666)),
         ),
         const SizedBox(height: MarktSpacing.sm),
@@ -360,6 +419,31 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
           ),
         ],
       ],
+    );
+  }
+
+  Widget _modeButton({
+    required Key key,
+    required String label,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onPressed,
+  }) {
+    return OutlinedButton.icon(
+      key: key,
+      onPressed: (_searching || _confirming || _foundParcel != null) ? null : onPressed,
+      icon: Icon(icon),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(52),
+        foregroundColor: selected ? const Color(0xFF667EEA) : const Color(0xFF333333),
+        backgroundColor: selected ? const Color(0x14667EEA) : Colors.white,
+        side: BorderSide(
+          color: selected ? const Color(0xFF667EEA) : const Color(0xFFDDDDDD),
+          width: 2,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
     );
   }
 
