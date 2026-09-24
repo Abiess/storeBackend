@@ -7,6 +7,7 @@ import '../../models/dhl_parcel_dto.dart';
 import '../../models/dhl_slot_dto.dart';
 import '../../models/dhl_store_parcel_request.dart';
 import '../../models/dhl_tracking_validation_dto.dart';
+import '../../services/dhl_scan_feedback_service.dart';
 import '../../services/dhl_service.dart';
 import '../../services/token_storage.dart';
 import '../../theme/markt_theme.dart';
@@ -46,13 +47,19 @@ enum TrackingValidationState { idle, validating, valid, invalid, technicalError 
 /// denselben `onChanged`-Handler, kein Bypass moeglich (analog zum
 /// bestehenden Angular-Flow, siehe Audit).
 class DhlStoreParcelScreen extends StatefulWidget {
-  const DhlStoreParcelScreen({super.key, required this.storeId, this.dhlService});
+  const DhlStoreParcelScreen({
+    super.key,
+    required this.storeId,
+    this.dhlService,
+    this.scanFeedback,
+  });
 
   final int storeId;
 
   /// Nur fuer Tests: erlaubt das Einschleusen eines Fake-`DhlService`
   /// (analog zum bestehenden Injection-Muster in `DhlHomeScreen`).
   final DhlService? dhlService;
+  final DhlScanFeedback? scanFeedback;
 
   @override
   State<DhlStoreParcelScreen> createState() => _DhlStoreParcelScreenState();
@@ -67,6 +74,7 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
   static const Duration _debounceDuration = Duration(milliseconds: 400);
 
   late final DhlService _dhlService = widget.dhlService ?? DhlService();
+  late final DhlScanFeedback _scanFeedback = widget.scanFeedback ?? DhlScanFeedbackService();
   final _trackingController = TextEditingController();
   final _notesController = TextEditingController();
   final _focusNode = FocusNode();
@@ -77,6 +85,7 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
   DhlTrackingValidationDto? _validatedResult;
   String? _validationMessage;
 
+  bool _scanSoundsEnabled = true;
   bool _submitting = false;
   Object? _storeError;
 
@@ -89,6 +98,30 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
 
   bool _success = false;
   DhlParcelDto? _storedParcel;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadScanSoundPreference());
+  }
+
+  Future<void> _loadScanSoundPreference() async {
+    final enabled = await _scanFeedback.loadEnabled();
+    if (!mounted) return;
+    setState(() => _scanSoundsEnabled = enabled);
+  }
+
+  void _toggleScanSounds() {
+    final next = !_scanSoundsEnabled;
+    setState(() => _scanSoundsEnabled = next);
+    unawaited(_scanFeedback.setEnabled(next));
+  }
+
+  void _playScanFeedback(DhlScanFeedbackState state) {
+    if (_scanSoundsEnabled) {
+      unawaited(_scanFeedback.playForState(state));
+    }
+  }
 
   @override
   void dispose() {
@@ -195,11 +228,13 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
           _validationState = TrackingValidationState.valid;
           _validatedResult = result;
         });
+        _playScanFeedback(DhlScanFeedbackState.valid);
       } else {
         setState(() {
           _validationState = TrackingValidationState.invalid;
           _validationMessage = result.dhlErrorMessage;
         });
+        _playScanFeedback(DhlScanFeedbackState.invalid);
       }
     } on ApiException catch (e) {
       if (!mounted || _trackingController.text.trim() != code) return;
@@ -207,12 +242,14 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
         _validationState = TrackingValidationState.technicalError;
         _validationMessage = e.message;
       });
+      _playScanFeedback(DhlScanFeedbackState.technicalError);
     } catch (_) {
       if (!mounted || _trackingController.text.trim() != code) return;
       setState(() {
         _validationState = TrackingValidationState.technicalError;
         _validationMessage = null;
       });
+      _playScanFeedback(DhlScanFeedbackState.technicalError);
     }
   }
 
@@ -329,6 +366,16 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
               fontWeight: FontWeight.w700,
               color: const Color(0xFF333333),
             ),
+          ),
+        ),
+        TextButton.icon(
+          key: const ValueKey('dhlStoreParcel.scanSoundsToggle'),
+          onPressed: _toggleScanSounds,
+          icon: Icon(_scanSoundsEnabled ? Icons.volume_up_outlined : Icons.volume_off_outlined),
+          label: Text(_scanSoundsEnabled ? 'Toene: An' : 'Toene: Aus'),
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFF667EEA),
+            visualDensity: VisualDensity.compact,
           ),
         ),
       ],

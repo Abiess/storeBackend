@@ -16,7 +16,29 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:markt_ma_documents_poc/features/dhl/dhl_store_parcel_screen.dart';
+import 'package:markt_ma_documents_poc/services/dhl_scan_feedback_service.dart';
 import 'package:markt_ma_documents_poc/services/dhl_service.dart';
+
+class _FakeScanFeedback implements DhlScanFeedback {
+  _FakeScanFeedback({this.initialEnabled = true});
+
+  final bool initialEnabled;
+  final List<bool> savedValues = [];
+  final List<DhlScanFeedbackState> playedStates = [];
+
+  @override
+  Future<bool> loadEnabled() async => initialEnabled;
+
+  @override
+  Future<void> setEnabled(bool enabled) async {
+    savedValues.add(enabled);
+  }
+
+  @override
+  Future<void> playForState(DhlScanFeedbackState state) async {
+    playedStates.add(state);
+  }
+}
 
 void main() {
   const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
@@ -46,6 +68,7 @@ void main() {
   const scannerModeButton = ValueKey('dhlStoreParcel.trackingModeScanner');
   const manualTrackingModeButton = ValueKey('dhlStoreParcel.trackingModeManual');
   const trackingModeHint = ValueKey('dhlStoreParcel.trackingModeHint');
+  const scanSoundsToggle = ValueKey('dhlStoreParcel.scanSoundsToggle');
 
   const validResponse = '{"status":"VALID","trackingCode":"JVGL0605379700518040","pieceCode":"JVGL0605379700518040"}';
   const storedResponse = '{"id":9,"storeId":7,"trackingCode":"JVGL0605379700518040","shelfLocation":"A3",'
@@ -56,6 +79,60 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
   }
+
+  testWidgets('Scan-Toene Einstellung wird geladen und kann umgeschaltet werden', (tester) async {
+    final feedback = _FakeScanFeedback(initialEnabled: false);
+    final mockClient = MockClient((request) async => http.Response(validResponse, 200));
+
+    await tester.pumpWidget(
+      wrap(
+        DhlStoreParcelScreen(
+          storeId: 7,
+          dhlService: DhlService(client: mockClient),
+          scanFeedback: feedback,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(scanSoundsToggle), findsOneWidget);
+    expect(find.text('Toene: Aus'), findsOneWidget);
+
+    await tester.tap(find.byKey(scanSoundsToggle));
+    await tester.pump();
+
+    expect(find.text('Toene: An'), findsOneWidget);
+    expect(feedback.savedValues, [true]);
+  });
+
+  testWidgets('VALID spielt Feedback nur wenn Scan-Toene aktiviert sind', (tester) async {
+    final feedback = _FakeScanFeedback(initialEnabled: true);
+    final mockClient = MockClient((request) async => http.Response(validResponse, 200));
+
+    await tester.pumpWidget(
+      wrap(
+        DhlStoreParcelScreen(
+          storeId: 7,
+          dhlService: DhlService(client: mockClient),
+          scanFeedback: feedback,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await enterAndDebounce(tester, 'JVGL0605379700518040');
+
+    expect(feedback.playedStates, [DhlScanFeedbackState.valid]);
+
+    await tester.tap(find.byKey(scanSoundsToggle));
+    await tester.pump();
+    feedback.playedStates.clear();
+
+    await tester.enterText(find.byKey(trackingField), 'JVGL0605379700518041');
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+
+    expect(feedback.playedStates, isEmpty);
+  });
 
   testWidgets('zu kurzer Code loest keinen Validate-Call aus und Einlagern bleibt disabled', (tester) async {
     var validateCalls = 0;
