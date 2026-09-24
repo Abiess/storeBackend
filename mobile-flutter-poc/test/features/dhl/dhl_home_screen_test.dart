@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:markt_ma_documents_poc/features/dhl/dhl_home_screen.dart';
+import 'package:markt_ma_documents_poc/features/dhl/dhl_pickup_parcel_screen.dart';
 import 'package:markt_ma_documents_poc/models/auth_response.dart';
 import 'package:markt_ma_documents_poc/services/dhl_service.dart';
 import 'package:markt_ma_documents_poc/widgets/dhl/dhl_parcel_card.dart';
@@ -116,6 +117,48 @@ void main() {
     expect(find.text('Sprache'), findsNothing);
   });
 
+  testWidgets('Suche filtert Pakete clientseitig und kann geleert werden', (tester) async {
+    final mockClient = MockClient((request) async {
+      return http.Response(
+        '[{"id":1,"storeId":7,"trackingCode":"TRACK-A1","shelfLocation":"A1","receivedAt":"2026-01-15T10:00:00","status":"STORED"},'
+        '{"id":2,"storeId":7,"trackingCode":"TRACK-B2","shelfLocation":"B2","receivedAt":"2026-01-16T10:00:00","status":"STORED"}]',
+        200,
+      );
+    });
+
+    await tester.pumpWidget(
+      wrap(DhlHomeScreen(storeId: 7, dhlService: DhlService(client: mockClient))),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const ValueKey('dhlHome.searchField')), 'B2');
+    await tester.pump();
+
+    expect(find.text('TRACK-B2'), findsOneWidget);
+    expect(find.text('TRACK-A1'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('dhlHome.clearSearch')));
+    await tester.pump();
+
+    expect(find.text('TRACK-A1'), findsOneWidget);
+    expect(find.text('TRACK-B2'), findsOneWidget);
+  });
+
+  testWidgets('Paket ausgeben Aktion oeffnet den bestehenden Abhol-Flow', (tester) async {
+    final mockClient = MockClient((request) async => http.Response('[]', 200));
+
+    await tester.pumpWidget(
+      wrap(DhlHomeScreen(storeId: 7, dhlService: DhlService(client: mockClient))),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('dhlHome.pickupAction')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DhlPickupParcelScreen), findsOneWidget);
+    expect(find.byKey(const ValueKey('dhlPickupParcel.trackingField')), findsOneWidget);
+  });
+
   testWidgets('mit storeId aber leerer Liste wird der Empty-State angezeigt', (tester) async {
     final mockClient = MockClient((request) async => http.Response('[]', 200));
 
@@ -159,7 +202,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(listCalls, 1);
 
-    await tester.tap(find.text('Paket einlagern'));
+    await tester.tap(find.byKey(const ValueKey('dhlHome.storeAction')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('dhlStoreParcel.trackingField')), findsOneWidget);

@@ -17,6 +17,7 @@ import '../../widgets/shared/markt_profile_menu.dart';
 import '../../widgets/shared/markt_responsive_data_list.dart';
 import '../../widgets/shared/markt_side_nav.dart';
 import 'dhl_login_screen.dart';
+import 'dhl_pickup_parcel_screen.dart';
 import 'dhl_store_parcel_screen.dart';
 
 /// DHL/Paketshop-Home-Screen - erster echter End-to-End-Flow
@@ -162,10 +163,21 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
   /// falls in der Zwischenzeit gar nichts eingelagert wurde.
   Future<void> _openStoreParcelScreen() async {
     final storeId = widget.storeId;
-    if (storeId == null) return; // fail closed, siehe Klassendoku
+    if (storeId == null) return;
 
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => DhlStoreParcelScreen(storeId: storeId)),
+    );
+    if (!mounted) return;
+    _loadParcels();
+  }
+
+  Future<void> _openPickupParcelScreen() async {
+    final storeId = widget.storeId;
+    if (storeId == null) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => DhlPickupParcelScreen(storeId: storeId)),
     );
     if (!mounted) return;
     _loadParcels();
@@ -212,16 +224,6 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
         contextLabel: widget.storeId == null ? null : 'DHL Paketshop · Store ${widget.storeId}',
         onLogout: _logout,
       ),
-      // Prominente Einlagerungs-Aktion (siehe Aufgabenstellung "+ Paket
-      // einlagern") - nur sichtbar/aktiv, wenn ueberhaupt eine storeId
-      // aufgeloest werden konnte (fail closed, kein Aufruf ohne storeId).
-      floatingActionButton: widget.storeId == null
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: _openStoreParcelScreen,
-              icon: const Icon(Icons.add),
-              label: const Text('Paket einlagern'),
-            ),
       body: _buildBody(context),
     );
   }
@@ -319,7 +321,7 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildPageHeader(context),
+                        _buildPageHeader(context, stacked: isPhone),
                         const SizedBox(height: MarktSpacing.lg),
                         _buildStatCards(context, stacked: isPhone),
                         const SizedBox(height: MarktSpacing.lg),
@@ -351,27 +353,66 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
   /// market"), sondern der real vorhandene Wert `storeId`. Eine
   /// zukuenftige, hier bewusst ausgeklammerte Backend-Erweiterung um ein
   /// Store-Namensfeld wuerde ein sprechenderes Label ermoeglichen.
-  Widget _buildPageHeader(BuildContext context) {
+  Widget _buildPageHeader(BuildContext context, {required bool stacked}) {
     final colorScheme = Theme.of(context).colorScheme;
+    final title = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'DHL Paketshop',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'Store #${widget.storeId}',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+        ),
+      ],
+    );
+
+    final pickupButton = OutlinedButton.icon(
+      key: const ValueKey('dhlHome.pickupAction'),
+      onPressed: _openPickupParcelScreen,
+      icon: const Icon(Icons.outbox_outlined),
+      label: const Text('Paket ausgeben'),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(0, 48),
+        foregroundColor: colorScheme.primary,
+        side: BorderSide(color: colorScheme.primary, width: 1.5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+    final storeButton = FilledButton.icon(
+      key: const ValueKey('dhlHome.storeAction'),
+      onPressed: _openStoreParcelScreen,
+      icon: const Icon(Icons.add),
+      label: const Text('Paket einlagern'),
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(0, 48),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+
+    if (stacked) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          title,
+          const SizedBox(height: MarktSpacing.lg),
+          storeButton,
+          const SizedBox(height: MarktSpacing.sm),
+          pickupButton,
+        ],
+      );
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'DHL Paketshop',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Store #${widget.storeId}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-              ),
-            ],
-          ),
-        ),
+        Expanded(child: title),
+        pickupButton,
+        const SizedBox(width: MarktSpacing.sm),
+        storeButton,
       ],
     );
   }
@@ -436,13 +477,32 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
       'Pakete im Laden',
       style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
     );
+    final colorScheme = Theme.of(context).colorScheme;
     final searchField = TextField(
+      key: const ValueKey('dhlHome.searchField'),
       controller: _searchController,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         isDense: true,
-        prefixIcon: Icon(Icons.search),
-        hintText: 'Suche nach Trackingnummer/Lagerplatz',
-        border: OutlineInputBorder(),
+        prefixIcon: const Icon(Icons.search),
+        suffixIcon: _searchQuery.isEmpty
+            ? null
+            : IconButton(
+                key: const ValueKey('dhlHome.clearSearch'),
+                tooltip: 'Suche leeren',
+                onPressed: _searchController.clear,
+                icon: const Icon(Icons.close),
+              ),
+        hintText: 'Trackingnummer oder Lagerplatz suchen',
+        filled: true,
+        fillColor: colorScheme.surface,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(10)),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(10)),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        ),
       ),
     );
 

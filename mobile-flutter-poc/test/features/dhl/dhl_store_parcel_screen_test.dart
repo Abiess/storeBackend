@@ -69,6 +69,7 @@ void main() {
   const manualTrackingModeButton = ValueKey('dhlStoreParcel.trackingModeManual');
   const trackingModeHint = ValueKey('dhlStoreParcel.trackingModeHint');
   const scanSoundsToggle = ValueKey('dhlStoreParcel.scanSoundsToggle');
+  const cameraButton = ValueKey('dhlStoreParcel.cameraButton');
 
   const validResponse = '{"status":"VALID","trackingCode":"JVGL0605379700518040","pieceCode":"JVGL0605379700518040"}';
   const storedResponse = '{"id":9,"storeId":7,"trackingCode":"JVGL0605379700518040","shelfLocation":"A3",'
@@ -179,6 +180,34 @@ void main() {
     await tester.tap(find.byKey(scannerModeButton));
     await tester.pump();
     expect(find.text('Hardware-/Bluetooth-Scanner bereit. Der Scan landet direkt in diesem Feld.'), findsOneWidget);
+  });
+
+  testWidgets('Kamera-Scan schreibt Trackingcode und nutzt denselben DHL-Validate-Pfad', (tester) async {
+    var validateCalls = 0;
+    final mockClient = MockClient((request) async {
+      if (request.url.path.endsWith('/tracking/validate')) validateCalls++;
+      return http.Response(validResponse, 200);
+    });
+
+    await tester.pumpWidget(
+      wrap(
+        DhlStoreParcelScreen(
+          storeId: 7,
+          dhlService: DhlService(client: mockClient),
+          cameraScanner: (_) async => 'JVGL0605379700518040',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(cameraButton));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextField>(find.byKey(trackingField));
+    expect(field.controller?.text, 'JVGL0605379700518040');
+    expect(validateCalls, 1);
+    expect(find.text('Sendung von DHL bestaetigt'), findsOneWidget);
   });
 
   testWidgets('manueller Lagerplatz verlangt Slot-Auswahl und sendet slotCode', (tester) async {

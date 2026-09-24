@@ -73,6 +73,7 @@ void main() {
   const scannerModeButton = ValueKey('dhlPickupParcel.trackingModeScanner');
   const manualModeButton = ValueKey('dhlPickupParcel.trackingModeManual');
   const scanSoundsToggle = ValueKey('dhlPickupParcel.scanSoundsToggle');
+  const cameraButton = ValueKey('dhlPickupParcel.cameraButton');
 
   const storedParcelResponse = '{"id":9,"storeId":7,"trackingCode":"JVGL0605379700518040","shelfLocation":"A3",'
       '"receivedAt":"2026-01-15T10:00:00","status":"STORED"}';
@@ -208,6 +209,40 @@ void main() {
       find.text('Hardware-/Bluetooth-Scanner bereit. Die Suche erfolgt nur in unserer Datenbank.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('Kamera-Scan schreibt Trackingcode und sucht weiterhin nur in der DB', (tester) async {
+    var findCalls = 0;
+    var validateCalls = 0;
+    final mockClient = MockClient((request) async {
+      if (request.url.path.endsWith('/tracking/validate')) validateCalls++;
+      if (request.url.path.endsWith('/parcels/find')) {
+        findCalls++;
+        return http.Response(storedParcelResponse, 200);
+      }
+      return http.Response('{}', 404);
+    });
+
+    await tester.pumpWidget(
+      wrap(
+        DhlPickupParcelScreen(
+          storeId: 7,
+          dhlService: DhlService(client: mockClient),
+          cameraScanner: (_) async => 'JVGL0605379700518040',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(cameraButton));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextField>(find.byKey(trackingField));
+    expect(field.controller?.text, 'JVGL0605379700518040');
+    expect(findCalls, 1);
+    expect(validateCalls, 0);
+    expect(find.text('Bereit zur Abholung.'), findsOneWidget);
   });
 
   testWidgets('ausreichend langer Code loest automatisch (debounced) die DB-Suche aus - NIE /tracking/validate',
