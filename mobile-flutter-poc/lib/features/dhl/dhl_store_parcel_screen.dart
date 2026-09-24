@@ -7,6 +7,7 @@ import '../../models/dhl_parcel_dto.dart';
 import '../../models/dhl_slot_dto.dart';
 import '../../models/dhl_store_parcel_request.dart';
 import '../../models/dhl_tracking_validation_dto.dart';
+import '../../services/dhl_scan_feedback_service.dart';
 import '../../services/dhl_service.dart';
 import '../../services/token_storage.dart';
 import '../../theme/markt_theme.dart';
@@ -46,13 +47,19 @@ enum TrackingValidationState { idle, validating, valid, invalid, technicalError 
 /// denselben `onChanged`-Handler, kein Bypass moeglich (analog zum
 /// bestehenden Angular-Flow, siehe Audit).
 class DhlStoreParcelScreen extends StatefulWidget {
-  const DhlStoreParcelScreen({super.key, required this.storeId, this.dhlService});
+  const DhlStoreParcelScreen({
+    super.key,
+    required this.storeId,
+    this.dhlService,
+    this.scanFeedback,
+  });
 
   final int storeId;
 
   /// Nur fuer Tests: erlaubt das Einschleusen eines Fake-`DhlService`
   /// (analog zum bestehenden Injection-Muster in `DhlHomeScreen`).
   final DhlService? dhlService;
+  final DhlScanFeedback? scanFeedback;
 
   @override
   State<DhlStoreParcelScreen> createState() => _DhlStoreParcelScreenState();
@@ -67,7 +74,9 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
   static const Duration _debounceDuration = Duration(milliseconds: 400);
 
   late final DhlService _dhlService = widget.dhlService ?? DhlService();
+  late final DhlScanFeedback _scanFeedback = widget.scanFeedback ?? DhlScanFeedbackService();
   final _trackingController = TextEditingController();
+  final _notesController = TextEditingController();
   final _focusNode = FocusNode();
 
   Timer? _debounceTimer;
@@ -76,9 +85,11 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
   DhlTrackingValidationDto? _validatedResult;
   String? _validationMessage;
 
+  bool _scanSoundsEnabled = true;
   bool _submitting = false;
   Object? _storeError;
 
+  String _trackingMode = 'scanner';
   String _slotMode = 'auto';
   List<DhlSlotDto> _slots = const [];
   DhlSlotDto? _selectedSlot;
@@ -89,9 +100,34 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
   DhlParcelDto? _storedParcel;
 
   @override
+  void initState() {
+    super.initState();
+    unawaited(_loadScanSoundPreference());
+  }
+
+  Future<void> _loadScanSoundPreference() async {
+    final enabled = await _scanFeedback.loadEnabled();
+    if (!mounted) return;
+    setState(() => _scanSoundsEnabled = enabled);
+  }
+
+  void _toggleScanSounds() {
+    final next = !_scanSoundsEnabled;
+    setState(() => _scanSoundsEnabled = next);
+    unawaited(_scanFeedback.setEnabled(next));
+  }
+
+  void _playScanFeedback(DhlScanFeedbackState state) {
+    if (_scanSoundsEnabled) {
+      unawaited(_scanFeedback.playForState(state));
+    }
+  }
+
+  @override
   void dispose() {
     _debounceTimer?.cancel();
     _trackingController.dispose();
+    _notesController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
@@ -100,6 +136,20 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
       _validationState == TrackingValidationState.valid &&
       !_submitting &&
       (_slotMode == 'auto' || _selectedSlot != null);
+
+  void _setTrackingMode(String mode) {
+    if (_submitting || mode == _trackingMode) return;
+    setState(() {
+      _trackingMode = mode;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _focusNode.requestFocus();
+      if (mode == 'scanner') {
+        SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+      }
+    });
+  }
 
   Future<void> _setSlotMode(String mode) async {
     if (_submitting || mode == _slotMode) return;
@@ -178,11 +228,13 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
           _validationState = TrackingValidationState.valid;
           _validatedResult = result;
         });
+        _playScanFeedback(DhlScanFeedbackState.valid);
       } else {
         setState(() {
           _validationState = TrackingValidationState.invalid;
           _validationMessage = result.dhlErrorMessage;
         });
+        _playScanFeedback(DhlScanFeedbackState.invalid);
       }
     } on ApiException catch (e) {
       if (!mounted || _trackingController.text.trim() != code) return;
@@ -190,12 +242,14 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
         _validationState = TrackingValidationState.technicalError;
         _validationMessage = e.message;
       });
+      _playScanFeedback(DhlScanFeedbackState.technicalError);
     } catch (_) {
       if (!mounted || _trackingController.text.trim() != code) return;
       setState(() {
         _validationState = TrackingValidationState.technicalError;
         _validationMessage = null;
       });
+      _playScanFeedback(DhlScanFeedbackState.technicalError);
     }
   }
 
@@ -217,6 +271,7 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
         trackingCode: _trackingController.text.trim(),
         mode: _slotMode,
         slotCode: _slotMode == 'manual' ? _selectedSlot?.code : null,
+        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
       );
       final parcel = await _dhlService.storeParcel(widget.storeId, request);
       if (!mounted) return;
@@ -241,12 +296,14 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
   void _resetForNextParcel() {
     _debounceTimer?.cancel();
     _trackingController.clear();
+    _notesController.clear();
     setState(() {
       _validationState = TrackingValidationState.idle;
       _validatedResult = null;
       _validationMessage = null;
       _submitting = false;
       _storeError = null;
+      _trackingMode = 'scanner';
       _slotMode = 'auto';
       _selectedSlot = null;
       _slotsError = null;
@@ -311,6 +368,16 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
             ),
           ),
         ),
+        TextButton.icon(
+          key: const ValueKey('dhlStoreParcel.scanSoundsToggle'),
+          onPressed: _toggleScanSounds,
+          icon: Icon(_scanSoundsEnabled ? Icons.volume_up_outlined : Icons.volume_off_outlined),
+          label: Text(_scanSoundsEnabled ? 'Toene: An' : 'Toene: Aus'),
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFF667EEA),
+            visualDensity: VisualDensity.compact,
+          ),
+        ),
       ],
     );
   }
@@ -348,6 +415,38 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
+          'Tracking-Erfassung',
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF333333),
+          ),
+        ),
+        const SizedBox(height: MarktSpacing.sm),
+        Row(
+          children: [
+            Expanded(
+              child: _modeButton(
+                key: const ValueKey('dhlStoreParcel.trackingModeScanner'),
+                label: 'Scanner',
+                icon: Icons.qr_code_scanner,
+                selected: _trackingMode == 'scanner',
+                onPressed: () => _setTrackingMode('scanner'),
+              ),
+            ),
+            const SizedBox(width: MarktSpacing.sm),
+            Expanded(
+              child: _modeButton(
+                key: const ValueKey('dhlStoreParcel.trackingModeManual'),
+                label: 'Manuell',
+                icon: Icons.keyboard_alt_outlined,
+                selected: _trackingMode == 'manual',
+                onPressed: () => _setTrackingMode('manual'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: MarktSpacing.lg),
+        Text(
           'Trackingnummer',
           style: textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
@@ -360,17 +459,31 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
           controller: _trackingController,
           focusNode: _focusNode,
           autofocus: true,
+          keyboardType: TextInputType.text,
           enabled: !_submitting,
           autocorrect: false,
           enableSuggestions: false,
           inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
           textCapitalization: TextCapitalization.characters,
-          decoration: _trackingInputDecoration(),
+          decoration: _trackingInputDecoration().copyWith(
+            suffixIcon: _trackingMode == 'scanner'
+                ? const Tooltip(
+                    message: 'Scanner-Modus aktiv',
+                    child: Icon(Icons.sensors, color: Color(0xFF667EEA)),
+                  )
+                : const Tooltip(
+                    message: 'Manuelle Eingabe aktiv',
+                    child: Icon(Icons.keyboard_alt_outlined),
+                  ),
+          ),
           onChanged: _onTrackingChanged,
         ),
         const SizedBox(height: MarktSpacing.sm),
         Text(
-          'Trackingnummer scannen oder manuell eingeben. Mindestens $_minTrackingCodeLength Zeichen.',
+          _trackingMode == 'scanner'
+              ? 'Hardware-/Bluetooth-Scanner bereit. Der Scan landet direkt in diesem Feld.'
+              : 'Trackingnummer manuell eingeben. Mindestens $_minTrackingCodeLength Zeichen.',
+          key: const ValueKey('dhlStoreParcel.trackingModeHint'),
           style: textTheme.bodySmall?.copyWith(color: const Color(0xFF666666)),
         ),
         const SizedBox(height: MarktSpacing.sm),
@@ -381,6 +494,27 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
         ],
         const SizedBox(height: MarktSpacing.xl),
         _buildSlotModeSection(context),
+        const SizedBox(height: MarktSpacing.xl),
+        Text(
+          'Notizen (optional)',
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF333333),
+          ),
+        ),
+        const SizedBox(height: MarktSpacing.sm),
+        TextField(
+          key: const ValueKey('dhlStoreParcel.notesField'),
+          controller: _notesController,
+          enabled: !_submitting,
+          minLines: 2,
+          maxLines: 4,
+          textInputAction: TextInputAction.newline,
+          decoration: _trackingInputDecoration().copyWith(
+            hintText: 'z.B. Paket beschaedigt, Kunde angerufen ...',
+            prefixIcon: const Icon(Icons.notes_outlined),
+          ),
+        ),
         const SizedBox(height: MarktSpacing.xl),
         _gradientFilledButton(
           key: const ValueKey('dhlStoreParcel.submitButton'),
