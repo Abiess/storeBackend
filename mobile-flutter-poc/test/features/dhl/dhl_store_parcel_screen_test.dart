@@ -43,6 +43,9 @@ void main() {
   const backButton = ValueKey('dhlStoreParcel.backButton');
   const manualModeButton = ValueKey('dhlStoreParcel.slotModeManual');
   const notesField = ValueKey('dhlStoreParcel.notesField');
+  const scannerModeButton = ValueKey('dhlStoreParcel.trackingModeScanner');
+  const manualTrackingModeButton = ValueKey('dhlStoreParcel.trackingModeManual');
+  const trackingModeHint = ValueKey('dhlStoreParcel.trackingModeHint');
 
   const validResponse = '{"status":"VALID","trackingCode":"JVGL0605379700518040","pieceCode":"JVGL0605379700518040"}';
   const storedResponse = '{"id":9,"storeId":7,"trackingCode":"JVGL0605379700518040","shelfLocation":"A3",'
@@ -78,6 +81,27 @@ void main() {
     expect(find.text('Sendung von DHL bestaetigt'), findsOneWidget);
     final button = tester.widget<FilledButton>(find.byKey(submitButton));
     expect(button.onPressed, isNotNull);
+  });
+
+  testWidgets('Tracking-Modus kann zwischen Scanner und Manuell wechseln ohne Code zu verlieren', (tester) async {
+    final mockClient = MockClient((request) async => http.Response(validResponse, 200));
+
+    await tester.pumpWidget(wrap(DhlStoreParcelScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
+    expect(find.byKey(scannerModeButton), findsOneWidget);
+    expect(find.text('Hardware-/Bluetooth-Scanner bereit. Der Scan landet direkt in diesem Feld.'), findsOneWidget);
+
+    await tester.enterText(find.byKey(trackingField), 'JVGL0605379700518040');
+    await tester.tap(find.byKey(manualTrackingModeButton));
+    await tester.pump();
+
+    final field = tester.widget<TextField>(find.byKey(trackingField));
+    expect(field.controller?.text, 'JVGL0605379700518040');
+    expect(find.text('Trackingnummer manuell eingeben. Mindestens 10 Zeichen.'), findsOneWidget);
+    expect(find.byKey(trackingModeHint), findsOneWidget);
+
+    await tester.tap(find.byKey(scannerModeButton));
+    await tester.pump();
+    expect(find.text('Hardware-/Bluetooth-Scanner bereit. Der Scan landet direkt in diesem Feld.'), findsOneWidget);
   });
 
   testWidgets('manueller Lagerplatz verlangt Slot-Auswahl und sendet slotCode', (tester) async {
@@ -270,6 +294,7 @@ void main() {
     expect(notes.controller?.text, isEmpty);
     final button = tester.widget<FilledButton>(find.byKey(submitButton));
     expect(button.onPressed, isNull); // zurueck auf IDLE - fail closed
+    expect(find.text('Hardware-/Bluetooth-Scanner bereit. Der Scan landet direkt in diesem Feld.'), findsOneWidget);
   });
 
   testWidgets('Zur Uebersicht schliesst den Screen (Navigator.pop)', (tester) async {
