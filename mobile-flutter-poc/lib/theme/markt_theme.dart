@@ -1,6 +1,7 @@
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Zentrale markt.ma Spacing-Tokens (Shared UI Primitive).
 ///
@@ -87,16 +88,16 @@ class MarktTheme {
 
   static ThemeData _build(Brightness brightness) {
     final colorScheme = ColorScheme.fromSeed(seedColor: _seedColor, brightness: brightness);
+    final textTheme = _textTheme(
+      GoogleFonts.interTextTheme(ThemeData(brightness: brightness).textTheme),
+    );
 
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
       colorScheme: colorScheme,
-      // Dezent getoente Oberflaeche statt reinem Weiss/Schwarz, damit sich
-      // Cards sichtbar vom Hintergrund abheben, ohne eine eigene Farbe zu
-      // erfinden (`surfaceContainerLowest` kommt direkt aus dem ColorScheme).
       scaffoldBackgroundColor: colorScheme.surfaceContainerLowest,
-      textTheme: _textTheme(ThemeData(brightness: brightness).textTheme),
+      textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.surface,
         foregroundColor: colorScheme.onSurface,
@@ -104,7 +105,7 @@ class MarktTheme {
         scrolledUnderElevation: 2,
         surfaceTintColor: colorScheme.surfaceTint,
         centerTitle: false,
-        titleTextStyle: TextStyle(
+        titleTextStyle: textTheme.titleLarge?.copyWith(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: colorScheme.onSurface,
