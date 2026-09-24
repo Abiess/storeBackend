@@ -71,7 +71,7 @@ void main() {
     await tester.pumpWidget(wrap(DhlStoreParcelScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
     await enterAndDebounce(tester, 'JVGL0605379700518040');
 
-    expect(find.textContaining('bestaetigt'), findsOneWidget);
+    expect(find.text('Sendung von DHL bestaetigt'), findsOneWidget);
     final button = tester.widget<FilledButton>(find.byKey(submitButton));
     expect(button.onPressed, isNotNull);
   });
