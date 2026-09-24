@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../models/dhl_find_parcel_request.dart';
 import '../../models/dhl_parcel_dto.dart';
 import '../../models/dhl_pickup_parcel_request.dart';
+import '../../services/dhl_scan_feedback_service.dart';
 import '../../services/dhl_service.dart';
 import '../../services/token_storage.dart';
 import '../../theme/markt_theme.dart';
@@ -39,13 +40,19 @@ import '../../theme/markt_theme.dart';
 /// Beide Modi nutzen bewusst dasselbe Trackingfeld und denselben DB-Suchpfad;
 /// der Scanner-Modus ist fuer Hardware-/USB-/Bluetooth-HID-Scanner gedacht.
 class DhlPickupParcelScreen extends StatefulWidget {
-  const DhlPickupParcelScreen({super.key, required this.storeId, this.dhlService});
+  const DhlPickupParcelScreen({
+    super.key,
+    required this.storeId,
+    this.dhlService,
+    this.scanFeedback,
+  });
 
   final int storeId;
 
   /// Nur fuer Tests: erlaubt das Einschleusen eines Fake-`DhlService`
   /// (analog zum bestehenden Injection-Muster in `DhlStoreParcelScreen`).
   final DhlService? dhlService;
+  final DhlScanFeedback? scanFeedback;
 
   @override
   State<DhlPickupParcelScreen> createState() => _DhlPickupParcelScreenState();
@@ -60,12 +67,14 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
   static const Duration _debounceDuration = Duration(milliseconds: 400);
 
   late final DhlService _dhlService = widget.dhlService ?? DhlService();
+  late final DhlScanFeedback _scanFeedback = widget.scanFeedback ?? DhlScanFeedbackService();
   final _trackingController = TextEditingController();
   final _focusNode = FocusNode();
 
   Timer? _debounceTimer;
 
   String _trackingMode = 'scanner';
+  bool _scanSoundsEnabled = true;
 
   bool _searching = false;
   Object? _findError;
@@ -76,6 +85,30 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
 
   bool _success = false;
   DhlParcelDto? _pickedUpParcel;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadScanSoundPreference());
+  }
+
+  Future<void> _loadScanSoundPreference() async {
+    final enabled = await _scanFeedback.loadEnabled();
+    if (!mounted) return;
+    setState(() => _scanSoundsEnabled = enabled);
+  }
+
+  void _toggleScanSounds() {
+    final next = !_scanSoundsEnabled;
+    setState(() => _scanSoundsEnabled = next);
+    unawaited(_scanFeedback.setEnabled(next));
+  }
+
+  void _playScanFeedback(DhlScanFeedbackState state) {
+    if (_scanSoundsEnabled) {
+      unawaited(_scanFeedback.playForState(state));
+    }
+  }
 
   @override
   void dispose() {
@@ -150,12 +183,20 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
         _foundParcel = parcel;
         _searching = false;
       });
+      _playScanFeedback(
+        parcel.status == 'STORED' ? DhlScanFeedbackState.valid : DhlScanFeedbackState.invalid,
+      );
     } catch (e) {
       if (!mounted || _trackingController.text.trim() != effectiveCode) return;
       setState(() {
         _searching = false;
         _findError = e;
       });
+      _playScanFeedback(
+        e is ApiException && e.statusCode == 404
+            ? DhlScanFeedbackState.invalid
+            : DhlScanFeedbackState.technicalError,
+      );
     }
   }
 
@@ -262,6 +303,16 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
               fontWeight: FontWeight.w700,
               color: const Color(0xFF333333),
             ),
+          ),
+        ),
+        TextButton.icon(
+          key: const ValueKey('dhlPickupParcel.scanSoundsToggle'),
+          onPressed: _toggleScanSounds,
+          icon: Icon(_scanSoundsEnabled ? Icons.volume_up_outlined : Icons.volume_off_outlined),
+          label: Text(_scanSoundsEnabled ? 'Toene: An' : 'Toene: Aus'),
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFF667EEA),
+            visualDensity: VisualDensity.compact,
           ),
         ),
       ],
