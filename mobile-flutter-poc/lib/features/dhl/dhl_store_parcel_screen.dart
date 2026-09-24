@@ -68,6 +68,7 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
 
   late final DhlService _dhlService = widget.dhlService ?? DhlService();
   final _trackingController = TextEditingController();
+  final _notesController = TextEditingController();
   final _focusNode = FocusNode();
 
   Timer? _debounceTimer;
@@ -92,6 +93,7 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
   void dispose() {
     _debounceTimer?.cancel();
     _trackingController.dispose();
+    _notesController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
@@ -217,6 +219,7 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
         trackingCode: _trackingController.text.trim(),
         mode: _slotMode,
         slotCode: _slotMode == 'manual' ? _selectedSlot?.code : null,
+        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
       );
       final parcel = await _dhlService.storeParcel(widget.storeId, request);
       if (!mounted) return;
@@ -241,6 +244,7 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
   void _resetForNextParcel() {
     _debounceTimer?.cancel();
     _trackingController.clear();
+    _notesController.clear();
     setState(() {
       _validationState = TrackingValidationState.idle;
       _validatedResult = null;
@@ -381,6 +385,27 @@ class _DhlStoreParcelScreenState extends State<DhlStoreParcelScreen> {
         ],
         const SizedBox(height: MarktSpacing.xl),
         _buildSlotModeSection(context),
+        const SizedBox(height: MarktSpacing.xl),
+        Text(
+          'Notizen (optional)',
+          style: textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF333333),
+          ),
+        ),
+        const SizedBox(height: MarktSpacing.sm),
+        TextField(
+          key: const ValueKey('dhlStoreParcel.notesField'),
+          controller: _notesController,
+          enabled: !_submitting,
+          minLines: 2,
+          maxLines: 4,
+          textInputAction: TextInputAction.newline,
+          decoration: _trackingInputDecoration().copyWith(
+            hintText: 'z.B. Paket beschaedigt, Kunde angerufen ...',
+            prefixIcon: const Icon(Icons.notes_outlined),
+          ),
+        ),
         const SizedBox(height: MarktSpacing.xl),
         _gradientFilledButton(
           key: const ValueKey('dhlStoreParcel.submitButton'),
