@@ -40,10 +40,12 @@ on:
     paths:
       - 'mobile-flutter-poc/**'
       - '.github/workflows/flutter-poc.yml'
+      - '.github/workflows/deploy-flutter-web.yml'
   push:
     paths:
       - 'mobile-flutter-poc/**'
       - '.github/workflows/flutter-poc.yml'
+      - '.github/workflows/deploy-flutter-web.yml'
 
 jobs:
   build-flutter-poc:
