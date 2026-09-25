@@ -10,6 +10,7 @@ import '../../services/dhl_scan_feedback_service.dart';
 import '../../services/dhl_service.dart';
 import '../../services/token_storage.dart';
 import '../../theme/markt_theme.dart';
+import '../../widgets/dhl/dhl_parcel_format.dart';
 import '../../widgets/markt_barcode_camera_scanner.dart';
 
 /// Abhol-Flow "Paket ausgeben" - nutzt die BESTEHENDEN Endpunkte
@@ -594,6 +595,20 @@ class _DhlPickupParcelScreenState extends State<DhlPickupParcelScreen> {
             'Lagerplatz: ${parcel.shelfLocation?.trim().isNotEmpty == true ? parcel.shelfLocation! : '-'}',
             style: textTheme.bodyMedium?.copyWith(color: textColor),
           ),
+          if (parcel.notes?.trim().isNotEmpty == true) ...[
+            const SizedBox(height: MarktSpacing.sm),
+            Text(
+              'Notiz: ${parcel.notes!.trim()}',
+              style: textTheme.bodyMedium?.copyWith(color: textColor),
+            ),
+          ],
+          if (alreadyPickedUp && parcel.pickedUpAt?.isNotEmpty == true) ...[
+            const SizedBox(height: MarktSpacing.sm),
+            Text(
+              'Abgeholt am: ${DhlParcelFormat.formatReceivedAt(parcel.pickedUpAt)}',
+              style: textTheme.bodyMedium?.copyWith(color: textColor),
+            ),
+          ],
           const SizedBox(height: MarktSpacing.sm),
           Text(
             alreadyPickedUp ? 'Dieses Paket wurde bereits abgeholt.' : 'Bereit zur Abholung.',
