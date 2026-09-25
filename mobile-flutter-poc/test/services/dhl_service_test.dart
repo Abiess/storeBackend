@@ -102,6 +102,23 @@ void main() {
     expect(calledHeaders.containsKey('Authorization'), isTrue);
   });
 
+  test('getActivityLog liest Seiteninhalt und totalElements fuer Tageszaehler', () async {
+    final client = MockClient((request) async {
+      expect(request.method, 'GET');
+      expect(request.url.path, '/api/stores/7/dhl/activity-log');
+      expect(request.url.queryParameters['today'], 'true');
+      expect(request.url.queryParameters['action'], 'PICKED_UP');
+      expect(request.url.queryParameters['size'], '1');
+      expect(request.headers['Authorization'], 'Bearer dummy-jwt-token');
+      return http.Response(
+          '{"content":[{"action":"PICKED_UP","trackingCode":"TRACK","createdAt":"2026-01-15T10:00:00"}],"totalElements":12}', 200);
+    });
+    final page = await DhlService(client: client)
+        .getActivityLog(7, size: 1, today: true, action: 'PICKED_UP');
+    expect(page.totalElements, 12);
+    expect(page.content.single.action, 'PICKED_UP');
+  });
+
   group('validateTrackingCode', () {
     test('ruft exakt POST /stores/{storeId}/dhl/tracking/validate mit dem Tracking-Code auf', () async {
       late Uri calledUri;

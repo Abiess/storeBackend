@@ -48,14 +48,25 @@ void main() {
     expect(find.text('Guten Tag'), findsNothing);
   });
 
-  testWidgets('mit storeId zeigt Begruessung, Kennzahl und letzte Aktivitaeten aus geladenen Paketen',
+  testWidgets('mit storeId zeigt Bestand, echte Aktivitaeten und heutige Abholungen',
       (tester) async {
     final mockClient = MockClient((request) async {
+      if (request.url.path.endsWith('/activity-log')) {
+        if (request.url.queryParameters['action'] == 'PICKED_UP') {
+          expect(request.url.queryParameters['today'], 'true');
+          return http.Response('{"content":[],"totalElements":3}', 200);
+        }
+        return http.Response(
+          '{"content":['
+          '{"action":"PICKED_UP","trackingCode":"T9","slotSnapshot":"A1","createdAt":"2026-01-16T11:00:00"},'
+          '{"action":"FOUND","trackingCode":"T9","createdAt":"2026-01-16T10:55:00"},'
+          '{"action":"STORED","trackingCode":"T2","slotSnapshot":null,"createdAt":"2026-01-15T10:00:00"}'
+          '],"totalElements":3}', 200,
+        );
+      }
       return http.Response(
-        '[{"id":1,"storeId":7,"trackingCode":"T1","shelfLocation":"A1","receivedAt":"2026-01-15T10:00:00","status":"STORED"},'
-        '{"id":2,"storeId":7,"trackingCode":"T2","shelfLocation":null,"receivedAt":"2026-01-16T10:00:00","status":"STORED"}]',
-        200,
-      );
+          '[{"id":1,"storeId":7,"trackingCode":"T1","shelfLocation":"A1","receivedAt":"2026-01-15T10:00:00","status":"STORED"},'
+          '{"id":2,"storeId":7,"trackingCode":"T2","shelfLocation":null,"receivedAt":"2026-01-16T10:00:00","status":"STORED"}]', 200);
     });
     final user = AuthUser(id: 1, email: 'dhl-user@example.com', name: 'DHL User', role: 'STORE_MANAGER');
 
@@ -69,9 +80,12 @@ void main() {
     // Kennzahl-Kachel "Pakete im Laden" spiegelt die Anzahl der geladenen
     // (gestubbten) Pakete.
     expect(find.text('2'), findsOneWidget);
-    expect(find.text('Sendung T1'), findsOneWidget);
-    expect(find.text('Sendung T2'), findsOneWidget);
-    expect(find.text('Noch kein Lagerplatz zugewiesen'), findsOneWidget);
+    expect(find.text('Heute ausgegeben'), findsOneWidget);
+    expect(find.text('3'), findsOneWidget);
+    expect(find.text('Ausgegeben: T9'), findsOneWidget);
+    expect(find.text('Eingelagert: T2'), findsOneWidget);
+    expect(find.text('Kein Lagerplatz angegeben'), findsOneWidget);
+    expect(find.text('FOUND: T9'), findsNothing);
   });
 
   testWidgets('"Paket einlagern" oeffnet den bestehenden Einlagerungs-Flow', (tester) async {

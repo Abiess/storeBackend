@@ -761,8 +761,11 @@ public class DhlController {
             }
 
             // 5. Pagination
-            org.springframework.data.domain.Pageable pageable = 
-                org.springframework.data.domain.PageRequest.of(page, size);
+            org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(page, size,
+                    org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Order.desc("createdAt"),
+                        org.springframework.data.domain.Sort.Order.desc("id")));
 
             // 6. Query mit Filtern
             org.springframework.data.domain.Page<storebackend.entity.DhlActivityLog> activityPage = 
@@ -1173,4 +1176,3 @@ public class DhlController {
         }
     }
 }
-

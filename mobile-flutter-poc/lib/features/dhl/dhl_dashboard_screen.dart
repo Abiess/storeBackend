@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../models/auth_response.dart';
-import '../../models/dhl_parcel_dto.dart';
+import '../../models/dhl_activity_log.dart';
 import '../../services/auth_service.dart';
 import '../../services/dhl_service.dart';
 import '../../theme/markt_theme.dart';
 import '../../widgets/dhl/dhl_dashboard_view.dart';
-import '../../widgets/dhl/dhl_parcel_format.dart';
 import '../../widgets/shared/markt_card.dart';
 import '../../widgets/shared/markt_icon_badge.dart';
 import 'dhl_home_screen.dart';
@@ -26,11 +25,9 @@ import 'dhl_store_parcel_screen.dart';
 /// - "Paket ausgeben" oeffnet den [DhlPickupParcelScreen] (Abhol-Flow ueber
 ///   die bestehenden Endpunkte `/parcels/find` und `/parcels/pickup`,
 ///   siehe `DhlController`).
-/// - Die Kennzahl "Pakete im Laden" und "Letzte Aktivitaeten" werden
-///   ausschliesslich aus [DhlService.listStoredParcels] abgeleitet -
-///   dieselbe Datenquelle wie [DhlHomeScreen]. "Heute ausgegeben" wird
-///   bewusst NICHT angezeigt, da der bestehende Endpoint keine
-///   Abhol-Historie liefert (keine Fake-Zahl).
+/// - "Pakete im Laden" kommt aus [DhlService.listStoredParcels]. Die letzten
+///   Aktionen und "Heute ausgegeben" kommen aus dem bestehenden, auf den
+///   Store begrenzten DHL-Aktivitaetsprotokoll.
 ///
 /// [storeId] wird - identisch zu [DhlHomeScreen] - ueber
 /// `AuthUser.storeIdForApp('DHL')` vom Aufrufer (`main_dhl.dart`)
@@ -57,33 +54,42 @@ class _DhlDashboardScreenState extends State<DhlDashboardScreen> {
   late final DhlService _dhlService = widget.dhlService ?? DhlService();
   final _authService = AuthService();
 
-  List<DhlParcelDto> _parcels = [];
-  bool _loading = false;
+  int? _storedCount;
+  int? _pickedUpTodayCount;
+  List<DhlActivityLog> _activityLog = [];
 
   @override
   void initState() {
     super.initState();
     if (widget.storeId != null) {
-      _loadParcels();
+      _loadDashboard();
     }
   }
 
-  Future<void> _loadParcels() async {
+  Future<void> _loadDashboard() async {
     final storeId = widget.storeId;
     if (storeId == null) return; // fail closed: kein Aufruf ohne gesicherte storeId
 
-    setState(() => _loading = true);
     try {
       final parcels = await _dhlService.listStoredParcels(storeId);
       if (!mounted) return;
-      setState(() => _parcels = parcels);
+      setState(() => _storedCount = parcels.length);
     } catch (_) {
-      // Ladefehler blockieren das Dashboard nicht (siehe [DhlHomeScreen],
-      // das dieselbe Datenquelle bereits mit eigener Fehleranzeige nutzt) -
-      // hier bleibt die Kennzahl-Kachel einfach bei `0`, ein erneuter Besuch
-      // von "Pakete im Laden" zeigt den echten Fehlerzustand.
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() => _storedCount = null);
+    }
+
+    try {
+      final log = await _dhlService.getActivityLog(storeId);
+      if (mounted) setState(() => _activityLog = log.content);
+    } catch (_) {
+      if (mounted) setState(() => _activityLog = []);
+    }
+
+    try {
+      final today = await _dhlService.getActivityLog(storeId, size: 1, today: true, action: 'PICKED_UP');
+      if (mounted) setState(() => _pickedUpTodayCount = today.totalElements);
+    } catch (_) {
+      if (mounted) setState(() => _pickedUpTodayCount = null);
     }
   }
 
@@ -103,7 +109,7 @@ class _DhlDashboardScreenState extends State<DhlDashboardScreen> {
       MaterialPageRoute(builder: (_) => DhlStoreParcelScreen(storeId: storeId)),
     );
     if (!mounted) return;
-    _loadParcels();
+    _loadDashboard();
   }
 
   Future<void> _openStoredParcelsScreen() async {
@@ -116,7 +122,7 @@ class _DhlDashboardScreenState extends State<DhlDashboardScreen> {
       ),
     );
     if (!mounted) return;
-    _loadParcels();
+    _loadDashboard();
   }
 
   /// "Paket ausgeben" (Abholung) - oeffnet den bestehenden Abhol-Flow ueber
@@ -131,32 +137,29 @@ class _DhlDashboardScreenState extends State<DhlDashboardScreen> {
       MaterialPageRoute(builder: (_) => DhlPickupParcelScreen(storeId: storeId)),
     );
     if (!mounted) return;
-    _loadParcels();
+    _loadDashboard();
   }
 
-  /// Bildet die letzten (max. 5) eingelagerten Pakete auf
-  /// [DhlActivity]-Eintraege ab - ausschliesslich aus bereits geladenen
-  /// [_parcels] (identische Datenquelle wie [DhlHomeScreen]), sortiert nach
-  /// `receivedAt` absteigend. Parcels ohne parsebares `receivedAt` landen
-  /// ans Ende (kein Rateglueck bei der Sortierung, analog zu
-  /// [DhlParcelFormat.isReceivedToday]).
+  /// Shows actual store/pickup/cancellation events from the audit log.
   List<DhlActivity> get _recentActivities {
-    final sorted = [..._parcels]..sort((a, b) {
-        final aTime = DateTime.tryParse(a.receivedAt ?? '');
-        final bTime = DateTime.tryParse(b.receivedAt ?? '');
-        if (aTime == null && bTime == null) return 0;
-        if (aTime == null) return 1;
-        if (bTime == null) return -1;
-        return bTime.compareTo(aTime);
-      });
-    return sorted.take(5).map((parcel) {
-      final shelf = parcel.shelfLocation;
+    return _activityLog.where((entry) => const {'STORED', 'PICKED_UP', 'STORAGE_CANCELLED'}
+        .contains(entry.action)).take(5).map((entry) {
+      final shelf = entry.slotSnapshot;
+      final label = switch (entry.action) {
+        'PICKED_UP' => 'Ausgegeben',
+        'STORAGE_CANCELLED' => 'Einlagerung storniert',
+        _ => 'Eingelagert',
+      };
       return DhlActivity(
-        title: 'Sendung ${parcel.trackingCode}',
+        title: '$label: ${entry.trackingCode}',
         description: shelf == null || shelf.trim().isEmpty
-            ? 'Noch kein Lagerplatz zugewiesen'
+            ? 'Kein Lagerplatz angegeben'
             : 'Lagerplatz $shelf',
-        timeLabel: DhlParcelFormat.formatReceivedAt(parcel.receivedAt) ?? '-',
+        timeLabel: entry.createdAt == null
+            ? '-'
+            : '${entry.createdAt!.day.toString().padLeft(2, '0')}.${entry.createdAt!.month.toString().padLeft(2, '0')}. '
+                '${entry.createdAt!.hour.toString().padLeft(2, '0')}:${entry.createdAt!.minute.toString().padLeft(2, '0')}',
+        icon: entry.action == 'PICKED_UP' ? Icons.outbox_outlined : Icons.inventory_2_outlined,
       );
     }).toList();
   }
@@ -171,7 +174,8 @@ class _DhlDashboardScreenState extends State<DhlDashboardScreen> {
       userName: widget.user?.name ?? widget.user?.email ?? 'Nutzer',
       storeName: 'Store #${widget.storeId}',
       roleLabel: widget.user?.role,
-      storedCount: _loading && _parcels.isEmpty ? null : _parcels.length,
+      storedCount: _storedCount,
+      pickedUpTodayCount: _pickedUpTodayCount,
       activities: _recentActivities,
       onStoreParcel: _openStoreParcelScreen,
       onPickupParcel: _openPickupParcelScreen,
