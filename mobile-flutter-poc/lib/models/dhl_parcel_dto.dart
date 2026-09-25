@@ -1,9 +1,8 @@
 /// Schlankes Flutter-Gegenstueck zu `DhlParcelResponse.java`
 /// (storebackend.dto, siehe DHL-Audit vom 23.09.).
 ///
-/// Bewusst NUR die Felder, die die erste Ansicht "Pakete im Laden"
-/// tatsaechlich anzeigt (Trackingnummer, Lagerplatz, Eingelagert am,
-/// Sendungsstatus) - keine erfundenen Felder, aber robust gegenueber
+/// Enthaelt die Felder fuer "Pakete im Laden" und die Abholansicht
+/// (Trackingnummer, Lagerplatz, Zeitpunkte, Notiz, Status) - robust gegenueber
 /// zusaetzlichen/fehlenden Backend-Feldern (analog zu `DocumentDto`).
 ///
 /// `receivedAt` bleibt bewusst ein roher ISO-8601-String (kein eigenes
@@ -15,6 +14,8 @@ class DhlParcelDto {
   final String trackingCode;
   final String? shelfLocation;
   final String? receivedAt;
+  final String? pickedUpAt;
+  final String? notes;
   final String status;
   final String? standardEventCode;
 
@@ -24,6 +25,8 @@ class DhlParcelDto {
     required this.trackingCode,
     this.shelfLocation,
     this.receivedAt,
+    this.pickedUpAt,
+    this.notes,
     required this.status,
     this.standardEventCode,
   });
@@ -35,6 +38,8 @@ class DhlParcelDto {
       trackingCode: json['trackingCode'] as String? ?? '-',
       shelfLocation: json['shelfLocation'] as String?,
       receivedAt: json['receivedAt'] as String?,
+      pickedUpAt: json['pickedUpAt'] as String?,
+      notes: json['notes'] as String?,
       // `status` ist im Backend ein Enum (`DhlParcelStatus`: STORED |
       // PICKED_UP | CANCELLED), das Jackson standardmaessig als String
       // serialisiert - hier bewusst als roher String belassen statt ein

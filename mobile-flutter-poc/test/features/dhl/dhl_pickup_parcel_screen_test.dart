@@ -317,6 +317,26 @@ void main() {
     expect(button.onPressed, isNull);
   });
 
+  testWidgets('Notiz und Abholzeit aus der DB erscheinen beim gefundenen Paket', (tester) async {
+    final mockClient = MockClient((request) async {
+      expect(request.url.path.endsWith('/parcels/find'), isTrue);
+      return http.Response(
+        '{"id":9,"storeId":7,"trackingCode":"JVGL0605379700518040",'
+        '"shelfLocation":"A3","status":"PICKED_UP",'
+        '"notes":" Empfaenger ruft vorher an ","pickedUpAt":"2026-09-25T08:14:00"}',
+        200,
+      );
+    });
+
+    await tester.pumpWidget(wrap(DhlPickupParcelScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
+    await enterAndDebounce(tester, 'JVGL0605379700518040');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Notiz: Empfaenger ruft vorher an'), findsOneWidget);
+    expect(find.text('Abgeholt am: 2026-09-25 08:14'), findsOneWidget);
+    expect(tester.widget<FilledButton>(find.byKey(confirmButton)).onPressed, isNull);
+  });
+
   testWidgets('404 bei der Suche zeigt einen Fehlerhinweis (kein DHL-Aufruf)', (tester) async {
     var validateCalls = 0;
     final mockClient = MockClient((request) async {
