@@ -160,6 +160,8 @@ void main() {
     });
     await tester.pumpWidget(wrap(DhlDashboardScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Aktivitätsprotokoll anzeigen'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Aktivitätsprotokoll anzeigen'));
     await tester.pumpAndSettle();
     expect(find.byType(DhlActivityLogScreen), findsOneWidget);

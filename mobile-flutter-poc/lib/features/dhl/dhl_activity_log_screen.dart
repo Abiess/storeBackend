@@ -92,6 +92,7 @@ class _DhlActivityLogScreenState extends State<DhlActivityLogScreen> {
                 }),
                 SizedBox(width: 220, child: DropdownButtonFormField<String>(
                   key: const ValueKey('dhlLog.action'),
+                  isExpanded: true,
                   initialValue: _action,
                   decoration: const InputDecoration(labelText: 'Aktion', isDense: true),
                   items: [
