@@ -186,9 +186,11 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
 
   void _backToDashboard() {
     final navigator = Navigator.of(context);
-    if (navigator.canPop()) {
-      navigator.pop();
-    } else {
+    final isRootScreen = ModalRoute.of(context)?.isFirst ?? false;
+    // A tablet drawer contributes a local history entry to this route. A
+    // single pop would only close the drawer without leaving the parcel list.
+    navigator.popUntil((route) => route.isFirst);
+    if (isRootScreen) {
       // Also works when a saved browser session restores the parcel list as
       // the first route instead of arriving here from the dashboard.
       navigator.pushReplacement(MaterialPageRoute(
