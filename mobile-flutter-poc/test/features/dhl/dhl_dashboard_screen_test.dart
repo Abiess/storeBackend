@@ -88,6 +88,26 @@ void main() {
     expect(find.text('FOUND: T9'), findsNothing);
   });
 
+  testWidgets('Datenfehler wird angezeigt und erneuter Versuch laedt Kennzahlen', (tester) async {
+    var fail = true;
+    final mockClient = MockClient((request) async {
+      if (fail) return http.Response('{"message":"Backend nicht erreichbar"}', 503);
+      if (request.url.path.endsWith('/activity-log')) {
+        return http.Response('{"content":[],"totalElements":0}', 200);
+      }
+      return http.Response('[]', 200);
+    });
+    await tester.pumpWidget(wrap(DhlDashboardScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
+    await tester.pumpAndSettle();
+    expect(find.text('Einige Daten konnten nicht geladen werden.'), findsOneWidget);
+
+    fail = false;
+    await tester.tap(find.text('Erneut versuchen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Einige Daten konnten nicht geladen werden.'), findsNothing);
+    expect(find.text('Pakete im Laden'), findsOneWidget);
+  });
+
   testWidgets('"Paket einlagern" oeffnet den bestehenden Einlagerungs-Flow', (tester) async {
     final mockClient = MockClient((request) async => http.Response('[]', 200));
 

@@ -36,6 +36,10 @@ name: Flutter PoC (DOCUMENTS) – Build/Analyze/Test/APK
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'mobile-flutter-poc/**'
+      - '.github/workflows/flutter-poc.yml'
   push:
     paths:
       - 'mobile-flutter-poc/**'

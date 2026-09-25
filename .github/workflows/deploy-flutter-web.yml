@@ -47,6 +47,12 @@ on:
           - dhl
         default: documents
 
+# Zwei Deploys derselben Vorschau duerfen nicht gleichzeitig das aktuelle
+# Verzeichnis austauschen. Verschiedene Apps koennen unabhaengig laufen.
+concurrency:
+  group: flutter-web-${{ inputs.app }}
+  cancel-in-progress: false
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -64,8 +70,10 @@ jobs:
         # unbekannten App, statt versehentlich in ein falsches/leeres
         # Zielverzeichnis zu deployen.
         id: app_config
+        env:
+          APP: ${{ inputs.app }}
         run: |
-          case "${{ inputs.app }}" in
+          case "$APP" in
             documents)
               echo "entrypoint=lib/entrypoints/main_documents.dart" >> "$GITHUB_OUTPUT"
               echo "deploy_dir=/var/www/flutter-dev.markt.ma" >> "$GITHUB_OUTPUT"
@@ -82,7 +90,7 @@ jobs:
               echo "domain=dhl-dev.markt.ma" >> "$GITHUB_OUTPUT"
               ;;
             *)
-              echo "❌ Unbekannte app: '${{ inputs.app }}' (erwartet: documents | maritime | dhl)"
+              echo "❌ Unbekannte app (erwartet: documents | maritime | dhl)"
               exit 1
               ;;
           esac
@@ -120,10 +128,13 @@ jobs:
           fi
           echo "✅ Web-Build gefunden: $(du -sh build/web | cut -f1)"
 
+      - name: Stamp deployed version
+        run: printf '%s\n' '${{ github.sha }}' > build/web/version.txt
+
       - name: Create deployment package
         run: |
           cd build/web
-          tar -czf ../../flutter-web-dist.tar.gz *
+          tar -czf ../../flutter-web-${{ github.run_id }}-dist.tar.gz .
 
       - name: Deploy to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -132,7 +143,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          source: "mobile-flutter-poc/flutter-web-dist.tar.gz"
+          source: "mobile-flutter-poc/flutter-web-${{ github.run_id }}-dist.tar.gz"
           target: "/tmp/"
           strip_components: 1
 
@@ -170,7 +181,7 @@ jobs:
 
             # Extract new build
             echo "📂 Extracting new build..."
-            sudo tar -xzf /tmp/flutter-web-dist.tar.gz -C "${DEPLOY_DIR}/current"
+            sudo tar -xzf /tmp/flutter-web-${{ github.run_id }}-dist.tar.gz -C "${DEPLOY_DIR}/current"
 
             # Set permissions
             echo "🔒 Setting permissions..."
@@ -178,7 +189,7 @@ jobs:
             sudo chmod -R 755 "${DEPLOY_DIR}/current"
 
             # Cleanup
-            rm /tmp/flutter-web-dist.tar.gz
+            rm /tmp/flutter-web-${{ github.run_id }}-dist.tar.gz
 
             # Keep only last 3 backups (nur innerhalb des eigenen Zielverzeichnisses)
             cd "${DEPLOY_DIR}"
@@ -197,6 +208,7 @@ jobs:
           echo "## 🎉 Flutter Web Preview Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- 📦 App: \`${{ inputs.app }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔖 Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- 🎯 Entrypoint: \`${{ steps.app_config.outputs.entrypoint }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Flutter Web (release) gebaut und auf VPS deployt" >> $GITHUB_STEP_SUMMARY
           echo "- 📍 Location: ${{ steps.app_config.outputs.deploy_dir }}/current" >> $GITHUB_STEP_SUMMARY
