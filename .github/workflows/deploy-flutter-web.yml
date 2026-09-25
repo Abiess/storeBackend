@@ -19,9 +19,9 @@ name: Deploy Flutter Web Preview to VPS (Documents/Maritime/DHL)
 # (separates Zielverzeichnis pro App, KEIN Flutter-SDK auf dem VPS, Build
 # ausschliesslich hier in GitHub Actions).
 #
-# Bewusst NICHT enthalten (siehe Aufgabenstellung, "noch kein automatischer
-# Trigger" / "kein Nginx/DNS/Certbot"):
-#   - kein automatischer push-Trigger (nur workflow_dispatch, manuell).
+# Bewusst NICHT enthalten:
+#   - kein direkter push-Trigger: DHL wird erst nach erfolgreicher Flutter-CI
+#     auf master automatisch ausgerollt; die manuelle Auswahl bleibt erhalten.
 #   - keine Nginx-Installation/-Reload, kein Certbot, keine DNS-Aenderung
 #     (siehe mobile-flutter-poc/nginx-flutter-dev-markt-ma.conf – nur
 #     eingecheckt, noch nicht auf dem VPS aktiviert; fuer maritime-dev.markt.ma
@@ -46,15 +46,53 @@ on:
           - maritime
           - dhl
         default: documents
+  workflow_run:
+    workflows:
+      - 'Flutter PoC (DOCUMENTS) – Build/Analyze/Test/APK'
+    branches:
+      - master
+    types:
+      - completed
 
 # Zwei Deploys derselben Vorschau duerfen nicht gleichzeitig das aktuelle
 # Verzeichnis austauschen. Verschiedene Apps koennen unabhaengig laufen.
 concurrency:
-  group: flutter-web-${{ inputs.app }}
+  group: flutter-web-${{ github.event_name == 'workflow_run' && 'dhl' || inputs.app }}
   cancel-in-progress: false
 
 jobs:
+  check-commit:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'master' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.check.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check tested commit is still master
+        id: check
+        env:
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          latest_sha=$(git ls-remote origin refs/heads/master | cut -f1)
+          if [ -n "$latest_sha" ] && [ "$latest_sha" = "$TESTED_SHA" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Skipping CI run for an older commit."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
   build-and-deploy:
+    needs: check-commit
+    if: needs.check-commit.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -63,6 +101,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - name: Resolve app config (entrypoint + deploy target)
         # Einziger Mapping-Ort "app -> Entrypoint/Zielverzeichnis" - siehe
@@ -71,7 +111,7 @@ jobs:
         # Zielverzeichnis zu deployen.
         id: app_config
         env:
-          APP: ${{ inputs.app }}
+          APP: ${{ github.event_name == 'workflow_run' && 'dhl' || inputs.app }}
         run: |
           case "$APP" in
             documents)
@@ -129,7 +169,7 @@ jobs:
           echo "✅ Web-Build gefunden: $(du -sh build/web | cut -f1)"
 
       - name: Stamp deployed version
-        run: printf '%s\n' '${{ github.sha }}' > build/web/version.txt
+        run: printf '%s\n' '${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}' > build/web/version.txt
 
       - name: Create deployment package
         run: |
@@ -207,8 +247,8 @@ jobs:
         run: |
           echo "## 🎉 Flutter Web Preview Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- 📦 App: \`${{ inputs.app }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- 🔖 Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 App: \`${{ github.event_name == 'workflow_run' && 'dhl' || inputs.app }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔖 Commit: \`${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- 🎯 Entrypoint: \`${{ steps.app_config.outputs.entrypoint }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Flutter Web (release) gebaut und auf VPS deployt" >> $GITHUB_STEP_SUMMARY
           echo "- 📍 Location: ${{ steps.app_config.outputs.deploy_dir }}/current" >> $GITHUB_STEP_SUMMARY
