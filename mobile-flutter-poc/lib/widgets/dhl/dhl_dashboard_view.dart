@@ -30,6 +30,7 @@ class DhlDashboardView extends StatelessWidget {
     this.loading = false,
     this.loadFailed = false,
     this.onRefresh,
+    this.onShowActivityLog,
   });
 
   final String userName;
@@ -47,6 +48,7 @@ class DhlDashboardView extends StatelessWidget {
   final bool loading;
   final bool loadFailed;
   final VoidCallback? onRefresh;
+  final VoidCallback? onShowActivityLog;
 
   static const _yellow = Color(0xFFFFCC00);
   static const _ink = Color(0xFF202124);
@@ -127,6 +129,14 @@ class DhlDashboardView extends StatelessWidget {
                               _sectionTitle(context, 'Letzte Aktivitäten'),
                               const SizedBox(height: 14),
                               _activityList(context),
+                            ],
+                            if (onShowActivityLog != null) ...[
+                              const SizedBox(height: 24),
+                              OutlinedButton.icon(
+                                onPressed: onShowActivityLog,
+                                icon: const Icon(Icons.history),
+                                label: const Text('Aktivitätsprotokoll anzeigen'),
+                              ),
                             ],
                           ],
                         ),
