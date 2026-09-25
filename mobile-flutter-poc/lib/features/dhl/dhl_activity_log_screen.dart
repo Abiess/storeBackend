@@ -92,7 +92,7 @@ class _DhlActivityLogScreenState extends State<DhlActivityLogScreen> {
                 }),
                 SizedBox(width: 220, child: DropdownButtonFormField<String>(
                   key: const ValueKey('dhlLog.action'),
-                  value: _action,
+                  initialValue: _action,
                   decoration: const InputDecoration(labelText: 'Aktion', isDense: true),
                   items: [
                     const DropdownMenuItem<String>(value: null, child: Text('Alle Aktionen')),
@@ -118,7 +118,7 @@ class _DhlActivityLogScreenState extends State<DhlActivityLogScreen> {
                         ? const Center(child: Text('Keine Aktivitäten gefunden'))
                         : ListView.separated(
                             itemCount: result.content.length,
-                            separatorBuilder: (_, _) => const Divider(height: 1),
+                            separatorBuilder: (context, index) => const Divider(height: 1),
                             itemBuilder: (context, index) => _activityTile(result.content[index]),
                           )),
             if (result != null && _error == null && result.totalPages > 1)
