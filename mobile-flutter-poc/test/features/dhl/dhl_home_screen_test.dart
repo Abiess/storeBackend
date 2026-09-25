@@ -159,6 +159,52 @@ void main() {
     expect(find.byKey(const ValueKey('dhlPickupParcel.trackingField')), findsOneWidget);
   });
 
+  testWidgets('Uebersicht im Tablet-Drawer kehrt zum vorherigen Dashboard zurueck', (tester) async {
+    tester.view.physicalSize = const Size(800, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final mockClient = MockClient((request) async => http.Response('[]', 200));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                key: const ValueKey('dashboardMarker'),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => DhlHomeScreen(
+                      storeId: 7,
+                      dhlService: DhlService(client: mockClient),
+                    ),
+                  ),
+                ),
+                child: const Text('Dashboard'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('dashboardMarker')));
+    await tester.pumpAndSettle();
+    expect(find.text('Pakete im Laden'), findsWidgets);
+
+    await tester.tap(find.byTooltip('Menu'));
+    await tester.pumpAndSettle();
+    expect(find.text('Uebersicht'), findsOneWidget);
+
+    await tester.tap(find.text('Uebersicht'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('dashboardMarker')), findsOneWidget);
+    expect(find.byType(DhlHomeScreen), findsNothing);
+  });
+
   testWidgets('mit storeId aber leerer Liste wird der Empty-State angezeigt', (tester) async {
     final mockClient = MockClient((request) async => http.Response('[]', 200));
 

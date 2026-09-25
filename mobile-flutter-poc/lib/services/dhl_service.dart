@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../config/api_config.dart';
+import '../models/dhl_activity_log.dart';
 import '../models/dhl_find_parcel_request.dart';
 import '../models/dhl_parcel_dto.dart';
 import '../models/dhl_pickup_parcel_request.dart';
@@ -22,12 +23,34 @@ import 'token_storage.dart';
 ///   siehe DHL-Einlagerungs-Audit vom 23.09.) - Kamera-Scanner und
 ///   manuelles Slot-Grid sind bewusst NICHT Teil dieses Schritts.
 /// - `findParcel`/`pickupParcel`: Abhol-Flow ("Paket ausgeben") - sucht ein
-///   eingelagertes Paket und markiert es nach erneuter, autoritativer
-///   DHL-Validierung als abgeholt (siehe `DhlController.pickupParcel`).
+///   eingelagertes Paket und markiert es lokal als abgeholt.
+/// - `getActivityLog`: liest das vorhandene, store-begrenzte Protokoll.
 class DhlService {
   DhlService({http.Client? client}) : _client = client ?? http.Client();
 
   final http.Client _client;
+
+  /// Reads the store-scoped audit log. The backend sorts newest first and
+  /// applies the optional action/today filters before pagination.
+  Future<DhlActivityLogPage> getActivityLog(int storeId, {
+    int size = 50,
+    bool today = false,
+    String? action,
+  }) async {
+    final token = await TokenStorage.instance.readToken();
+    final uri = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.dhlActivityLogPath(storeId)}')
+        .replace(queryParameters: {
+      'page': '0',
+      'size': '$size',
+      if (today) 'today': 'true',
+      if (action != null) 'action': action,
+    });
+    final response = await _client.get(uri, headers: _authHeaders(token));
+    if (response.statusCode != 200) {
+      throw ApiException(response.statusCode, _extractMessage(response.body));
+    }
+    return DhlActivityLogPage.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
 
   Future<List<DhlParcelDto>> listStoredParcels(int storeId) async {
     final token = await TokenStorage.instance.readToken();
@@ -147,8 +170,7 @@ class DhlService {
   ///
   /// Sucht ein bereits eingelagertes Paket anhand des Tracking-Codes (reine
   /// DB-Suche, siehe `DhlController.findParcel` - kein DHL-API-Call). Wird
-  /// vom Abhol-Flow ([DhlPickupParcelScreen]) genutzt, NACHDEM
-  /// [validateTrackingCode] den Code als `VALID` bestaetigt hat.
+  /// vom Abhol-Flow ([DhlPickupParcelScreen]) ohne vorherigen DHL-Aufruf genutzt.
   ///
   /// Wirft [ApiException] bei 404 (`code == 'PARCEL_NOT_FOUND'`, kein
   /// passendes eingelagertes Paket) oder 400 (leerer Tracking-Code).
@@ -175,19 +197,11 @@ class DhlService {
 
   /// POST /api/stores/{storeId}/dhl/parcels/pickup
   ///
-  /// Markiert ein gefundenes Paket als abgeholt. WICHTIG: Das Backend
-  /// validiert den `trackingCode` hierbei selbst NOCHMALS autoritativ gegen
-  /// die DHL Tracking API (siehe `DhlController.pickupParcel`, Kommentar
-  /// "AUTHORITATIVE DHL VALIDATION") - [findParcel] davor ist ausschliesslich
-  /// UX-Vorpruefung/Anzeige (Fachlagerplatz etc.), keine Berechtigung zur
-  /// Abholung.
+  /// Markiert ein gefundenes Paket lokal und atomar als abgeholt.
   ///
   /// Wirft [ApiException] mit strukturiertem `code` u.a. fuer:
   /// - 404 `PARCEL_NOT_FOUND`
   /// - 409 `PARCEL_ALREADY_PICKED_UP`
-  /// - 422 `DHL_TRACKING_NOT_FOUND` / `DHL_VALIDATION_ERROR` (DHL bestaetigt
-  ///   die Sendung nicht mehr)
-  /// - 503/504 technische DHL-Fehler (Authentifizierung/Konnektivitaet)
   Future<DhlParcelDto> pickupParcel(int storeId, DhlPickupParcelRequest request) async {
     final token = await TokenStorage.instance.readToken();
     final uri = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.dhlPickupParcelPath(storeId)}');
