@@ -183,23 +183,26 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
     _loadParcels();
   }
 
+  void _backToDashboard() {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MarktAppShell(
       title: 'DHL Paketshop',
       sideNavHeader: _buildBrandHeader(context),
-      // Navigation vorbereitet (siehe Aufgabenstellung "Navigation
-      // vorbereiten... noch nicht funktional implementieren"): nur die
-      // beiden fuer den aktuellen Flow relevanten Bereiche. "Uebersicht"
-      // ist ein reiner Platzhalter (kein eigener Screen/State dahinter) -
-      // Scanner/Abholung werden bewusst noch NICHT als Eintraege ergaenzt,
-      // da dafuer noch keine Fachlogik existiert. Die Einlagerung selbst
-      // ist bewusst KEIN Sidebar-Eintrag, sondern die prominente
-      // "+ Paket einlagern"-Aktion (siehe [floatingActionButton]) - keine
-      // komplett neue Navigation, siehe Aufgabenstellung.
-      navItems: const [
-        MarktNavItem(icon: Icons.dashboard_outlined, label: 'Uebersicht'),
-        MarktNavItem(icon: Icons.local_shipping_outlined, label: 'Pakete im Laden', selected: true),
+      navItems: [
+        MarktNavItem(
+          icon: Icons.dashboard_outlined,
+          label: 'Uebersicht',
+          onTap: _backToDashboard,
+        ),
+        const MarktNavItem(
+          icon: Icons.local_shipping_outlined,
+          label: 'Pakete im Laden',
+          selected: true,
+        ),
       ],
       actions: [
         IconButton(
