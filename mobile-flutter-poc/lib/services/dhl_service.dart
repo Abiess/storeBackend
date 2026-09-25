@@ -33,6 +33,7 @@ class DhlService {
   /// Reads the store-scoped audit log. The backend sorts newest first and
   /// applies the optional action/today filters before pagination.
   Future<DhlActivityLogPage> getActivityLog(int storeId, {
+    int page = 0,
     int size = 50,
     bool today = false,
     String? action,
@@ -40,7 +41,7 @@ class DhlService {
     final token = await TokenStorage.instance.readToken();
     final uri = Uri.parse('${ApiConfig.baseUrl}${ApiConfig.dhlActivityLogPath(storeId)}')
         .replace(queryParameters: {
-      'page': '0',
+      'page': '$page',
       'size': '$size',
       if (today) 'today': 'true',
       if (action != null) 'action': action,

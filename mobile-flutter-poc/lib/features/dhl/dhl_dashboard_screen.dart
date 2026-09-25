@@ -10,6 +10,7 @@ import '../../widgets/dhl/dhl_dashboard_view.dart';
 import '../../widgets/shared/markt_card.dart';
 import '../../widgets/shared/markt_icon_badge.dart';
 import 'dhl_home_screen.dart';
+import 'dhl_activity_log_screen.dart';
 import 'dhl_login_screen.dart';
 import 'dhl_pickup_parcel_screen.dart';
 import 'dhl_store_parcel_screen.dart';
@@ -138,6 +139,15 @@ class _DhlDashboardScreenState extends State<DhlDashboardScreen> {
     _loadDashboard();
   }
 
+  Future<void> _openActivityLog() async {
+    final storeId = widget.storeId;
+    if (storeId == null) return;
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => DhlActivityLogScreen(storeId: storeId, dhlService: _dhlService),
+    ));
+    if (mounted) _loadDashboard();
+  }
+
   /// Shows actual store/pickup/cancellation events from the audit log.
   List<DhlActivity> get _recentActivities {
     return _activityLog.where((entry) => const {'STORED', 'PICKED_UP', 'STORAGE_CANCELLED'}
@@ -182,6 +192,7 @@ class _DhlDashboardScreenState extends State<DhlDashboardScreen> {
       onPickupParcel: _openPickupParcelScreen,
       onSearchShipment: _openStoredParcelsScreen,
       onShowStoredParcels: _openStoredParcelsScreen,
+      onShowActivityLog: _openActivityLog,
       onSignOut: _logout,
     );
   }
