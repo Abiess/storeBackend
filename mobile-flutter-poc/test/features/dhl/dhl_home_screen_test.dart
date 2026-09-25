@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:markt_ma_documents_poc/features/dhl/dhl_home_screen.dart';
+import 'package:markt_ma_documents_poc/features/dhl/dhl_dashboard_screen.dart';
 import 'package:markt_ma_documents_poc/features/dhl/dhl_pickup_parcel_screen.dart';
 import 'package:markt_ma_documents_poc/models/auth_response.dart';
 import 'package:markt_ma_documents_poc/services/dhl_service.dart';
@@ -202,6 +203,22 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('dashboardMarker')), findsOneWidget);
+    expect(find.byType(DhlHomeScreen), findsNothing);
+  });
+
+  testWidgets('Uebersicht aus einer wiederhergestellten Root-Liste oeffnet das Dashboard', (tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final mockClient = MockClient((request) async => http.Response('[]', 200));
+    await tester.pumpWidget(wrap(DhlHomeScreen(storeId: 7, dhlService: DhlService(client: mockClient))));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Uebersicht'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DhlDashboardScreen), findsOneWidget);
     expect(find.byType(DhlHomeScreen), findsNothing);
   });
 

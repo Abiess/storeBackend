@@ -17,6 +17,7 @@ import '../../widgets/shared/markt_profile_menu.dart';
 import '../../widgets/shared/markt_responsive_data_list.dart';
 import '../../widgets/shared/markt_side_nav.dart';
 import 'dhl_login_screen.dart';
+import 'dhl_dashboard_screen.dart';
 import 'dhl_pickup_parcel_screen.dart';
 import 'dhl_store_parcel_screen.dart';
 
@@ -184,7 +185,16 @@ class _DhlHomeScreenState extends State<DhlHomeScreen> {
   }
 
   void _backToDashboard() {
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    } else {
+      // Also works when a saved browser session restores the parcel list as
+      // the first route instead of arriving here from the dashboard.
+      navigator.pushReplacement(MaterialPageRoute(
+        builder: (_) => DhlDashboardScreen(storeId: widget.storeId, user: widget.user, dhlService: widget.dhlService),
+      ));
+    }
   }
 
   @override

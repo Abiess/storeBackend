@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/auth_response.dart';
 import '../../models/dhl_activity_log.dart';
+import '../../models/dhl_parcel_dto.dart';
 import '../../services/auth_service.dart';
 import '../../services/dhl_service.dart';
 import '../../theme/markt_theme.dart';
@@ -57,6 +58,9 @@ class _DhlDashboardScreenState extends State<DhlDashboardScreen> {
   int? _storedCount;
   int? _pickedUpTodayCount;
   List<DhlActivityLog> _activityLog = [];
+  bool _loading = false;
+  bool _loadFailed = false;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -69,28 +73,22 @@ class _DhlDashboardScreenState extends State<DhlDashboardScreen> {
   Future<void> _loadDashboard() async {
     final storeId = widget.storeId;
     if (storeId == null) return; // fail closed: kein Aufruf ohne gesicherte storeId
-
-    try {
-      final parcels = await _dhlService.listStoredParcels(storeId);
-      if (!mounted) return;
-      setState(() => _storedCount = parcels.length);
-    } catch (_) {
-      if (mounted) setState(() => _storedCount = null);
-    }
-
-    try {
-      final log = await _dhlService.getActivityLog(storeId);
-      if (mounted) setState(() => _activityLog = log.content);
-    } catch (_) {
-      if (mounted) setState(() => _activityLog = []);
-    }
-
-    try {
-      final today = await _dhlService.getActivityLog(storeId, size: 1, today: true, action: 'PICKED_UP');
-      if (mounted) setState(() => _pickedUpTodayCount = today.totalElements);
-    } catch (_) {
-      if (mounted) setState(() => _pickedUpTodayCount = null);
-    }
+    final generation = ++_loadGeneration;
+    setState(() => _loading = true);
+    final results = await Future.wait<Object?>([
+      _dhlService.listStoredParcels(storeId).then<Object?>((value) => value).catchError((Object _) => null),
+      _dhlService.getActivityLog(storeId).then<Object?>((value) => value).catchError((Object _) => null),
+      _dhlService.getActivityLog(storeId, size: 1, today: true, action: 'PICKED_UP')
+          .then<Object?>((value) => value).catchError((Object _) => null),
+    ]);
+    if (!mounted || generation != _loadGeneration) return;
+    setState(() {
+      _storedCount = (results[0] as List<DhlParcelDto>?)?.length;
+      _activityLog = (results[1] as DhlActivityLogPage?)?.content ?? [];
+      _pickedUpTodayCount = (results[2] as DhlActivityLogPage?)?.totalElements;
+      _loadFailed = results.any((result) => result == null);
+      _loading = false;
+    });
   }
 
   Future<void> _logout() async {
@@ -177,6 +175,9 @@ class _DhlDashboardScreenState extends State<DhlDashboardScreen> {
       storedCount: _storedCount,
       pickedUpTodayCount: _pickedUpTodayCount,
       activities: _recentActivities,
+      loading: _loading,
+      loadFailed: _loadFailed,
+      onRefresh: _loadDashboard,
       onStoreParcel: _openStoreParcelScreen,
       onPickupParcel: _openPickupParcelScreen,
       onSearchShipment: _openStoredParcelsScreen,

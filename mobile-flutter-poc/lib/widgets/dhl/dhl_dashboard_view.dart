@@ -27,6 +27,9 @@ class DhlDashboardView extends StatelessWidget {
     this.storedCount,
     this.pickedUpTodayCount,
     this.activities = const [],
+    this.loading = false,
+    this.loadFailed = false,
+    this.onRefresh,
   });
 
   final String userName;
@@ -41,6 +44,9 @@ class DhlDashboardView extends StatelessWidget {
   final int? storedCount;
   final int? pickedUpTodayCount;
   final List<DhlActivity> activities;
+  final bool loading;
+  final bool loadFailed;
+  final VoidCallback? onRefresh;
 
   static const _yellow = Color(0xFFFFCC00);
   static const _ink = Color(0xFF202124);
@@ -84,6 +90,17 @@ class DhlDashboardView extends StatelessWidget {
                                 color: const Color(0xFF62666C),
                               ),
                             ),
+                            if (loading) ...[
+                              const SizedBox(height: 16),
+                              const LinearProgressIndicator(),
+                            ],
+                            if (loadFailed) ...[
+                              const SizedBox(height: 16),
+                              MaterialBanner(
+                                content: const Text('Einige Daten konnten nicht geladen werden.'),
+                                actions: [TextButton(onPressed: onRefresh, child: const Text('Erneut versuchen'))],
+                              ),
+                            ],
                             const SizedBox(height: 28),
                             _featuredAction(context),
                             const SizedBox(height: 14),
