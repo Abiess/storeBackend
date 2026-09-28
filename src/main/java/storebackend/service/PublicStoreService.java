@@ -42,7 +42,7 @@ public class PublicStoreService {
             }
         }
         
-        return new PublicStoreDTO(
+        PublicStoreDTO dto = new PublicStoreDTO(
             store.getId(),
             domain.getId(),
             store.getName(),
@@ -100,5 +100,19 @@ public class PublicStoreService {
                 ? store.getShippingPolicyText() 
                 : null
         );
+        dto.setMaintenanceEnabled(store.isMaintenanceEnabled());
+        dto.setMaintenanceMode(store.getMaintenanceMode() != null
+                ? store.getMaintenanceMode().name()
+                : storebackend.enums.MaintenanceMode.DEFAULT.name());
+        if (store.isMaintenanceEnabled()
+                && store.getMaintenanceMode() == storebackend.enums.MaintenanceMode.CUSTOM_IMAGE
+                && store.getMaintenanceImageMediaId() != null) {
+            try {
+                dto.setMaintenanceImageUrl(mediaService.getMediaUrl(store.getMaintenanceImageMediaId()));
+            } catch (RuntimeException ignored) {
+                // The public store configuration remains available if an optional image is missing.
+            }
+        }
+        return dto;
     }
 }

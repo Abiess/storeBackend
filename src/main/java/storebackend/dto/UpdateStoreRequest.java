@@ -47,6 +47,11 @@ public class UpdateStoreRequest {
     private String googleMapsUrl;
     private String reservationWhatsappText;
 
+    private Boolean maintenanceEnabled;
+    private String maintenanceMode;
+    /** Set to 0 to clear the optional image; positive IDs must belong to this store. */
+    private Long maintenanceImageMediaId;
+
     // ─── Bot-Schutz – optional, null = nicht ändern ─
     /** Bot-Schutz aktiviert (true) oder deaktiviert (false) */
     private Boolean botProtectionEnabled;

@@ -187,6 +187,7 @@ public class DomainService {
                     dto.setAddress(store.getAddress());
                     dto.setGoogleMapsUrl(store.getGoogleMapsUrl());
                     dto.setReservationWhatsappText(store.getReservationWhatsappText());
+                    mapMaintenanceInfo(dto, store);
                     
                     // ─── Währung & Steuern (Public) ─────────────────────────
                     dto.setCurrencyCode(store.getCurrencyCode() != null ? store.getCurrencyCode().name() : "EUR");
@@ -264,6 +265,7 @@ public class DomainService {
                             dto.setAddress(store.getAddress());
                             dto.setGoogleMapsUrl(store.getGoogleMapsUrl());
                             dto.setReservationWhatsappText(store.getReservationWhatsappText());
+                            mapMaintenanceInfo(dto, store);
                             
                             // ─── Währung & Steuern (Public) ─────────────────────────
                             dto.setCurrencyCode(store.getCurrencyCode() != null ? store.getCurrencyCode().name() : "EUR");
@@ -467,6 +469,23 @@ public class DomainService {
         } catch (Exception e) {
             log.warn("❌ Error loading DHL shipping info for store {}: {}", storeId, e.getMessage());
             dto.setDhlShippingEnabled(false);
+        }
+    }
+
+    private void mapMaintenanceInfo(PublicStoreDTO dto, Store store) {
+        dto.setMaintenanceEnabled(store.isMaintenanceEnabled());
+        dto.setMaintenanceMode(store.getMaintenanceMode() != null
+                ? store.getMaintenanceMode().name()
+                : storebackend.enums.MaintenanceMode.DEFAULT.name());
+        if (store.isMaintenanceEnabled()
+                && store.getMaintenanceMode() == storebackend.enums.MaintenanceMode.CUSTOM_IMAGE
+                && store.getMaintenanceImageMediaId() != null) {
+            try {
+                dto.setMaintenanceImageUrl(mediaService.getMediaUrl(store.getMaintenanceImageMediaId()));
+            } catch (RuntimeException ex) {
+                log.warn("Maintenance image {} for store {} could not be resolved: {}",
+                        store.getMaintenanceImageMediaId(), store.getId(), ex.getMessage());
+            }
         }
     }
 }

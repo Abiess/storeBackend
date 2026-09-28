@@ -36,6 +36,10 @@ public class PublicStoreDTO {
     private String address;
     private String googleMapsUrl;
     private String reservationWhatsappText;
+
+    private boolean maintenanceEnabled;
+    private String maintenanceMode;
+    private String maintenanceImageUrl;
     
     // ─── DHL Shipping (Public Info Only - NO SECRETS) ──────
     private Boolean dhlShippingEnabled;       // DHL als Versandoption verfügbar
