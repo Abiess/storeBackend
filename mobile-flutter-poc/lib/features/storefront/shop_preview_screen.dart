@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/markt_theme.dart';
-
 /// UI-only first slice for the customer-facing store app.
 ///
 /// The catalog is intentionally sample data in this PR. Backend/domain
@@ -163,7 +161,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       child: Stack(
         children: [
           Positioned(right: -22, bottom: -48, child: Container(width: 200, height: 200, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.10), shape: BoxShape.circle))),
-          Positioned(right: 20, top: 18, child: Icon(Icons.shopping_bags_outlined, size: 94, color: Colors.white.withValues(alpha: 0.9))),
+          Positioned(right: 20, top: 18, child: Icon(Icons.shopping_bag_outlined, size: 94, color: Colors.white.withValues(alpha: 0.9))),
           Padding(
             padding: const EdgeInsets.all(20),
             child: SizedBox(
