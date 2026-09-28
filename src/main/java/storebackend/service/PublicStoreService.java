@@ -69,6 +69,9 @@ public class PublicStoreService {
             store.getAddress(),
             store.getGoogleMapsUrl(),
             store.getReservationWhatsappText(),
+            false,
+            storebackend.enums.MaintenanceMode.DEFAULT.name(),
+            null,
             // DHL Shipping (set to null/false for MVP - not implemented here)
             false,
             null,
