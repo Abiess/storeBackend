@@ -25,7 +25,8 @@ void main() {
     await tester.pumpWidget(const MarktShopPreviewApp());
 
     final addButton = find.byTooltip('In den Warenkorb').first;
-    await tester.ensureVisible(addButton);
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
+    await tester.pumpAndSettle();
     await tester.tap(addButton);
     await tester.pump();
 
