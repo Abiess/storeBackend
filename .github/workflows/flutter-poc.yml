@@ -6,7 +6,7 @@ name: Flutter PoC (DOCUMENTS) – Build/Analyze/Test/APK
 # Ablauf (rein lesend/bauend, KEIN Repo-Schreibzugriff):
 #   Checkout → Flutter stable installieren (mit Cache)
 #   → flutter pub get → flutter analyze → flutter test
-#   → flutter build apk --debug → app-debug.apk als Artifact
+#   → Documents- und Shop-Entrypoint als getrennte Debug-APKs/Artifacts
 #   → flutter build web --release → build/web als Artifact
 #
 # WICHTIG: Dieser Workflow generiert NICHTS und committet NICHTS zurueck ins
@@ -21,7 +21,7 @@ name: Flutter PoC (DOCUMENTS) – Build/Analyze/Test/APK
 #
 # Bewusst NICHT enthalten:
 #   - kein `flutter create`, kein `git commit`/`git push` (siehe Bootstrap-Workflows).
-#   - kein iOS-Build/-Signing (nur Android-Debug-APK, analog zu
+#   - kein iOS-Build/-Signing (nur Android-Debug-APKs, analog zu
 #     build-android-apk.yml).
 #   - kein Deploy des Web-Builds auf den VPS, kein Nginx/DNS/Certbot, keine
 #     Backend/CORS- oder Angular-Aenderung (Phase 1 baut nur, deployt nichts).
@@ -95,12 +95,12 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Build debug APK
-        run: flutter build apk --debug
+      - name: Build Documents debug APK
+        run: flutter build apk --debug --flavor documents
 
       - name: Verify APK exists
         run: |
-          APK=build/app/outputs/flutter-apk/app-debug.apk
+          APK=build/app/outputs/flutter-apk/app-documents-debug.apk
           if [ ! -f "$APK" ]; then
             echo "❌ $APK nicht gefunden!"
             find build/app/outputs -type f || true
@@ -112,7 +112,18 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: markt-ma-flutter-poc
-          path: mobile-flutter-poc/build/app/outputs/flutter-apk/app-debug.apk
+          path: mobile-flutter-poc/build/app/outputs/flutter-apk/app-documents-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Build customer shop preview APK
+        run: flutter build apk --debug --flavor shop -t lib/entrypoints/main_shop.dart
+
+      - name: Upload customer shop preview APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: markt-ma-flutter-shop-preview-apk
+          path: mobile-flutter-poc/build/app/outputs/flutter-apk/app-shop-debug.apk
           if-no-files-found: error
           retention-days: 14
 
@@ -144,3 +155,6 @@ jobs:
           path: mobile-flutter-poc/build/web
           if-no-files-found: error
           retention-days: 14
+
+      - name: Build customer shop preview for web
+        run: flutter build web --release -t lib/entrypoints/main_shop.dart
