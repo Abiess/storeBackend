@@ -44,17 +44,6 @@ function integerValidator(control: AbstractControl): ValidationErrors | null {
         <h1 class="settings-title">{{ 'navigation.settings' | translate }}</h1>
         
         <!-- Wiederverwendbare Tab-Leiste (analog app-productnavigation-bar) -->
-        <label class="mobile-settings-picker-label" for="mobile-settings-tab">{{ 'navigation.settings' | translate }}</label>
-        <select
-          id="mobile-settings-tab"
-          class="mobile-settings-picker"
-          [value]="activeTab"
-          (change)="onTabClick($any($event.target).value)">
-          <option *ngFor="let tab of visibleTabs" [value]="tab.id">
-            {{ tab.icon }} {{ tab.labelKey | translate }}<ng-container *ngIf="tab.beta"> (Beta)</ng-container>
-          </option>
-        </select>
-
         <nav class="settings-tabs" role="tablist">
           <button
             *ngFor="let tab of visibleTabs"
@@ -1129,15 +1118,11 @@ function integerValidator(control: AbstractControl): ValidationErrors | null {
     }
 
     /* ─── Modern Tab Bar (analog productnavigation-bar) ─── */
-    .mobile-settings-picker-label,
-    .mobile-settings-picker {
-      display: none;
-    }
-
     .settings-tabs {
       display: flex;
+      flex-wrap: wrap;
       gap: 2px;
-      overflow-x: auto;
+      overflow-x: visible;
       scrollbar-width: none;
       -ms-overflow-style: none;
       padding: 6px 0;
@@ -1245,30 +1230,11 @@ function integerValidator(control: AbstractControl): ValidationErrors | null {
     }
 
     @media (max-width: 767px) {
-      .settings-tabs { display: none; }
-
-      .mobile-settings-picker-label {
-        display: block;
-        margin: 0 0 0.4rem;
-        color: #475569;
-        font-size: 0.875rem;
-        font-weight: 600;
+      .settings-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 1px;
       }
-
-      .mobile-settings-picker {
-        display: block;
-        width: 100%;
-        min-height: 48px;
-        margin-bottom: 1rem;
-        padding: 0.65rem 0.85rem;
-        border: 1px solid #cbd5e1;
-        border-radius: 10px;
-        background: #fff;
-        color: #1f2937;
-        font: inherit;
-      }
-
-      .settings-tabs { gap: 1px; }
       .settings-tab { padding: 8px 10px; gap: 6px; }
       .tab-label { font-size: 0.75rem; }
     }
