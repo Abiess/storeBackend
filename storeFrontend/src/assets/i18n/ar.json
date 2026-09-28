@@ -716,6 +716,23 @@
     "usage_domains": "النطاقات",
     "usage_customers": "العملاء",
     "general": "عام",
+    "advanced": {
+      "title": "إعدادات متقدمة",
+      "maintenance": "وضع الصيانة",
+      "maintenanceLabel": "تفعيل وضع الصيانة",
+      "maintenanceHint": "ستظهر صفحة صيانة للزوار، مع إمكانية الوصول إلى لوحة الإدارة.",
+      "maintenanceMode": "طريقة عرض صفحة الصيانة",
+      "maintenanceDefault": "صفحة الصيانة الافتراضية",
+      "maintenanceCustomImage": "صورة مخصصة، مثل بطاقة العمل",
+      "maintenanceModeHint": "اختر الصفحة الافتراضية أو صورة مخصصة للزوار.",
+      "maintenanceImage": "صورة الصيانة المخصصة",
+      "maintenanceImageHint": "PNG أو JPG أو WebP، بحد أقصى 4 ميغابايت. ارفع صورة بطاقة العمل أو الشعار.",
+      "maintenanceImageRemove": "إزالة الصورة",
+      "maintenanceImageUploading": "جارٍ رفع الصورة …",
+      "maintenanceImageTypeError": "يرجى اختيار صورة PNG أو JPG أو WebP.",
+      "maintenanceImageSizeError": "يجب ألا يتجاوز حجم الصورة 4 ميغابايت.",
+      "maintenanceImageUploadError": "تعذر رفع الصورة. يرجى المحاولة مرة أخرى."
+    },
     "slider": "شريط تمرير",
     "whatsapp": {
       "title": "تواصل واتساب",
