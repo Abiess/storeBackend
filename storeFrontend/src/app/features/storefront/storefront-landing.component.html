@@ -224,6 +224,31 @@
 
 </div><!-- End storefront-wrapper -->
 
+<!-- Mobile category picker opened from the fixed bottom navigation. -->
+<div class="mobile-category-sheet-backdrop" *ngIf="categorySheetOpen" (click)="closeCategorySheet()">
+  <section class="mobile-category-sheet" role="dialog" aria-modal="true"
+    [attr.aria-label]="'navigation.categories' | translate"
+    (click)="$event.stopPropagation()" (keydown.escape)="closeCategorySheet()" tabindex="-1">
+    <header class="mobile-category-sheet-header">
+      <h2>{{ 'navigation.categories' | translate }}</h2>
+      <button type="button" class="mobile-category-sheet-close"
+        [attr.aria-label]="'storefront.filter.close' | translate" (click)="closeCategorySheet()">×</button>
+    </header>
+    <div class="mobile-category-sheet-list">
+      <button type="button" class="mobile-category-option" [class.active]="!selectedCategory"
+        (click)="selectCategoryFromSheet(null)">
+        {{ 'storefront.allProducts' | translate }}
+      </button>
+      <button type="button" class="mobile-category-option" *ngFor="let category of categories"
+        [class.active]="selectedCategory?.id === category.id"
+        (click)="selectCategoryFromSheet(category)">
+        <span>{{ category.name }}</span>
+        <span class="mobile-category-check" *ngIf="selectedCategory?.id === category.id" aria-hidden="true">✓</span>
+      </button>
+    </div>
+  </section>
+</div>
+
 <!-- Mobile Bottom Navigation (nur auf < 768px sichtbar, nicht bei SERVICE_PROFESSIONAL) -->
 <app-storefront-bottom-nav
   *ngIf="!storeNotFound && !isServiceMode"

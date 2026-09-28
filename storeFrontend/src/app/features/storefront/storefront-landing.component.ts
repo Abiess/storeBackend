@@ -62,6 +62,8 @@ import { ServiceProfessionalLayoutComponent } from './components/service-profess
     styleUrls: ['./storefront-landing.component.scss']
 })
 export class StorefrontLandingComponent implements OnInit {
+  @ViewChild(StorefrontHeaderComponent) private storefrontHeader?: StorefrontHeaderComponent;
+
   storeId: number | null = null;
   storeName: string | null = null;
   storeResolutionComplete = false;
@@ -92,6 +94,7 @@ export class StorefrontLandingComponent implements OnInit {
   /** Mobile Bottom-Nav State */
   bottomNavCategoryActive = false;
   bottomNavSearchActive = false;
+  categorySheetOpen = false;
 
   // ✨ NEUE: Slider State
   sliderImages: SliderImage[] = [];
@@ -693,31 +696,27 @@ export class StorefrontLandingComponent implements OnInit {
     }
   }
 
-  /** Bottom-Nav: Kategorien-Button → Drawer öffnen / Kategorie-Pills fokussieren */
+  /** Bottom-Nav: Kategorien-Button öffnet eine gut erreichbare Auswahl. */
   onBottomNavCategory(): void {
     this.bottomNavCategoryActive = true;
-    // Scrolle zu den Category-Chips und fokussiere sie
-    const el = document.querySelector('.category-pills-wrapper') as HTMLElement | null;
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      // Ersten Chip kurz hervorheben
-      el.classList.add('highlight-pulse');
-      setTimeout(() => el.classList.remove('highlight-pulse'), 800);
-    }
-    setTimeout(() => { this.bottomNavCategoryActive = false; }, 600);
+    this.categorySheetOpen = true;
   }
 
-  /** Bottom-Nav: Suche-Button → Suchfeld fokussieren */
+  selectCategoryFromSheet(category: Category | null): void {
+    this.categorySheetOpen = false;
+    this.bottomNavCategoryActive = false;
+    this.filterByCategory(category);
+  }
+
+  closeCategorySheet(): void {
+    this.categorySheetOpen = false;
+    this.bottomNavCategoryActive = false;
+  }
+
+  /** Bottom-Nav: öffnet und fokussiert die mobile Suchleiste im Header. */
   onBottomNavSearch(): void {
     this.bottomNavSearchActive = true;
-    // Suche im Marketplace-Grid fokussieren (input[type=search])
-    setTimeout(() => {
-      const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement | null;
-      if (searchInput) {
-        searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        searchInput.focus();
-      }
-    }, 100);
+    this.storefrontHeader?.openMobileSearch();
   }
 
   /** Bottom-Nav: Profile-Button → Header Auth-Dialog öffnen */
