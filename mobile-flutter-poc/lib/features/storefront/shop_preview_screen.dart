@@ -277,7 +277,6 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     const labels = ['Kategorien', 'Suche', 'Start', 'Warenkorb', 'Mehr'];
     const icons = [Icons.grid_view, Icons.search, Icons.storefront, Icons.shopping_cart_outlined, Icons.more_horiz];
     return Material(color: colors.surface, elevation: 8, child: SafeArea(top: false, child: SizedBox(height: 66, child: Row(children: List.generate(labels.length, (index) {
-      final selected = index == _selectedTab || (index == 2 && _selectedTab == 0);
           final selected = switch (index) {
             0 => _selectedTab == 1,
             1 => _selectedTab == 2,
