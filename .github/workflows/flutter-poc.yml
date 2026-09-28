@@ -144,3 +144,6 @@ jobs:
           path: mobile-flutter-poc/build/web
           if-no-files-found: error
           retention-days: 14
+
+      - name: Build customer shop preview for web
+        run: flutter build web --release -t lib/entrypoints/main_shop.dart
