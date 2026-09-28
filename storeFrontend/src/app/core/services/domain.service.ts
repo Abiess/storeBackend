@@ -24,7 +24,10 @@ export class DomainService {
     if (environment.useMockData) {
       return this.mockService.createDomain(storeId, request);
     }
-    return this.http.post<Domain>(`${environment.apiUrl}/stores/${storeId}/domains`, request);
+    return this.http.post<Domain>(`${environment.apiUrl}/stores/${storeId}/domains/custom`, {
+      host: request.host || request.domain,
+      type: request.type
+    });
   }
 
   deleteDomain(storeId: number, domainId: number): Observable<void> {
@@ -39,5 +42,19 @@ export class DomainService {
       return this.mockService.verifyDomain(storeId, domainId);
     }
     return this.http.post<Domain>(`${environment.apiUrl}/stores/${storeId}/domains/${domainId}/verify`, {});
+  }
+
+  getVerificationInstructions(storeId: number, domainId: number): Observable<string> {
+    if (environment.useMockData) {
+      return this.mockService.getVerificationInstructions(storeId, domainId);
+    }
+    return this.http.get(`${environment.apiUrl}/stores/${storeId}/domains/${domainId}/verification-instructions`, { responseType: 'text' });
+  }
+
+  setPrimaryDomain(storeId: number, domainId: number): Observable<void> {
+    if (environment.useMockData) {
+      return this.mockService.setPrimaryDomain(storeId, domainId);
+    }
+    return this.http.post<void>(`${environment.apiUrl}/stores/${storeId}/domains/${domainId}/set-primary`, {});
   }
 }

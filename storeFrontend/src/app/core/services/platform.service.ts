@@ -91,6 +91,10 @@ export class PlatformService {
   isStorefrontSubdomain(): boolean {
     if (this.isNative) return false; // Im App-Kontext keine Subdomain-Erkennung möglich
     const hostname = window.location.hostname;
+    if (hostname !== 'markt.ma' && hostname !== 'www.markt.ma' && hostname !== 'api.markt.ma' &&
+        hostname !== 'localhost' && !hostname.startsWith('127.0.0.1') && !hostname.endsWith('.markt.ma')) {
+      return true;
+    }
     return hostname.endsWith('.markt.ma') &&
            hostname !== 'markt.ma' &&
            hostname !== 'www.markt.ma' &&
@@ -116,5 +120,4 @@ export class PlatformService {
     return 'web';
   }
 }
-
 

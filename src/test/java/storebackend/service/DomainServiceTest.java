@@ -148,7 +148,7 @@ class DomainServiceTest {
         });
 
         // When
-        Domain result = domainService.createCustomDomain(1L, "shop.customer.com", testUser);
+        Domain result = domainService.createCustomDomain(1L, " Shop.Customer.Com. ", testUser);
 
         // Then
         assertNotNull(result);
@@ -158,6 +158,14 @@ class DomainServiceTest {
         assertFalse(result.getIsPrimary());
         assertNotNull(result.getVerificationToken());
         verify(domainRepository).save(any(Domain.class));
+    }
+
+    @Test
+    void createCustomDomain_RejectsUrlInsteadOfHostname() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> domainService.createCustomDomain(1L, "https://shop.customer.com/path", testUser));
+        assertTrue(exception.getMessage().contains("hostname"));
+        verifyNoInteractions(storeRepository, domainRepository);
     }
 
     @Test

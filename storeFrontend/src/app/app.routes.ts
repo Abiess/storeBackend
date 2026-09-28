@@ -4,6 +4,13 @@ import { platformAdminGuard } from './core/guards/platform-admin.guard';
 import { dashboardStoresRedirectGuard } from './core/guards/dashboard-stores-redirect.guard';
 import { AppKey } from './core/models';
 
+function isStorefrontHost(hostname: string): boolean {
+  return hostname !== 'markt.ma' && hostname !== 'www.markt.ma' &&
+    hostname !== 'api.markt.ma' && hostname !== 'grafana.markt.ma' &&
+    hostname !== 'admin.markt.ma' && hostname !== 'localhost' &&
+    !hostname.startsWith('127.0.0.1');
+}
+
 export const routes: Routes = [
   // ==================== Legal Pages (Public) ====================
   // Platform legal pages (markt.ma main domain)
@@ -11,9 +18,7 @@ export const routes: Routes = [
     path: 'impressum',
     loadComponent: () => {
       const hostname = window.location.hostname;
-      const isSubdomain = hostname.endsWith('.markt.ma') && 
-                         hostname !== 'markt.ma' && 
-                         hostname !== 'www.markt.ma';
+      const isSubdomain = isStorefrontHost(hostname);
       
       if (isSubdomain) {
         // Store-specific imprint
@@ -28,9 +33,7 @@ export const routes: Routes = [
     path: 'datenschutz',
     loadComponent: () => {
       const hostname = window.location.hostname;
-      const isSubdomain = hostname.endsWith('.markt.ma') && 
-                         hostname !== 'markt.ma' && 
-                         hostname !== 'www.markt.ma';
+      const isSubdomain = isStorefrontHost(hostname);
       
       if (isSubdomain) {
         return import('./features/legal/datenschutz-store.component').then(m => m.DatenschutzStoreComponent);
@@ -43,9 +46,7 @@ export const routes: Routes = [
     path: 'agb',
     loadComponent: () => {
       const hostname = window.location.hostname;
-      const isSubdomain = hostname.endsWith('.markt.ma') && 
-                         hostname !== 'markt.ma' && 
-                         hostname !== 'www.markt.ma';
+      const isSubdomain = isStorefrontHost(hostname);
       
       if (isSubdomain) {
         return import('./features/legal/agb-store.component').then(m => m.AgbStoreComponent);
@@ -449,6 +450,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'stores/:id/domains',
+    loadComponent: () => import('./features/stores/domain-management.component').then(m => m.DomainManagementComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'stores/:id/homepage-builder',
     loadComponent: () => import('./features/stores/homepage-builder.component').then(m => m.HomepageBuilderComponent),
     canActivate: [authGuard]
@@ -745,11 +751,7 @@ export const routes: Routes = [
     path: '',
     loadComponent: () => {
       const hostname = window.location.hostname;
-      const isSubdomain = hostname.endsWith('.markt.ma') &&
-                         hostname !== 'markt.ma' &&
-                         hostname !== 'www.markt.ma' &&
-                         hostname !== 'api.markt.ma' &&
-                         hostname !== 'grafana.markt.ma';
+      const isSubdomain = isStorefrontHost(hostname);
 
       console.log('🌐 Root Route - Hostname:', hostname, 'isSubdomain:', isSubdomain);
 
@@ -779,10 +781,7 @@ export const routes: Routes = [
     loadComponent: () => {
       const hostname = window.location.hostname;
       const path = window.location.pathname;
-      const isSubdomain = hostname.endsWith('.markt.ma') &&
-                         hostname !== 'markt.ma' &&
-                         hostname !== 'www.markt.ma' &&
-                         hostname !== 'api.markt.ma';
+      const isSubdomain = isStorefrontHost(hostname);
 
       console.log('❌ Wildcard Route (404) - Path:', path, 'Hostname:', hostname, 'isSubdomain:', isSubdomain);
 

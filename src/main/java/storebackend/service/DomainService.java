@@ -18,6 +18,15 @@ import storebackend.repository.StoreRepository;
 import storebackend.util.StoreAccessChecker;
 
 import java.security.SecureRandom;
+import java.net.IDN;
+import java.util.Locale;
+import java.util.regex.Pattern;
+import javax.naming.NamingEnumeration;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,6 +42,7 @@ public class DomainService {
     private final StoreDeliverySettingsRepository deliverySettingsRepository;
     private final MediaService mediaService;
     private final SecureRandom secureRandom = new SecureRandom();
+    private static final Pattern DOMAIN_LABEL = Pattern.compile("[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?");
 
     public List<Domain> getDomainsForStore(Long storeId, User currentUser) {
         Store store = storeRepository.findById(storeId)
@@ -76,6 +86,7 @@ public class DomainService {
     }
 
     public Domain createCustomDomain(Long storeId, String customHost, User currentUser) {
+        customHost = normalizeCustomHost(customHost);
         Store store = storeRepository.findById(storeId)
             .orElseThrow(() -> new IllegalArgumentException("Store not found"));
 
@@ -94,7 +105,8 @@ public class DomainService {
         }
 
         // Validiere dass es keine Subdomain unserer Platform ist
-        if (saasProperties.isSubdomainOfBaseDomain(customHost)) {
+        if (customHost.equalsIgnoreCase(saasProperties.getBaseDomain())
+                || saasProperties.isSubdomainOfBaseDomain(customHost)) {
             throw new IllegalArgumentException("Cannot use subdomain of platform domain as custom domain");
         }
 
@@ -399,10 +411,57 @@ public class DomainService {
     }
 
     private boolean performDnsVerification(Domain domain) {
-        // TODO: Implementiere tatsächliche DNS-Verifikation
-        // Für jetzt return true zur Demonstration
-        log.info("Performing DNS verification for domain: {}", domain.getHost());
-        return true;
+        String recordName = saasProperties.getDomainVerification().getTxtRecordPrefix()
+            + "." + domain.getHost();
+        Hashtable<String, String> environment = new Hashtable<>();
+        environment.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
+
+        try (DirContext context = new InitialDirContext(environment)) {
+            Attributes attributes = context.getAttributes(recordName, new String[] {"TXT"});
+            Attribute txtRecords = attributes.get("TXT");
+            if (txtRecords == null) {
+                return false;
+            }
+
+            NamingEnumeration<?> values = txtRecords.getAll();
+            while (values.hasMore()) {
+                String value = values.next().toString().replace("\"", "").replace(" ", "");
+                if (value.equals(domain.getVerificationToken())) {
+                    return true;
+                }
+            }
+        } catch (Exception ex) {
+            log.info("DNS TXT verification is not ready for {}: {}", recordName, ex.getMessage());
+        }
+        return false;
+    }
+
+    private String normalizeCustomHost(String customHost) {
+        if (customHost == null || customHost.isBlank()) {
+            throw new IllegalArgumentException("Domain is required");
+        }
+        String host = customHost.trim().toLowerCase(Locale.ROOT);
+        if (host.contains("://") || host.contains("/") || host.contains("?") || host.contains("#")
+                || host.contains(":")) {
+            throw new IllegalArgumentException("Enter a hostname without protocol, port, or path");
+        }
+        while (host.endsWith(".")) {
+            host = host.substring(0, host.length() - 1);
+        }
+        try {
+            host = IDN.toASCII(host, IDN.USE_STD3_ASCII_RULES);
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Invalid domain name", ex);
+        }
+        if (host.length() > 253 || host.indexOf('.') < 0) {
+            throw new IllegalArgumentException("Enter a fully qualified domain name");
+        }
+        for (String label : host.split("\\.")) {
+            if (label.length() > 63 || !DOMAIN_LABEL.matcher(label).matches()) {
+                throw new IllegalArgumentException("Invalid domain name");
+            }
+        }
+        return host;
     }
 
     private String normalizeHost(String host) {

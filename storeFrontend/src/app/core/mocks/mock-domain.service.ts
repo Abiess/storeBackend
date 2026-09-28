@@ -6,7 +6,7 @@ export class MockDomainService {
   private domains: Domain[] = [...MOCK_DOMAINS];
 
   getDomains(storeId: number): Observable<Domain[]> {
-    return of(this.domains).pipe(delay(500));
+    return of(this.domains.filter(domain => domain.storeId === storeId)).pipe(delay(500));
   }
 
   createDomain(storeId: number, request: CreateDomainRequest): Observable<Domain> {
@@ -29,15 +29,26 @@ export class MockDomainService {
   }
 
   deleteDomain(storeId: number, domainId: number): Observable<void> {
-    this.domains = this.domains.filter(d => d.id !== domainId);
+    this.domains = this.domains.filter(d => d.id !== domainId || d.storeId !== storeId);
     return of(void 0).pipe(delay(500));
   }
 
   verifyDomain(storeId: number, domainId: number): Observable<Domain> {
-    const domain = this.domains.find(d => d.id === domainId);
+    const domain = this.domains.find(d => d.id === domainId && d.storeId === storeId);
     if (domain) {
       domain.isVerified = true;
     }
     return of(domain!).pipe(delay(1000));
+  }
+
+  getVerificationInstructions(storeId: number, domainId: number): Observable<string> {
+    const domain = this.domains.find(item => item.id === domainId && item.storeId === storeId);
+    return of(`Add a TXT record to your DNS:\nName: _marktma-verification.${domain?.host ?? 'your-domain'}\nValue: ${domain?.verificationToken ?? 'verification-token'}\nThen verify the domain.`).pipe(delay(200));
+  }
+
+  setPrimaryDomain(storeId: number, domainId: number): Observable<void> {
+    this.domains.filter(domain => domain.storeId === storeId)
+      .forEach(domain => domain.isPrimary = domain.id === domainId);
+    return of(void 0).pipe(delay(200));
   }
 }
