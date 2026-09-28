@@ -416,7 +416,9 @@ public class DomainService {
         Hashtable<String, String> environment = new Hashtable<>();
         environment.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
 
-        try (DirContext context = new InitialDirContext(environment)) {
+        DirContext context = null;
+        try {
+            context = new InitialDirContext(environment);
             Attributes attributes = context.getAttributes(recordName, new String[] {"TXT"});
             Attribute txtRecords = attributes.get("TXT");
             if (txtRecords == null) {
@@ -432,6 +434,14 @@ public class DomainService {
             }
         } catch (Exception ex) {
             log.info("DNS TXT verification is not ready for {}: {}", recordName, ex.getMessage());
+        } finally {
+            if (context != null) {
+                try {
+                    context.close();
+                } catch (Exception ignored) {
+                    // ignore close failures
+                }
+            }
         }
         return false;
     }
