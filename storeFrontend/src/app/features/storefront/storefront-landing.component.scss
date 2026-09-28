@@ -1015,3 +1015,83 @@
   .category-pills-wrapper { display: none; }
 }
 
+
+
+/* Store maintenance view */
+.storefront-resolution-loading,
+.store-maintenance-page {
+  box-sizing: border-box;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.storefront-resolution-loading {
+  background: #fff;
+}
+
+.storefront-resolution-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid #e2e8f0;
+  border-top-color: #475569;
+  border-radius: 50%;
+  animation: store-maintenance-spin 0.8s linear infinite;
+}
+
+@keyframes store-maintenance-spin {
+  to { transform: rotate(360deg); }
+}
+
+.store-maintenance-page {
+  padding: clamp(1rem, 3vw, 2.5rem);
+  background: #f8fafc;
+}
+
+.store-maintenance-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(100%, 1100px);
+  max-height: calc(100dvh - 5rem);
+  object-fit: contain;
+}
+
+.store-maintenance-message {
+  box-sizing: border-box;
+  width: min(100%, 40rem);
+  padding: clamp(1.5rem, 5vw, 3rem);
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #fff;
+  color: #1f2937;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+.store-maintenance-logo {
+  display: block;
+  max-width: min(100%, 16rem);
+  max-height: 6rem;
+  width: auto;
+  height: auto;
+  margin: 0 auto 1.5rem;
+  object-fit: contain;
+}
+
+.store-maintenance-message h1 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+}
+
+.store-maintenance-message p {
+  margin: 0 0 1rem;
+  color: #475569;
+  line-height: 1.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .storefront-resolution-spinner { animation: none; }
+}

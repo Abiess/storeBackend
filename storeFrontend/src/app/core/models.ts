@@ -1014,6 +1014,9 @@ export interface PublicStore {
   slug: string;
   description?: string;
   logoUrl?: string;
+  maintenanceEnabled?: boolean;
+  maintenanceMode?: 'DEFAULT' | 'CUSTOM_IMAGE';
+  maintenanceImageUrl?: string;
   status: StoreStatus;
   /** WhatsApp-Kontaktnummer (optional) */
   whatsappNumber?: string;

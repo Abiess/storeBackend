@@ -1,10 +1,35 @@
 <!-- Modern E-Commerce Storefront - Dynamic Layout Switching -->
 
+<!-- Store-Auflösung abwarten, damit Besucher keinen Shop-Inhalt sehen, bevor der Wartungsstatus bekannt ist. -->
+<div class="storefront-resolution-loading" *ngIf="!storeResolutionComplete && !storeNotFound" role="status">
+  <span class="storefront-resolution-spinner" aria-hidden="true"></span>
+  <span class="sr-only">{{ 'mobile.skeleton' | translate }}</span>
+</div>
+
+<!-- Wartungsansicht -->
+<main class="store-maintenance-page" *ngIf="storeResolutionComplete && maintenanceEnabled">
+  <img
+    *ngIf="maintenanceMode === 'CUSTOM_IMAGE' && maintenanceImageUrl && !maintenanceImageLoadFailed; else defaultMaintenancePage"
+    class="store-maintenance-image"
+    [src]="maintenanceImageUrl"
+    [alt]="storeName || 'Maintenance'"
+    (error)="maintenanceImageLoadFailed = true" />
+
+  <ng-template #defaultMaintenancePage>
+    <section class="store-maintenance-message">
+      <img *ngIf="storeLogo" class="store-maintenance-logo" [src]="storeLogo" [alt]="storeName || ''" />
+      <h1>{{ 'storefront.maintenanceTitle' | translate }}</h1>
+      <p>{{ 'storefront.maintenanceMessage' | translate }}</p>
+      <strong>{{ storeName }}</strong>
+    </section>
+  </ng-template>
+</main>
+
 <!-- Store nicht gefunden / Reservierter Slug -->
 <app-store-not-found *ngIf="storeNotFound"></app-store-not-found>
 
 <!-- Normaler Store-Inhalt -->
-<div *ngIf="!storeNotFound" class="storefront-wrapper">
+<div *ngIf="storeResolutionComplete && !storeNotFound && !maintenanceEnabled" class="storefront-wrapper">
   <!-- Sticky Header mit Store-Name und Warenkorb -->
   <!-- ✅ Nur für normale Shop-Templates, NICHT für Full-Page-Templates (SERVICE_PROFESSIONAL) -->
   <div class="sticky-header" *ngIf="!isServiceMode">

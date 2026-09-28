@@ -64,6 +64,11 @@ import { ServiceProfessionalLayoutComponent } from './components/service-profess
 export class StorefrontLandingComponent implements OnInit {
   storeId: number | null = null;
   storeName: string | null = null;
+  storeResolutionComplete = false;
+  maintenanceEnabled = false;
+  maintenanceMode: 'DEFAULT' | 'CUSTOM_IMAGE' = 'DEFAULT';
+  maintenanceImageUrl: string | null = null;
+  maintenanceImageLoadFailed = false;
   products: Product[] = [];
   categories: Category[] = [];
   loading = true;
@@ -217,6 +222,11 @@ export class StorefrontLandingComponent implements OnInit {
     this.subdomainService.resolveStore().subscribe({
       next: (info) => {
         console.log('✅ Store Info resolved:', info);
+        this.storeResolutionComplete = true;
+        this.maintenanceEnabled = info.maintenanceEnabled === true;
+        this.maintenanceMode = info.maintenanceMode === 'CUSTOM_IMAGE' ? 'CUSTOM_IMAGE' : 'DEFAULT';
+        this.maintenanceImageUrl = info.maintenanceImageUrl ?? null;
+        this.maintenanceImageLoadFailed = false;
 
         if (info.isSubdomain && info.storeId) {
           this.storeId = info.storeId;
@@ -250,6 +260,7 @@ export class StorefrontLandingComponent implements OnInit {
         }
       },
       error: (error) => {
+        this.storeResolutionComplete = true;
         console.error('❌ Fehler beim Laden der Store-Informationen:', error);
         // NEUE: Bei Fehler "Store nicht gefunden" anzeigen
         this.storeNotFound = true;
