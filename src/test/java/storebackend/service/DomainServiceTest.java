@@ -14,10 +14,12 @@ import storebackend.entity.Plan;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.enums.DomainType;
+import storebackend.enums.MaintenanceMode;
 import storebackend.enums.Role;
 import storebackend.enums.StoreStatus;
 import storebackend.repository.DomainRepository;
 import storebackend.repository.StoreRepository;
+import storebackend.repository.StoreDeliverySettingsRepository;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -36,6 +38,12 @@ class DomainServiceTest {
 
     @Mock
     private StoreRepository storeRepository;
+
+    @Mock
+    private StoreDeliverySettingsRepository deliverySettingsRepository;
+
+    @Mock
+    private MediaService mediaService;
 
     @Mock
     private SaasProperties saasProperties;
@@ -176,5 +184,27 @@ class DomainServiceTest {
         SecurityException exception = assertThrows(SecurityException.class,
                 () -> domainService.getDomainsForStore(1L, otherUser));
         assertEquals("Access denied", exception.getMessage());
+    }
+
+    @Test
+    void resolveStoreByHost_ExposesMaintenanceSettingsForPlatformSubdomain() {
+        testStore.setMaintenanceEnabled(true);
+        testStore.setMaintenanceMode(MaintenanceMode.CUSTOM_IMAGE);
+        testStore.setMaintenanceImageMediaId(42L);
+        Domain domain = new Domain();
+        domain.setId(9L);
+        domain.setHost("spm.markt.ma");
+        domain.setStore(testStore);
+        when(domainRepository.findActiveVerifiedDomainWithStoreByHost("spm.markt.ma"))
+                .thenReturn(Optional.of(domain));
+        when(mediaService.getMediaUrl(42L)).thenReturn("https://minio.markt.ma/store-assets/card.png");
+
+        var resolved = domainService.resolveStoreByHost("spm.markt.ma");
+
+        assertTrue(resolved.isPresent());
+        assertEquals(1L, resolved.get().getStoreId());
+        assertTrue(resolved.get().isMaintenanceEnabled());
+        assertEquals("CUSTOM_IMAGE", resolved.get().getMaintenanceMode());
+        assertEquals("https://minio.markt.ma/store-assets/card.png", resolved.get().getMaintenanceImageUrl());
     }
 }

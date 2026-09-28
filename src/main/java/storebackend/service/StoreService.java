@@ -392,6 +392,31 @@ public class StoreService {
             store.setReservationWhatsappText(request.getReservationWhatsappText().isBlank() ? null : request.getReservationWhatsappText().trim());
         }
 
+        // ─── Under-construction / maintenance presentation ─────────────
+        if (request.getMaintenanceEnabled() != null) {
+            store.setMaintenanceEnabled(request.getMaintenanceEnabled());
+        }
+        if (request.getMaintenanceMode() != null && !request.getMaintenanceMode().isBlank()) {
+            try {
+                store.setMaintenanceMode(storebackend.enums.MaintenanceMode.valueOf(
+                    request.getMaintenanceMode().trim().toUpperCase()
+                ));
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException("maintenanceMode must be DEFAULT or CUSTOM_IMAGE");
+            }
+        }
+        if (request.getMaintenanceImageMediaId() != null) {
+            if (request.getMaintenanceImageMediaId() <= 0) {
+                store.setMaintenanceImageMediaId(null);
+            } else {
+                Media maintenanceImage = mediaService.getMediaById(request.getMaintenanceImageMediaId());
+                if (!maintenanceImage.getStore().getId().equals(store.getId())) {
+                    throw new RuntimeException("Maintenance image must belong to the store");
+                }
+                store.setMaintenanceImageMediaId(maintenanceImage.getId());
+            }
+        }
+
         // ─── Bot-Schutz-Konfiguration ────────────────────────────────
         if (request.getBotProtectionEnabled() != null) {
             store.setBotProtectionEnabled(request.getBotProtectionEnabled());
@@ -915,6 +940,17 @@ public class StoreService {
         dto.setAddress(store.getAddress());
         dto.setGoogleMapsUrl(store.getGoogleMapsUrl());
         dto.setReservationWhatsappText(store.getReservationWhatsappText());
+        dto.setMaintenanceEnabled(store.isMaintenanceEnabled());
+        dto.setMaintenanceMode(store.getMaintenanceMode());
+        dto.setMaintenanceImageMediaId(store.getMaintenanceImageMediaId());
+        if (store.getMaintenanceImageMediaId() != null) {
+            try {
+                dto.setMaintenanceImageUrl(mediaService.getMediaUrl(store.getMaintenanceImageMediaId()));
+            } catch (RuntimeException ex) {
+                log.warn("Maintenance image {} for store {} could not be resolved: {}",
+                        store.getMaintenanceImageMediaId(), store.getId(), ex.getMessage());
+            }
+        }
         // ─── Bot-Schutz (nur für Admin-Bereich) ─────────────────────────
         dto.setBotProtectionEnabled(store.isBotProtectionEnabled());
         dto.setBotProtectionMode(store.getBotProtectionMode());

@@ -9,6 +9,7 @@ import storebackend.enums.BusinessType;
 import storebackend.enums.CurrencyCode;
 import storebackend.enums.PriceMode;
 import storebackend.enums.ShippingTaxStrategy;
+import storebackend.enums.MaintenanceMode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -116,6 +117,19 @@ public class Store {
     /** Prefix für die WhatsApp-Reservierungs-/Bestellnachricht (Restaurant/Riad). */
     @Column(name = "reservation_whatsapp_text", columnDefinition = "TEXT")
     private String reservationWhatsappText;
+
+    /** Whether the public storefront should be presented as under construction. */
+    @Column(name = "maintenance_enabled", nullable = false)
+    private boolean maintenanceEnabled = false;
+
+    /** Presentation choice for the future storefront maintenance page. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "maintenance_mode", length = 20, nullable = false)
+    private MaintenanceMode maintenanceMode = MaintenanceMode.DEFAULT;
+
+    /** Optional store-owned image, such as a business card, for CUSTOM_IMAGE mode. */
+    @Column(name = "maintenance_image_media_id")
+    private Long maintenanceImageMediaId;
 
     // ─── Service-Website Content (About-Section) ──────────────────
     /** Titel der Über-uns-Section (Service-Websites) */
