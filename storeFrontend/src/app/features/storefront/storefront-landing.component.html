@@ -3,7 +3,7 @@
 <!-- Store-Auflösung abwarten, damit Besucher keinen Shop-Inhalt sehen, bevor der Wartungsstatus bekannt ist. -->
 <div class="storefront-resolution-loading" *ngIf="!storeResolutionComplete && !storeNotFound" role="status">
   <span class="storefront-resolution-spinner" aria-hidden="true"></span>
-  <span class="sr-only">{{ 'common.loading' | translate }}</span>
+  <span class="sr-only">{{ 'mobile.skeleton' | translate }}</span>
 </div>
 
 <!-- Wartungsansicht -->
