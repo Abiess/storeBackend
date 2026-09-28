@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule, ValidatorFn, AbstractControl, ValidationErrors } from '@angular/forms';
 import { StoreService } from '../../core/services/store.service';
+import { MediaService } from '../../core/services/media.service';
 import { Store } from '../../core/models';
 import { StoreNavigationComponent } from '../../shared/components/store-navigation.component';
 import { TranslatePipe } from '../../core/pipes/translate.pipe';
@@ -965,6 +966,59 @@ function integerValidator(control: AbstractControl): ValidationErrors | null {
 
         <!-- Advanced Settings -->
         <div class="tab-content" *ngIf="activeTab === 'advanced'">
+          <section class="maintenance-settings">
+            <h3>🔧 {{ 'settings.advanced.maintenance' | translate }}</h3>
+            <p class="section-hint">{{ 'settings.advanced.maintenanceHint' | translate }}</p>
+
+            <form [formGroup]="settingsForm" (ngSubmit)="saveSettings()">
+              <div class="form-group maintenance-toggle">
+                <label class="toggle-label">
+                  <input type="checkbox" formControlName="maintenanceEnabled" />
+                  <span class="toggle-text">{{ 'settings.advanced.maintenanceLabel' | translate }}</span>
+                </label>
+              </div>
+
+              <div class="form-group">
+                <label for="maintenanceMode">{{ 'settings.advanced.maintenanceMode' | translate }}</label>
+                <select id="maintenanceMode" formControlName="maintenanceMode" class="form-control">
+                  <option value="DEFAULT">{{ 'settings.advanced.maintenanceDefault' | translate }}</option>
+                  <option value="CUSTOM_IMAGE">{{ 'settings.advanced.maintenanceCustomImage' | translate }}</option>
+                </select>
+                <small class="form-text">{{ 'settings.advanced.maintenanceModeHint' | translate }}</small>
+              </div>
+
+              <div class="form-group" *ngIf="settingsForm.get('maintenanceMode')?.value === 'CUSTOM_IMAGE'">
+                <label>{{ 'settings.advanced.maintenanceImage' | translate }}</label>
+                <p class="form-text">{{ 'settings.advanced.maintenanceImageHint' | translate }}</p>
+                <div class="maintenance-image-preview" *ngIf="maintenanceImagePreview">
+                  <img [src]="maintenanceImagePreview" [alt]="'settings.advanced.maintenanceImage' | translate" />
+                  <button type="button" class="btn btn-secondary" (click)="removeMaintenanceImage()">
+                    {{ 'settings.advanced.maintenanceImageRemove' | translate }}
+                  </button>
+                </div>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  [disabled]="maintenanceImageUploading"
+                  (change)="onMaintenanceImageSelected($event)" />
+                <div class="maintenance-upload-progress" *ngIf="maintenanceImageUploading">
+                  {{ 'settings.advanced.maintenanceImageUploading' | translate }} {{ maintenanceImageUploadProgress }}%
+                </div>
+                <div class="maintenance-upload-error" *ngIf="maintenanceImageUploadError">
+                  {{ maintenanceImageUploadError | translate }}
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary"
+                        [disabled]="!settingsForm.valid || saving || maintenanceImageUploading ||
+                          (settingsForm.get('maintenanceMode')?.value === 'CUSTOM_IMAGE' && !settingsForm.get('maintenanceImageMediaId')?.value)">
+                  {{ saving ? ('common.saving' | translate) : ('common.save' | translate) }}
+                </button>
+              </div>
+            </form>
+          </section>
+
           <div class="danger-zone">
             <h3>⚠️ Gefahrenzone</h3>
             <p class="warning-text">Diese Aktionen können nicht rückgängig gemacht werden.</p>
@@ -1264,6 +1318,53 @@ function integerValidator(control: AbstractControl): ValidationErrors | null {
       border-radius: 12px;
       background: #fef2f2;
     }
+
+    .maintenance-settings {
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .maintenance-settings h3 {
+      margin: 0 0 0.5rem;
+      color: #111827;
+    }
+
+    .maintenance-toggle {
+      margin-top: 1rem;
+      padding: 0.875rem 1rem;
+      border: 1px solid #c7d2fe;
+      border-radius: 8px;
+      background: #eef2ff;
+    }
+
+    .maintenance-image-preview {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin: 0.75rem 0;
+    }
+
+    .maintenance-image-preview img {
+      display: block;
+      max-width: min(100%, 480px);
+      max-height: 320px;
+      object-fit: contain;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .maintenance-upload-progress,
+    .maintenance-upload-error {
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .maintenance-upload-error { color: #b91c1c; }
 
     .danger-zone h3 {
       margin: 0 0 0.5rem;
@@ -1998,6 +2099,10 @@ export class StoreSettingsComponent implements OnInit {
   store: Store | null = null;
   loading = false;
   saving = false;
+  maintenanceImageUploading = false;
+  maintenanceImageUploadProgress = 0;
+  maintenanceImageUploadError: string | null = null;
+  maintenanceImagePreview: string | null = null;
   deleting = false;
   error: string | null = null;
   activeTab = 'general';
@@ -2075,6 +2180,7 @@ export class StoreSettingsComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private storeService: StoreService,
+    private mediaService: MediaService,
     private fb: FormBuilder
   ) {
     this.settingsForm = this.fb.group({
@@ -2100,6 +2206,9 @@ export class StoreSettingsComponent implements OnInit {
       address: ['', [Validators.maxLength(300)]],
       googleMapsUrl: [''],
       reservationWhatsappText: ['', [Validators.maxLength(300)]],
+      maintenanceEnabled: [false],
+      maintenanceMode: ['DEFAULT'],
+      maintenanceImageMediaId: [null],
       // ─── Bot-Schutz ──────────────────────────────────────────────
       botProtectionEnabled: [true],
       botProtectionMode: ['SUSPICIOUS_ONLY'],
@@ -2200,6 +2309,9 @@ export class StoreSettingsComponent implements OnInit {
           address:                 store.address                 ?? '',
           googleMapsUrl:           store.googleMapsUrl           ?? '',
           reservationWhatsappText: store.reservationWhatsappText ?? '',
+          maintenanceEnabled: store.maintenanceEnabled ?? false,
+          maintenanceMode: store.maintenanceMode ?? 'DEFAULT',
+          maintenanceImageMediaId: store.maintenanceImageMediaId ?? null,
           botProtectionEnabled:    store.botProtectionEnabled    ?? true,
           botProtectionMode:       store.botProtectionMode       ?? 'SUSPICIOUS_ONLY',
           // Currency & Tax
@@ -2217,6 +2329,7 @@ export class StoreSettingsComponent implements OnInit {
           loyaltyPointsPerStep:    store.loyaltyPointsPerStep    ?? 1,
           loyaltyMinimumPurchase:  store.loyaltyMinimumPurchase  ?? null
         });
+        this.maintenanceImagePreview = store.maintenanceImageUrl ?? null;
         
         // Track original currency for change warning
         this.originalCurrency = store.currencyCode ?? 'EUR';
@@ -2269,6 +2382,55 @@ export class StoreSettingsComponent implements OnInit {
         }
       });
     }
+  }
+
+  onMaintenanceImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.maintenanceImageUploadError = null;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type.toLowerCase())) {
+      this.maintenanceImageUploadError = 'settings.advanced.maintenanceImageTypeError';
+      input.value = '';
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      this.maintenanceImageUploadError = 'settings.advanced.maintenanceImageSizeError';
+      input.value = '';
+      return;
+    }
+    if (!this.storeId) {
+      this.maintenanceImageUploadError = 'settings.advanced.maintenanceImageUploadError';
+      input.value = '';
+      return;
+    }
+
+    this.maintenanceImageUploading = true;
+    this.maintenanceImageUploadProgress = 0;
+    this.mediaService.uploadMediaWithProgress(this.storeId, file, 'IMAGE').subscribe({
+      next: event => {
+        this.maintenanceImageUploadProgress = event.progress;
+        if (event.response) {
+          this.settingsForm.patchValue({ maintenanceImageMediaId: event.response.mediaId });
+          this.maintenanceImagePreview = event.response.url;
+          this.maintenanceImageUploading = false;
+          input.value = '';
+        }
+      },
+      error: () => {
+        this.maintenanceImageUploading = false;
+        this.maintenanceImageUploadProgress = 0;
+        this.maintenanceImageUploadError = 'settings.advanced.maintenanceImageUploadError';
+        input.value = '';
+      }
+    });
+  }
+
+  removeMaintenanceImage(): void {
+    this.settingsForm.patchValue({ maintenanceImageMediaId: 0 });
+    this.maintenanceImagePreview = null;
+    this.maintenanceImageUploadError = null;
   }
 
   // ═══════════════════════════════════════════════════════════════

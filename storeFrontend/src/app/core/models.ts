@@ -951,6 +951,10 @@ export interface Store {
   address?: string;
   googleMapsUrl?: string;
   reservationWhatsappText?: string;
+  maintenanceEnabled?: boolean;
+  maintenanceMode?: 'DEFAULT' | 'CUSTOM_IMAGE';
+  maintenanceImageMediaId?: number | null;
+  maintenanceImageUrl?: string;
   // ─── Service-Website Content (About-Section) ────────────────────
   aboutTitle?: string;
   aboutText?: string;
