@@ -145,6 +145,17 @@ export class SubdomainService {
       return this.subdomainInfo;
     }
 
+    if ([`admin.${this.baseDomain}`, `grafana.${this.baseDomain}`, `mail.${this.baseDomain}`].includes(hostname)) {
+      this.subdomainInfo = {
+        isSubdomain: false,
+        subdomain: null,
+        storeId: null,
+        storeName: null,
+        slug: null
+      };
+      return this.subdomainInfo;
+    }
+
     // Subdomain erkannt (z.B. abc.markt.ma)
     if (hostname.endsWith(`.${this.baseDomain}`)) {
       const subdomain = hostname.replace(`.${this.baseDomain}`, '');
@@ -160,13 +171,13 @@ export class SubdomainService {
       return this.subdomainInfo;
     }
 
-    // Keine Subdomain
+    // Unbekannte Hosts können verifizierte Custom Domains eines Stores sein.
     this.subdomainInfo = {
-      isSubdomain: false,
-      subdomain: null,
+      isSubdomain: true,
+      subdomain: hostname,
       storeId: null,
       storeName: null,
-      slug: null
+      slug: hostname
     };
     return this.subdomainInfo;
   }

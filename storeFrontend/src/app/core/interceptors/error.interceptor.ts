@@ -116,6 +116,10 @@ export class ErrorInterceptor implements HttpInterceptor {
    */
   private isOnStorefrontSubdomain(): boolean {
     const hostname = window.location.hostname;
+    if (hostname !== 'markt.ma' && hostname !== 'www.markt.ma' && hostname !== 'api.markt.ma' &&
+        hostname !== 'localhost' && !hostname.startsWith('127.0.0.1') && !hostname.endsWith('.markt.ma')) {
+      return true;
+    }
     const reservedSubdomains = ['api', 'www', 'grafana', 'admin'];
     if (!hostname.endsWith('.markt.ma')) return false;
     const subdomain = hostname.replace('.markt.ma', '');

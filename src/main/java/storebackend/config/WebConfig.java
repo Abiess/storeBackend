@@ -6,13 +6,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import storebackend.enums.DomainType;
+import storebackend.repository.DomainRepository;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import storebackend.security.AppAccessInterceptor;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 @Configuration
 @RequiredArgsConstructor
@@ -40,7 +43,7 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource(DomainRepository domainRepository) {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // WICHTIG: Für Wildcard-Subdomains mit allowCredentials
@@ -90,9 +93,32 @@ public class WebConfig implements WebMvcConfigurer {
         // Max Age für Preflight-Requests (1 Stunde)
         configuration.setMaxAge(3600L);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-
-        return source;
+        CorsConfiguration platformConfiguration = configuration;
+        return request -> {
+            String origin = request.getHeader("Origin");
+            CorsConfiguration requestConfiguration = new CorsConfiguration();
+            requestConfiguration.setAllowedOriginPatterns(platformConfiguration.getAllowedOriginPatterns());
+            requestConfiguration.setAllowedMethods(platformConfiguration.getAllowedMethods());
+            requestConfiguration.setAllowedHeaders(platformConfiguration.getAllowedHeaders());
+            requestConfiguration.setExposedHeaders(platformConfiguration.getExposedHeaders());
+            requestConfiguration.setAllowCredentials(platformConfiguration.getAllowCredentials());
+            requestConfiguration.setMaxAge(platformConfiguration.getMaxAge());
+            if (origin != null) {
+                try {
+                    URI originUri = URI.create(origin);
+                    String host = originUri.getHost();
+                    if ("https".equalsIgnoreCase(originUri.getScheme()) && host != null
+                            && originUri.getPort() == -1 && originUri.getRawUserInfo() == null
+                            && domainRepository.findActiveVerifiedDomainByHost(host.toLowerCase(Locale.ROOT))
+                                    .map(domain -> domain.getType() == DomainType.CUSTOM)
+                                    .orElse(false)) {
+                        requestConfiguration.addAllowedOrigin(origin);
+                    }
+                } catch (IllegalArgumentException ignored) {
+                    // Invalid Origin is not granted a dynamic CORS exception.
+                }
+            }
+            return requestConfiguration;
+        };
     }
 }

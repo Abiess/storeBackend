@@ -12,6 +12,7 @@ import storebackend.service.DomainService;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/stores/{storeId}/domains")
@@ -47,15 +48,20 @@ public class DomainController {
     }
 
     @PostMapping("/custom")
-    public ResponseEntity<DomainDTO> createCustomDomain(
+    public ResponseEntity<?> createCustomDomain(
             @PathVariable Long storeId,
             @RequestBody @Valid CreateDomainRequest request,
             Authentication authentication) {
 
         User currentUser = (User) authentication.getPrincipal();
-        Domain domain = domainService.createCustomDomain(storeId, request.getHost(), currentUser);
-
-        return ResponseEntity.ok(convertToDTO(domain));
+        try {
+            Domain domain = domainService.createCustomDomain(storeId, request.getHost(), currentUser);
+            return ResponseEntity.ok(convertToDTO(domain));
+        } catch (SecurityException ex) {
+            return ResponseEntity.status(403).body(Map.of("message", ex.getMessage()));
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        }
     }
 
     @GetMapping("/{domainId}/verification-instructions")

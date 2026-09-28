@@ -446,7 +446,7 @@ export const ROLE_PERMISSIONS_MAP: Record<UserRole, Permission[]> = {
 // ============================================
 export interface Domain {
   id: number;
-  storeId: number;
+  storeId?: number;
   domain?: string;
   host: string;
   type: DomainType;
@@ -463,7 +463,7 @@ export enum DomainType {
 }
 
 export interface CreateDomainRequest {
-  storeId: number;
+  storeId?: number;
   domain?: string;
   host?: string;
   type: DomainType;
