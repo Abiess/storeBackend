@@ -127,18 +127,18 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
 
   Widget _buildHero(ColorScheme colors) {
     return Container(
-      height: 178,
+      height: 196,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), gradient: LinearGradient(colors: [colors.primary, Color.lerp(colors.primary, const Color(0xFF8F82EB), 0.55)!], begin: Alignment.bottomLeft, end: Alignment.topRight)),
       child: Stack(children: [
         Positioned(right: -24, bottom: -58, child: Container(width: 190, height: 190, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), shape: BoxShape.circle))),
         Positioned(right: 18, top: 20, child: Icon(Icons.shopping_bag_outlined, size: 88, color: Colors.white.withValues(alpha: 0.92))),
-        Padding(padding: const EdgeInsets.all(20), child: SizedBox(width: 220, child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text('SAISON-AKTION', style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1)),
-          const SizedBox(height: 8),
-          const Text('Finde deine\nneuen Lieblinge', style: TextStyle(color: Colors.white, fontSize: 20, height: 1.12, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 10),
-          TextButton(onPressed: () => setState(() => _selectedTab = 1), style: TextButton.styleFrom(backgroundColor: Colors.white, foregroundColor: colors.primary, padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7), minimumSize: Size.zero), child: const Text('Jetzt entdecken')),
+        Padding(padding: const EdgeInsets.all(16), child: SizedBox(width: 220, child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+          Text('SAISON-AKTION', style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1)),
+          const SizedBox(height: 5),
+          const Text('Finde deine\nneuen Lieblinge', style: TextStyle(color: Colors.white, fontSize: 18, height: 1.08, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          TextButton(onPressed: () => setState(() => _selectedTab = 1), style: TextButton.styleFrom(backgroundColor: Colors.white, foregroundColor: colors.primary, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap), child: const Text('Jetzt entdecken')),
         ]))),
       ]),
     );
