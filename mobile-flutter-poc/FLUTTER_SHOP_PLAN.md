@@ -56,3 +56,8 @@ flutter run -d chrome -t lib/entrypoints/main_shop.dart
 ```
 
 Die CI führt den Widget-Test aus und baut zusätzlich den Shop-Web-Einstieg.
+Sie stellt außerdem das Android-Artefakt `markt-ma-flutter-shop-preview-apk`
+bereit. Auf dem PR in **Actions → Flutter PoC → Artifacts** herunterladen und
+die APK auf dem Android-Handy installieren. Die Shop-Vorschau hat eine eigene
+Android-App-ID und kann neben den vorhandenen Flutter-Apps installiert
+bleiben. Es ist ein Debug-Build, kein Play-Store-Release.

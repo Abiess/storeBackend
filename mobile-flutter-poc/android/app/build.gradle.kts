@@ -29,6 +29,19 @@ android {
         versionName = flutter.versionName
     }
 
+    // Separate install identities let the customer shop and staff/document
+    // apps stay installed side by side on a test phone.
+    flavorDimensions += "app"
+    productFlavors {
+        create("documents") {
+            dimension = "app"
+        }
+        create("shop") {
+            dimension = "app"
+            applicationId = "ma.markt.markt_ma_shop_preview"
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
