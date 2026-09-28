@@ -28,7 +28,9 @@ void main() {
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
     await tester.pumpAndSettle();
     await tester.tap(addButton);
-    await tester.pump();
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 500));
+    await tester.pumpAndSettle();
 
     expect(find.text('1'), findsOneWidget);
   });
