@@ -3,6 +3,7 @@
 
 /* Leaflet (Maritime Live Map, Phase 3A) – OpenStreetMap-Tiles, kein API-Key nötig */
 @import 'leaflet/dist/leaflet.css';
+@import './app/features/storefront/storefront-mobile-nav.scss';
 
 /* ============================================================
    SAFE-AREA – iPhone Notch / Dynamic Island / Home-Indicator
@@ -818,4 +819,3 @@ h1, h2, h3, h4, h5, h6 {
     margin-right: 6px;
   }
 }
-

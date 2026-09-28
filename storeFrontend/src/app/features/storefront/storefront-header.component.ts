@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, HostListener, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener, ViewChild, ElementRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -631,6 +631,8 @@ export class StorefrontHeaderComponent {
   searchQuery = '';
   logoError = false;
 
+  @ViewChild('mobileSearchInput') private mobileSearchInput?: ElementRef<HTMLInputElement>;
+
   isLoggedIn$ = this.authService.currentUser$.pipe(
     map(user => user !== null && user !== undefined)
   );
@@ -670,6 +672,11 @@ export class StorefrontHeaderComponent {
 
   toggleSearch(): void {
     this.searchOpen = !this.searchOpen;
+  }
+
+  openMobileSearch(): void {
+    this.searchOpen = true;
+    window.setTimeout(() => this.mobileSearchInput?.nativeElement.focus(), 350);
   }
 
   closeSearch(): void {
