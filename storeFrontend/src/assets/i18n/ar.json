@@ -455,6 +455,8 @@
     "order": "استفسر"
   },
   "storefront": {
+    "maintenanceTitle": "المتجر قيد الصيانة",
+    "maintenanceMessage": "متجرنا قيد الصيانة حالياً. يرجى العودة قريباً.",
     "storeCurrency": "عملة المتجر",
     "currencyFixedByMerchant": "يتم عرض الأسعار بالعملة المحددة من قبل التاجر.",
     "searchResults": "نتائج البحث",

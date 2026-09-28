@@ -11,6 +11,9 @@ export interface SubdomainInfo {
   storeId: number | null;
   storeName: string | null;
   slug: string | null;
+  maintenanceEnabled?: boolean;
+  maintenanceMode?: 'DEFAULT' | 'CUSTOM_IMAGE' | null;
+  maintenanceImageUrl?: string | null;
 }
 
 @Injectable({
@@ -208,7 +211,10 @@ export class SubdomainService {
             subdomain: info.subdomain,
             storeId: response.storeId,
             storeName: response.name,
-            slug: response.slug
+            slug: response.slug,
+            maintenanceEnabled: response.maintenanceEnabled === true,
+            maintenanceMode: response.maintenanceMode ?? 'DEFAULT',
+            maintenanceImageUrl: response.maintenanceImageUrl ?? null
           };
           return this.subdomainInfo;
         }),

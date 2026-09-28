@@ -1222,6 +1222,8 @@
     "order": "Anfragen"
   },
   "storefront": {
+    "maintenanceTitle": "Wartungsarbeiten",
+    "maintenanceMessage": "Unser Shop wird gerade gewartet. Bitte schau bald wieder vorbei.",
     "storeCurrency": "Store-Währung",
     "currencyFixedByMerchant": "Die Preise werden in der vom Händler festgelegten Währung angezeigt.",
     "searchResults": "Suchergebnisse",
