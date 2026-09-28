@@ -23,6 +23,10 @@ export class SubdomainService {
   private baseDomain = 'markt.ma';
   private subdomainInfo: SubdomainInfo | null = null;
 
+  get isMaintenanceEnabled(): boolean {
+    return this.subdomainInfo?.maintenanceEnabled === true;
+  }
+
   // NEUE: Liste der reservierten/technischen Subdomains, die NICHT als Stores erstellt werden können
   private readonly RESERVED_SLUGS = [
     // Technische Subdomains

@@ -10,6 +10,7 @@ import { WhatsappConfigService } from './core/services/whatsapp-config.service';
 import { TranslationService } from './core/services/translation.service';
 import { PwaUpdateService } from './core/services/pwa-update.service';
 import { AppAccessService } from './core/services/app-access.service';
+import { SubdomainService } from './core/services/subdomain.service';
 import { environment } from '@env/environment';
 import { ChatbotWidgetComponent } from './components/chatbot-widget/chatbot-widget.component';
 import { WhatsappWidgetComponent } from './components/whatsapp-widget/whatsapp-widget.component';
@@ -39,7 +40,7 @@ import { PwaUpdateBannerComponent } from './shared/components/pwa-update-banner/
     </ng-template>
 
     <app-chatbot-widget *ngIf="showChatbotWidget"></app-chatbot-widget>
-    <app-whatsapp-widget *ngIf="showWhatsappWidget"></app-whatsapp-widget>
+    <app-whatsapp-widget *ngIf="showWhatsappWidget && !subdomainService.isMaintenanceEnabled"></app-whatsapp-widget>
     <app-fab-host></app-fab-host>
     <app-preview-panel></app-preview-panel>
   `,
@@ -263,7 +264,8 @@ export class AppComponent implements OnInit {
     private whatsappConfig: WhatsappConfigService,
     private translationService: TranslationService,
     private pwaUpdate: PwaUpdateService,
-    private appAccessService: AppAccessService
+    private appAccessService: AppAccessService,
+    public subdomainService: SubdomainService
   ) {
     // ✅ Effect: Bei Sprachwechsel WhatsApp-Nachricht aktualisieren
     effect(() => {
