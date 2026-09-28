@@ -24,7 +24,9 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(const MarktShopPreviewApp());
 
-    await tester.tap(find.byTooltip('In den Warenkorb').first);
+    final addButton = find.byTooltip('In den Warenkorb').first;
+    await tester.ensureVisible(addButton);
+    await tester.tap(addButton);
     await tester.pump();
 
     expect(find.text('1'), findsOneWidget);
