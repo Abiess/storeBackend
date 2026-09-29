@@ -59,7 +59,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Shop-Daten konnten nicht geladen werden'), findsOneWidget);
+    expect(find.textContaining('Die Shop-Daten konnten nicht geladen werden'), findsOneWidget);
     expect(find.text('Erneut laden'), findsOneWidget);
   });
 }
