@@ -51,6 +51,9 @@ public class PublicStoreService {
             store.getLogoUrl(),
             domain.getHost(),
             store.getStatus().name(),
+            store.getCustomerAccountMode() != null
+                ? store.getCustomerAccountMode().name()
+                : storebackend.enums.CustomerAccountMode.PUBLIC_REGISTRATION.name(),
             store.getWhatsappNumber(),
             store.getGreetingMessage(),
             store.getContactEmail(),
