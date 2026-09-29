@@ -272,7 +272,21 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     final products = _visibleProducts;
     return CustomScrollView(key: const ValueKey('shop-category-products'), slivers: [
       SliverAppBar(pinned: true, leading: IconButton(tooltip: 'Zurück zu Kategorien', onPressed: () => setState(() { _selectedCategory = null; _selectedTab = 1; }), icon: const Icon(Icons.arrow_back)), title: Text('${category.name} (${products.length} Artikel)'), centerTitle: true, backgroundColor: colors.surface),
-      SliverToBoxAdapter(child: SizedBox(height: 170, child: Center(child: SizedBox(width: 140, height: 140, child: ClipRRect(borderRadius: BorderRadius.circular(70), child: _categoryArtwork(category, colors))))),
+      SliverToBoxAdapter(
+        child: SizedBox(
+          height: 170,
+          child: Center(
+            child: SizedBox(
+              width: 140,
+              height: 140,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(70),
+                child: _categoryArtwork(category, colors),
+              ),
+            ),
+          ),
+        ),
+      ),
       SliverToBoxAdapter(child: Divider(height: 1, color: colors.outlineVariant)),
       SliverToBoxAdapter(child: ListTile(title: const Text('Alle Produkte anzeigen', style: TextStyle(fontWeight: FontWeight.w700)), trailing: Text('${products.length} Artikel', style: TextStyle(color: colors.primary)), onTap: () {})),
       SliverToBoxAdapter(child: Divider(height: 1, color: colors.outlineVariant)),
