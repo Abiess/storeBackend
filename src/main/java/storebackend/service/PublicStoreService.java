@@ -51,6 +51,7 @@ public class PublicStoreService {
             store.getLogoUrl(),
             domain.getHost(),
             store.getStatus().name(),
+            store.getCustomerAccountMode() != null ? store.getCustomerAccountMode().name() : null,
             store.getWhatsappNumber(),
             store.getGreetingMessage(),
             store.getContactEmail(),
