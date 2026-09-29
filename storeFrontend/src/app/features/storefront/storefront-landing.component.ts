@@ -106,6 +106,7 @@ export class StorefrontLandingComponent implements OnInit {
   bottomNavCategoryActive = false;
   bottomNavSearchActive = false;
   categorySheetOpen = false;
+  categoryTilesOpen = false;
 
   // ✨ NEUE: Slider State
   sliderImages: SliderImage[] = [];
@@ -214,7 +215,10 @@ export class StorefrontLandingComponent implements OnInit {
       const wasAuthenticated = this.inviteOnlyAuthenticated;
       this.inviteOnlyAuthenticated = this.authService.isLoggedInAsStoreCustomer(this.storeId);
       if (this.inviteOnlyAuthenticated && !wasAuthenticated) this.loadStorefrontContent();
-      if (!this.inviteOnlyAuthenticated && wasAuthenticated) this.loading = false;
+      if (!this.inviteOnlyAuthenticated && wasAuthenticated) {
+        this.categoryTilesOpen = false;
+        this.loading = false;
+      }
     });
 
     // ── Native App: Route-Param /s/:slug hat Vorrang vor Subdomain ──────────
@@ -746,13 +750,48 @@ export class StorefrontLandingComponent implements OnInit {
   /** Bottom-Nav: Kategorien-Button öffnet eine gut erreichbare Auswahl. */
   onBottomNavCategory(): void {
     this.bottomNavCategoryActive = true;
-    this.categorySheetOpen = true;
+    if (this.customerAccountMode === 'INVITE_ONLY') {
+      this.categoryTilesOpen = true;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      this.categorySheetOpen = true;
+    }
   }
 
   selectCategoryFromSheet(category: Category | null): void {
     this.categorySheetOpen = false;
+    this.categoryTilesOpen = false;
     this.bottomNavCategoryActive = false;
     this.filterByCategory(category);
+  }
+
+  onBottomNavHome(): void {
+    this.categoryTilesOpen = false;
+    this.categorySheetOpen = false;
+    this.bottomNavCategoryActive = false;
+    if (this.selectedCategory) this.filterByCategory(null);
+  }
+
+  categoryProductCount(category: Category): number {
+    return this.products.filter(product => product.categoryId === category.id).length;
+  }
+
+  categoryImage(category: Category): string | null {
+    const label = `${category.slug || ''} ${category.name}`.toLocaleLowerCase();
+    const illustrations: Array<[RegExp, string]> = [
+      [/backwaren|baeckerei|bäckerei/, 'backwaren'],
+      [/\bbrot\b|bread/, 'brot'],
+      [/chips|crisps/, 'chips'],
+      [/basar|bazar/, 'basar']
+    ];
+    const illustration = illustrations.find(([pattern]) => pattern.test(label));
+    if (illustration) return `assets/images/invite-category-${illustration[1]}.webp`;
+
+    const product = this.products.find(item => item.categoryId === category.id &&
+      (item.primaryImageUrl || item.media?.length || item.imageUrl));
+    if (!product) return null;
+    return product.primaryImageUrl || product.media?.find(media => media.isPrimary)?.url ||
+      product.media?.[0]?.url || product.imageUrl || null;
   }
 
   closeCategorySheet(): void {
@@ -762,6 +801,8 @@ export class StorefrontLandingComponent implements OnInit {
 
   /** Bottom-Nav: öffnet und fokussiert die mobile Suchleiste im Header. */
   onBottomNavSearch(): void {
+    this.categoryTilesOpen = false;
+    this.bottomNavCategoryActive = false;
     this.bottomNavSearchActive = true;
     this.storefrontHeader?.openMobileSearch();
   }
