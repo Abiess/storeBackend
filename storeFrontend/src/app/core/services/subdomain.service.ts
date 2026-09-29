@@ -14,6 +14,7 @@ export interface SubdomainInfo {
   maintenanceEnabled?: boolean;
   maintenanceMode?: 'DEFAULT' | 'CUSTOM_IMAGE' | null;
   maintenanceImageUrl?: string | null;
+  customerAccountMode?: 'PUBLIC_REGISTRATION' | 'INVITE_ONLY';
 }
 
 @Injectable({
@@ -229,7 +230,10 @@ export class SubdomainService {
             slug: response.slug,
             maintenanceEnabled: response.maintenanceEnabled === true,
             maintenanceMode: response.maintenanceMode ?? 'DEFAULT',
-            maintenanceImageUrl: response.maintenanceImageUrl ?? null
+            maintenanceImageUrl: response.maintenanceImageUrl ?? null,
+            customerAccountMode: ['PUBLIC_REGISTRATION', 'INVITE_ONLY'].includes(response.customerAccountMode)
+              ? response.customerAccountMode
+              : 'PUBLIC_REGISTRATION'
           };
           return this.subdomainInfo;
         }),

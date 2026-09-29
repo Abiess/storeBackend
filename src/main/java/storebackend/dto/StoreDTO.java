@@ -6,6 +6,7 @@ import storebackend.enums.BusinessType;
 import storebackend.enums.CurrencyCode;
 import storebackend.enums.PriceMode;
 import storebackend.enums.ShippingTaxStrategy;
+import storebackend.enums.CustomerAccountMode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,6 +20,7 @@ public class StoreDTO {
     private String logoUrl;
     private String bannerImageUrl;
     private StoreStatus status;
+    private CustomerAccountMode customerAccountMode;
     private LocalDateTime createdAt;
     private String whatsappNumber;
     private boolean whatsappNotificationsEnabled;

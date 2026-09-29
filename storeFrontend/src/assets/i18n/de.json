@@ -621,6 +621,13 @@
     "usage_domains": "Domains",
     "usage_customers": "Kunden",
     "general": "Allgemein",
+    "customerAccounts": {
+      "title": "Kundenkonten",
+      "mode": "Anmeldemodus",
+      "openRegistration": "Öffentlicher Shop: Login und Registrierung",
+      "loginOnly": "Geschlossener Shop: Nur Login für vom Admin eingerichtete Kunden",
+      "hint": "Im geschlossenen Modus müssen sich Kunden anmelden. Der Admin richtet Kunden-ID/Telefonnummer und Passwort ein."
+    },
     "slider": "Slider",
     "whatsapp": {
       "title": "WhatsApp-Kontakt",

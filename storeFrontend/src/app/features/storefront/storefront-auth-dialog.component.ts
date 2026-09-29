@@ -122,7 +122,7 @@ import { environment } from '../../../environments/environment';
           </button>
         </form>
         
-        <div class="toggle-mode">
+        <div class="toggle-mode" *ngIf="allowRegistration">
           <button type="button" (click)="toggleMode()" class="btn-link">
             {{ isLogin ? ('auth.noAccount' | translate) : ('auth.alreadyRegistered' | translate) }}
           </button>
@@ -288,6 +288,7 @@ import { environment } from '../../../environments/environment';
 })
 export class StorefrontAuthDialogComponent {
   @Input() isLogin = true;
+  @Input() allowRegistration = true;
   @Output() close = new EventEmitter<void>();
   @Output() success = new EventEmitter<void>();
 
@@ -387,6 +388,7 @@ export class StorefrontAuthDialogComponent {
   }
 
   toggleMode(): void {
+    if (!this.allowRegistration) return;
     this.isLogin = !this.isLogin;
     this.errorMessage = '';
     this.captchaToken = null;
@@ -584,4 +586,3 @@ export class StorefrontAuthDialogComponent {
     }
   }
 }
-

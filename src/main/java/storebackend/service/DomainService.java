@@ -174,6 +174,7 @@ public class DomainService {
                     dto.setLogoUrl(store.getLogoUrl());
                     dto.setPrimaryDomain(domain.getHost());
                     dto.setStatus(store.getStatus().name());
+                    dto.setCustomerAccountMode(store.getCustomerAccountMode().name());
                     dto.setWhatsappNumber(store.getWhatsappNumber());
                     dto.setGreetingMessage(store.getGreetingMessage());
                     dto.setContactEmail(store.getContactEmail());
@@ -252,6 +253,7 @@ public class DomainService {
                             dto.setLogoUrl(store.getLogoUrl());
                             dto.setPrimaryDomain(domain.getHost());
                             dto.setStatus(store.getStatus().name());
+                            dto.setCustomerAccountMode(store.getCustomerAccountMode().name());
                             dto.setWhatsappNumber(store.getWhatsappNumber());
                             dto.setGreetingMessage(store.getGreetingMessage());
                             dto.setContactEmail(store.getContactEmail());

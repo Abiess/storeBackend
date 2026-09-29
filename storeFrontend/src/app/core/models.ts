@@ -917,6 +917,8 @@ export enum BusinessType {
   SERVICE = 'SERVICE'
 }
 
+export type CustomerAccountMode = 'PUBLIC_REGISTRATION' | 'INVITE_ONLY';
+
 export interface Store {
   id: number;
   name: string;
@@ -928,6 +930,7 @@ export interface Store {
   owner?: User;
   userId?: number;
   status: StoreStatus;
+  customerAccountMode?: CustomerAccountMode;
   createdAt: string;
   updatedAt: string;
   /** WhatsApp-Kontaktnummer im internationalen Format, z. B. +212600123456 */
@@ -1015,6 +1018,7 @@ export interface PublicStore {
   description?: string;
   logoUrl?: string;
   maintenanceEnabled?: boolean;
+  customerAccountMode?: CustomerAccountMode;
   maintenanceMode?: 'DEFAULT' | 'CUSTOM_IMAGE';
   maintenanceImageUrl?: string;
   status: StoreStatus;

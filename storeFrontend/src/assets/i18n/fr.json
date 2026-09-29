@@ -431,6 +431,13 @@
     "usage_domains": "Domaines",
     "usage_customers": "Clients",
     "general": "Général",
+    "customerAccounts": {
+      "title": "Comptes clients",
+      "mode": "Mode d’accès client",
+      "openRegistration": "Boutique publique : connexion et inscription",
+      "loginOnly": "Boutique privée : connexion pour les clients invités",
+      "hint": "En mode privé, les clients doivent se connecter. L’administrateur crée leur identifiant/téléphone et leur mot de passe."
+    },
     "slider": "Curseur",
     "whatsapp": {
       "title": "Contact WhatsApp",

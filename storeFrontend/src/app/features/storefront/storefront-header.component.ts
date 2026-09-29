@@ -93,7 +93,7 @@ import { PromoBannerComponent } from '../../shared/components/promo-banner/promo
           </button>
 
           <!-- User Menu -->
-          <div *ngIf="isLoggedIn$ | async" class="user-menu-wrap">
+          <div *ngIf="(isLoggedIn$ | async)" class="user-menu-wrap">
             <button class="icon-btn user-btn" (click)="userMenuOpen = !userMenuOpen" type="button" [attr.aria-expanded]="userMenuOpen" aria-label="Mein Konto">
               <span class="user-avatar">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -155,6 +155,7 @@ import { PromoBannerComponent } from '../../shared/components/promo-banner/promo
     <app-storefront-auth-dialog
       *ngIf="showAuthDialog"
       [isLogin]="true"
+      [allowRegistration]="customerAccountMode === 'PUBLIC_REGISTRATION'"
       (close)="showAuthDialog = false"
       (success)="onAuthSuccess()">
     </app-storefront-auth-dialog>
@@ -619,6 +620,7 @@ export class StorefrontHeaderComponent {
   @Input() storeLogo: string | null = null;
   @Input() storeId!: number; // Neu: für promo-banner
   @Input() storeCurrencyCode: string = 'EUR'; // Währung des Stores
+  @Input() customerAccountMode: 'PUBLIC_REGISTRATION' | 'INVITE_ONLY' = 'PUBLIC_REGISTRATION';
   @Input() cartItemCount = 0;
   @Output() cartClick = new EventEmitter<void>();
   @Output() searchChange = new EventEmitter<string>();

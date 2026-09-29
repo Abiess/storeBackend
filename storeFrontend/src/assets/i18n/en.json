@@ -91,8 +91,7 @@
       "expiryDate": "Best Before Date / Expiry Date (e.g. 08/25/2026)"
     },
     "hint": {
-      "barcode": "EAN-13, UPC or other barcode standard. Can be entered manually or scanned.",
-      "expiryDate": "Optional: Current best-before date of product in stock. Can be updated when new stock arrives."
+      "priceZeroForService": "0 = On Request"
     },
     "variants": {
       "title": "Variants",
@@ -168,9 +167,6 @@
       "perPiece": "per piece",
       "total": "Total",
       "totalForQuantity": "Total for {{quantity}} pieces: {{total}} €"
-    },
-    "hint": {
-      "priceZeroForService": "0 = On Request"
     },
     "created": "Product successfully created!",
     "updated": "Product successfully updated!",
@@ -504,6 +500,13 @@
     "usage_domains": "Domains",
     "usage_customers": "Customers",
     "general": "General",
+    "customerAccounts": {
+      "title": "Customer accounts",
+      "mode": "Customer access mode",
+      "openRegistration": "Public shop: sign-in and registration",
+      "loginOnly": "Private shop: sign-in for admin-provisioned customers",
+      "hint": "In private mode, customers must sign in. The admin creates their customer ID/phone and password."
+    },
     "slider": "Slider",
     "whatsapp": {
       "title": "WhatsApp Contact",

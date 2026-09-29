@@ -1,5 +1,6 @@
 package storebackend.dto;
 
+import storebackend.enums.CustomerAccountMode;
 import lombok.Data;
 
 /**
@@ -19,6 +20,9 @@ public class UpdateStoreRequest {
 
     // Status – optional, null = nicht ändern
     private String status;
+
+    /** PUBLIC_REGISTRATION | INVITE_ONLY */
+    private CustomerAccountMode customerAccountMode;
 
     // WhatsApp-Kontaktdaten – optional, null = nicht ändern
     private String whatsappNumber;

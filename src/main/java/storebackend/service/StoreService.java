@@ -287,6 +287,10 @@ public class StoreService {
             store.setName(request.getName().trim());
         }
 
+        if (request.getCustomerAccountMode() != null) {
+            store.setCustomerAccountMode(request.getCustomerAccountMode());
+        }
+
         // Update slug if provided (optional beim Update)
         if (request.getSlug() != null && !request.getSlug().isEmpty()) {
             // Prüfe ob der neue Slug bereits von einem anderen Store verwendet wird
@@ -906,6 +910,7 @@ public class StoreService {
         dto.setName(store.getName());
         dto.setSlug(store.getSlug());
         dto.setStatus(store.getStatus());
+        dto.setCustomerAccountMode(store.getCustomerAccountMode());
         dto.setDescription(store.getDescription());
         dto.setCreatedAt(store.getCreatedAt());
         dto.setWhatsappNumber(store.getWhatsappNumber());
