@@ -256,6 +256,14 @@ public class WooCommerceController {
     // POST Import
     // ─────────────────────────────────────────────────────────────────────────
 
+    @PostMapping("/categories/sync")
+    public ResponseEntity<Map<String, Integer>> syncCategories(
+            @PathVariable Long storeId,
+            @AuthenticationPrincipal User user) {
+        verifyOwnership(storeId, user);
+        return ResponseEntity.ok(Map.of("categoryCount", importService.syncCategories(storeId)));
+    }
+
     @PostMapping("/import")
     public ResponseEntity<WooCommerceImportResponse> startImport(
             @PathVariable Long storeId,

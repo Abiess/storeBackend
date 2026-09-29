@@ -58,6 +58,7 @@ export class WooCommerceImportComponent implements OnInit {
   savingConfig: boolean = false;
   testingConnection: boolean = false;
   loadingPreview: boolean = false;
+  syncingCategories: boolean = false;
 
   // Test Result
   testResult: WooCommerceTestResponse | null = null;
@@ -245,6 +246,21 @@ export class WooCommerceImportComponent implements OnInit {
   // ─────────────────────────────────────────────────────────────────────────
   // Step 4: Import
   // ─────────────────────────────────────────────────────────────────────────
+
+  syncCategories(): void {
+    if (this.syncingCategories) return;
+    this.syncingCategories = true;
+    this.wooCommerceService.syncCategories(this.storeId).subscribe({
+      next: response => {
+        this.syncingCategories = false;
+        this.toastService.success(`${response.categoryCount} Kategorien synchronisiert. Unterkategorien und Bilder sind jetzt im Shop verfügbar.`);
+      },
+      error: () => {
+        this.syncingCategories = false;
+        this.toastService.error('Kategorien konnten nicht synchronisiert werden. Bitte die WooCommerce-Verbindung prüfen.');
+      }
+    });
+  }
 
   startImport(): void {
     if (!this.previewResult || this.importing) {

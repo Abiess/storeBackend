@@ -20,7 +20,7 @@ import java.util.*;
  * WooCommerce Import Service.
  * 
  * MVP Scope:
- * - Import categories (flat, no hierarchy)
+ * - Import categories with their parent hierarchy
  * - Import simple products (type=simple)
  * - Import variable products as base product (variants not yet supported)
  * - Import customers (with address)
@@ -31,7 +31,6 @@ import java.util.*;
  * 
  * NOT in MVP:
  * - Product variants (variable products imported without variants)
- * - Category hierarchy
  * - Update existing products
  * - Progress polling
  */
@@ -55,6 +54,16 @@ public class WooCommerceImportService {
 
     private static final String EXTERNAL_SOURCE = "WOOCOMMERCE";
     private static final int MAX_IMPORT_SIZE = 50; // MVP: max 50 products per import
+
+    /** Synchronizes categories without changing products or customer accounts. */
+    @Transactional
+    public int syncCategories(Long storeId) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new IllegalArgumentException("Store not found: " + storeId));
+        WooCommerceConfig config = configRepository.findByStoreId(storeId)
+                .orElseThrow(() -> new IllegalArgumentException("WooCommerce config not found for store " + storeId));
+        return importCategories(config, store, null).size();
+    }
 
     /**
      * Start import process.
@@ -214,7 +223,13 @@ public class WooCommerceImportService {
                 );
 
                 if (existing.isPresent()) {
-                    categoryMap.put(wooCategory.getId(), existing.get());
+                    Category category = existing.get();
+                    if ((category.getImageUrl() == null || category.getImageUrl().isBlank())
+                            && wooCategory.getImage() != null && wooCategory.getImage().getSrc() != null) {
+                        category.setImageUrl(wooCategory.getImage().getSrc());
+                        categoryRepository.save(category);
+                    }
+                    categoryMap.put(wooCategory.getId(), category);
                     log.debug("Category already exists: {}", wooCategory.getName());
                     continue;
                 }
@@ -230,8 +245,9 @@ public class WooCommerceImportService {
                 category.setExternalId(wooCategory.getId().toString());
                 category.setLastImportedAt(LocalDateTime.now());
 
-                // MVP: Flat categories, no parent
-                category.setParent(null);
+                if (wooCategory.getImage() != null) {
+                    category.setImageUrl(wooCategory.getImage().getSrc());
+                }
 
                 category = categoryRepository.save(category);
                 categoryMap.put(wooCategory.getId(), category);
@@ -239,9 +255,24 @@ public class WooCommerceImportService {
                 log.info("✅ Category imported: {}", category.getName());
             }
 
+            // Resolve parents after all categories exist; WooCommerce may return children first.
+            // Preserve parent assignments that an admin has already made in markt.ma.
+            for (WooCategoryDto wooCategory : wooCategories) {
+                Long parentId = wooCategory.getParent();
+                if (parentId == null || parentId == 0) continue;
+                Category child = categoryMap.get(wooCategory.getId());
+                Category parent = categoryMap.get(parentId);
+                if (child != null && parent != null && child.getParent() == null
+                        && !child.getId().equals(parent.getId())) {
+                    child.setParent(parent);
+                    categoryRepository.save(child);
+                }
+            }
+
             return categoryMap;
 
         } catch (Exception e) {
+            if (jobId == null) throw new IllegalStateException("Category sync failed", e);
             logWarning(jobId, "Category import failed: " + e.getMessage());
             return categoryMap; // Continue with empty category map
         }
