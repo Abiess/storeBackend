@@ -170,8 +170,10 @@ export class AuthService {
       { identifier, password }
     ).pipe(tap(response => {
       this.tokenCache = response.token;
-      this.currentUserSubject.next(response.user);
       this.storeCustomerStoreId = storeId;
+      // Emit only after the store scope is set so invite-only storefront
+      // subscribers can recognize this as a valid store customer session.
+      this.currentUserSubject.next(response.user);
       void this.storage.set('auth_token', response.token);
       void this.storage.set('currentUser', JSON.stringify(response.user));
       void this.storage.set('store_customer_store_id', String(storeId));
