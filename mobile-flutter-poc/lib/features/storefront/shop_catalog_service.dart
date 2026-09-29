@@ -147,16 +147,20 @@ class ShopStore {
 }
 
 class ShopCategory {
-  const ShopCategory({required this.id, required this.name, required this.slug});
+  const ShopCategory({required this.id, required this.name, required this.slug, this.parentId, this.imageUrl});
 
   final int id;
   final String name;
   final String slug;
+  final int? parentId;
+  final String? imageUrl;
 
   factory ShopCategory.fromJson(Map<String, dynamic> json) => ShopCategory(
         id: _readInt(json['id']),
         name: json['name'] as String? ?? '',
         slug: json['slug'] as String? ?? '',
+        parentId: json['parentId'] == null ? null : _readInt(json['parentId']),
+        imageUrl: _readString(json['imageUrl']),
       );
 }
 

@@ -18,7 +18,7 @@ void main() {
 
     expect(requests, [
       '/api/public/store/by-slug/spm',
-      '/api/stores/130/categories/root',
+      '/api/stores/130/categories',
       '/api/stores/130/products',
     ]);
     expect(find.text('SPM Shop'), findsOneWidget);
@@ -90,14 +90,40 @@ void main() {
     expect(logins, ['130:C-AB12CD34:secret123']);
     expect(requests, [
       '/api/public/store/by-slug/spm',
-      '/api/stores/130/categories/root',
+      '/api/stores/130/categories',
       '/api/stores/130/products',
     ]);
     expect(find.text('Olivenöl'), findsOneWidget);
   });
+
+  testWidgets('shows child categories and filters products in the chosen branch', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MarktShopPreviewApp(catalogService: _service([], withSubcategories: true), storeSlug: 'spm'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('nav-Kategorien')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('category-card-Extra Virgin')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('category-card-Oliven')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('subcategory-Extra Virgin')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('subcategory-Extra Virgin')));
+    await tester.pumpAndSettle();
+    expect(find.text('Olivenöl'), findsOneWidget);
+    expect(find.text('Kompakte Kamera'), findsNothing);
+
+    await tester.tap(find.byTooltip('Zurück zu Kategorien'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('shop-category-all')));
+    await tester.pumpAndSettle();
+    expect(find.text('Olivenöl'), findsOneWidget);
+  });
 }
 
-ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION'}) {
+ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool withSubcategories = false}) {
   return ShopCatalogService(client: MockClient((request) async {
     requests.add(request.url.path);
     switch (request.url.path) {
@@ -109,10 +135,11 @@ ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC
           'currencyCode': 'MAD',
           'customerAccountMode': accountMode,
         }), 200);
-      case '/api/stores/130/categories/root':
+      case '/api/stores/130/categories':
         return http.Response(jsonEncode([
           {'id': 5, 'name': 'Oliven', 'slug': 'oliven'},
           {'id': 9, 'name': 'Elektronik', 'slug': 'elektronik'},
+          if (withSubcategories) {'id': 12, 'name': 'Extra Virgin', 'slug': 'extra-virgin', 'parentId': 5},
         ]), 200);
       case '/api/stores/130/products':
         return http.Response(jsonEncode([
@@ -120,7 +147,7 @@ ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC
             'id': 2,
             'title': 'Olivenöl',
             'basePrice': 12.5,
-            'categoryId': 5,
+            'categoryId': withSubcategories ? 12 : 5,
             'categoryName': 'Oliven',
             'isFeatured': true,
           },

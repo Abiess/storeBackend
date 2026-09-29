@@ -30,10 +30,31 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   int _selectedTab = 0;
   int _cartCount = 0;
   ShopCategory? _selectedCategory;
+  bool _showCategoryProducts = false;
   String _query = '';
 
   List<ShopCategory> get _categories => _catalog?.categories ?? const [];
+  List<ShopCategory> get _rootCategories => _categories.where((category) => category.parentId == null).toList();
   List<ShopProduct> get _products => _catalog?.products ?? const [];
+
+  List<ShopCategory> _childrenOf(ShopCategory category) =>
+      _categories.where((child) => child.parentId == category.id).toList();
+
+  Set<int> _categoryIdsUnder(ShopCategory category) {
+    final ids = <int>{category.id};
+    for (var changed = true; changed;) {
+      changed = false;
+      for (final child in _categories) {
+        if (ids.contains(child.parentId) && ids.add(child.id)) changed = true;
+      }
+    }
+    return ids;
+  }
+
+  int _productCount(ShopCategory category) {
+    final ids = _categoryIdsUnder(category);
+    return _products.where((product) => ids.contains(product.categoryId)).length;
+  }
 
   @override
   void initState() {
@@ -107,12 +128,15 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       _customerAuthenticated = false;
       _selectedTab = 0;
       _cartCount = 0;
+      _selectedCategory = null;
+      _showCategoryProducts = false;
     });
   }
 
   List<ShopProduct> get _visibleProducts {
+    final categoryIds = _selectedCategory == null ? null : _categoryIdsUnder(_selectedCategory!);
     return _products.where((product) {
-      final matchesCategory = _selectedCategory == null || product.categoryId == _selectedCategory!.id;
+      final matchesCategory = categoryIds == null || categoryIds.contains(product.categoryId);
       final matchesQuery = product.name.toLowerCase().contains(_query.trim().toLowerCase());
       return matchesCategory && matchesQuery;
     }).toList();
@@ -120,8 +144,11 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Scaffold(
+    final baseTheme = Theme.of(context);
+    final colors = _loginRequired
+        ? ColorScheme.fromSeed(seedColor: const Color(0xFF187A73), brightness: baseTheme.brightness)
+        : baseTheme.colorScheme;
+    return Theme(data: baseTheme.copyWith(colorScheme: colors), child: Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       body: SafeArea(
         child: _isLoading
@@ -133,7 +160,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
                 : _buildCurrentPage(colors),
       ),
       bottomNavigationBar: _loadError == null && (!_loginRequired || _customerAuthenticated) ? _buildBottomNavigation(colors) : null,
-    );
+    ));
   }
 
   Widget _buildLoadError(ColorScheme colors) {
@@ -243,7 +270,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     return Container(
       height: 196,
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), gradient: LinearGradient(colors: [colors.primary, Color.lerp(colors.primary, const Color(0xFF8F82EB), 0.55)!], begin: Alignment.bottomLeft, end: Alignment.topRight)),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), gradient: LinearGradient(colors: [colors.primary, Color.lerp(colors.primary, _loginRequired ? const Color(0xFF51A79D) : const Color(0xFF8F82EB), 0.55)!], begin: Alignment.bottomLeft, end: Alignment.topRight)),
       child: Stack(children: [
         Positioned(right: -24, bottom: -58, child: Container(width: 190, height: 190, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), shape: BoxShape.circle))),
         Positioned(right: 18, top: 20, child: Icon(Icons.shopping_bag_outlined, size: 88, color: Colors.white.withValues(alpha: 0.92))),
@@ -269,10 +296,10 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     return SizedBox(height: 125, child: ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       scrollDirection: Axis.horizontal,
-      itemCount: _categories.length,
+      itemCount: _rootCategories.length,
       separatorBuilder: (_, __) => const SizedBox(width: 12),
       itemBuilder: (context, index) {
-        final category = _categories[index];
+        final category = _rootCategories[index];
         return SizedBox(width: 104, child: InkWell(
           key: ValueKey('category-${category.name}'),
           borderRadius: BorderRadius.circular(14),
@@ -291,14 +318,14 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     return CustomScrollView(key: const ValueKey('shop-categories'), slivers: [
       SliverAppBar(pinned: true, title: const Text('Kategorien'), centerTitle: true, backgroundColor: colors.surface),
       SliverPadding(padding: const EdgeInsets.all(16), sliver: SliverGrid(
-        delegate: SliverChildBuilderDelegate((context, index) => _buildCategoryCard(_categories[index], colors), childCount: _categories.length),
+        delegate: SliverChildBuilderDelegate((context, index) => _buildCategoryCard(_rootCategories[index], colors), childCount: _rootCategories.length),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 14, crossAxisSpacing: 14, childAspectRatio: 0.78),
       )),
     ]);
   }
 
   Widget _buildCategoryCard(ShopCategory category, ColorScheme colors) {
-    final count = _products.where((p) => p.categoryId == category.id).length;
+    final count = _productCount(category);
     return Card(margin: EdgeInsets.zero, color: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: colors.outlineVariant)), clipBehavior: Clip.antiAlias, child: InkWell(
       key: ValueKey('category-card-${category.name}'),
       onTap: () => _openCategory(category),
@@ -319,8 +346,10 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   Widget _buildCategoryProductsPage(ColorScheme colors) {
     final category = _categories.firstWhere((item) => item.id == _selectedCategory!.id);
     final products = _visibleProducts;
+    final children = _childrenOf(category);
+    final showProducts = children.isEmpty || _showCategoryProducts;
     return CustomScrollView(key: const ValueKey('shop-category-products'), slivers: [
-      SliverAppBar(pinned: true, leading: IconButton(tooltip: 'Zurück zu Kategorien', onPressed: () => setState(() { _selectedCategory = null; _selectedTab = 1; }), icon: const Icon(Icons.arrow_back)), title: Text('${category.name} (${products.length} Artikel)'), centerTitle: true, backgroundColor: colors.surface),
+      SliverAppBar(pinned: true, leading: IconButton(tooltip: 'Zurück zu Kategorien', onPressed: _backFromCategory, icon: const Icon(Icons.arrow_back)), title: Text('${category.name} (${products.length} Artikel)'), centerTitle: true, backgroundColor: colors.surface),
       SliverToBoxAdapter(
         child: SizedBox(
           height: 170,
@@ -337,9 +366,24 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         ),
       ),
       SliverToBoxAdapter(child: Divider(height: 1, color: colors.outlineVariant)),
-      SliverToBoxAdapter(child: ListTile(title: const Text('Alle Produkte anzeigen', style: TextStyle(fontWeight: FontWeight.w700)), trailing: Text('${products.length} Artikel', style: TextStyle(color: colors.primary)), onTap: () {})),
-      SliverToBoxAdapter(child: Divider(height: 1, color: colors.outlineVariant)),
-      if (products.isEmpty)
+      if (children.isNotEmpty) ...[
+        SliverToBoxAdapter(child: ListTile(key: const ValueKey('shop-category-all'), title: Text(_showCategoryProducts ? 'Unterkategorien anzeigen' : 'Alle Produkte anzeigen', style: const TextStyle(fontWeight: FontWeight.w700)), trailing: Text('${products.length} Artikel', style: TextStyle(color: colors.primary)), onTap: () => setState(() => _showCategoryProducts = !_showCategoryProducts))),
+        SliverToBoxAdapter(child: Divider(height: 1, color: colors.outlineVariant)),
+      ],
+      if (!showProducts)
+        SliverList(delegate: SliverChildBuilderDelegate((context, index) {
+          final child = children[index];
+          return ListTile(
+            key: ValueKey('subcategory-${child.name}'),
+            tileColor: colors.surface,
+            leading: SizedBox(width: 64, height: 64, child: _categoryArtwork(child, colors)),
+            title: Text(child.name),
+            subtitle: Text('${_productCount(child)} Artikel'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _openCategory(child),
+          );
+        }, childCount: children.length))
+      else if (products.isEmpty)
         const SliverFillRemaining(hasScrollBody: false, child: Center(child: Text('Keine Produkte gefunden')))
       else
         SliverList(delegate: SliverChildBuilderDelegate((context, index) => _buildProductRow(products[index], colors), childCount: products.length)),
@@ -370,7 +414,11 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   }
 
   Widget _categoryArtwork(ShopCategory category, ColorScheme colors) {
-    final matches = _products.where((product) => product.categoryId == category.id && product.imageUrl != null);
+    if (category.imageUrl != null) {
+      return _networkImage(category.imageUrl!, colors, _categoryIcon(category.name), fit: BoxFit.contain);
+    }
+    final ids = _categoryIdsUnder(category);
+    final matches = _products.where((product) => ids.contains(product.categoryId) && product.imageUrl != null);
     if (matches.isNotEmpty) {
       return _networkImage(matches.first.imageUrl!, colors, _categoryIcon(category.name), fit: BoxFit.cover);
     }
@@ -483,6 +531,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
           return Expanded(child: InkWell(key: ValueKey('nav-${labels[index]}'), onTap: () => setState(() {
             _selectedTab = switch (index) { 0 => 1, 1 => 2, 2 => 0, _ => index };
             _selectedCategory = null;
+            _showCategoryProducts = false;
           }), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Icon(icons[index], color: selected ? colors.primary : colors.onSurfaceVariant, size: index == 2 ? 26 : 22),
         const SizedBox(height: 3),
@@ -491,7 +540,13 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     })))));
   }
 
-  void _openCategory(ShopCategory category) => setState(() { _selectedCategory = category; _selectedTab = 1; _query = ''; });
+  void _openCategory(ShopCategory category) => setState(() { _selectedCategory = category; _selectedTab = 1; _showCategoryProducts = false; _query = ''; });
+
+  void _backFromCategory() => setState(() {
+    final parentId = _selectedCategory?.parentId;
+    _selectedCategory = parentId == null ? null : _categories.where((category) => category.id == parentId).firstOrNull;
+    _showCategoryProducts = false;
+  });
 
   void _addToCart() => setState(() => _cartCount++);
 }

@@ -48,7 +48,7 @@ class ApiConfig {
       '/public/store/by-slug/${Uri.encodeComponent(slug)}';
 
   static String publicStoreCategoriesPath(int storeId) =>
-      '/stores/$storeId/categories/root';
+      '/stores/$storeId/categories';
 
   static String publicStoreProductsPath(int storeId) =>
       '/stores/$storeId/products';

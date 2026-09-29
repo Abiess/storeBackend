@@ -7,6 +7,19 @@ import 'package:markt_ma_documents_poc/config/api_config.dart';
 import 'package:markt_ma_documents_poc/features/storefront/shop_catalog_service.dart';
 
 void main() {
+  test('reads parent and uploaded image from the category API', () {
+    final category = ShopCategory.fromJson({
+      'id': 12,
+      'name': 'Extra Virgin',
+      'slug': 'extra-virgin',
+      'parentId': 5,
+      'imageUrl': 'https://minio.markt.ma/category.jpg',
+    });
+
+    expect(category.parentId, 5);
+    expect(category.imageUrl, 'https://minio.markt.ma/category.jpg');
+  });
+
   test('customer login posts store-scoped identifier and saves the returned token', () async {
     late Uri calledUri;
     late Map<String, dynamic> sentBody;
