@@ -1,6 +1,7 @@
 package storebackend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -34,6 +35,14 @@ public class Category {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Category parent;
+
+    @JsonProperty("parentId")
+    public Long getParentId() {
+        return parent == null ? null : parent.getId();
+    }
+
+    @Column(name = "image_url", length = 2048)
+    private String imageUrl;
 
     @Column(nullable = false)
     private Integer sortOrder = 0;

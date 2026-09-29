@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CategoryService } from '@app/core/services/category.service';
+import { MediaService } from '@app/core/services/media.service';
 import { StoreContextService } from '@app/core/services/store-context.service';
 import { Category } from '@app/core/models';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
@@ -66,6 +67,16 @@ import { Subscription } from 'rxjs';
             ></textarea>
           </div>
 
+          <div class="form-group">
+            <label for="categoryImage">Kategoriebild</label>
+            <div class="category-image-preview" *ngIf="categoryForm.value.imageUrl">
+              <img [src]="categoryForm.value.imageUrl" alt="Vorschau des Kategoriebildes">
+              <button type="button" class="btn-secondary" (click)="categoryForm.patchValue({imageUrl: null})">Bild entfernen</button>
+            </div>
+            <input id="categoryImage" type="file" accept="image/*" (change)="uploadImage($event)" [disabled]="uploadingImage">
+            <p class="form-hint">{{ uploadingImage ? 'Bild wird hochgeladen…' : 'Optional. Ein eigenes Bild erscheint bei der Kategorie und ihren Unterkategorien.' }}</p>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label for="parentId">{{ 'category.parent.label' | translate }}</label>
@@ -98,7 +109,7 @@ import { Subscription } from 'rxjs';
           <button 
             type="submit" 
             class="btn-primary"
-            [disabled]="categoryForm.invalid || saving"
+            [disabled]="categoryForm.invalid || saving || uploadingImage"
           >
             {{ saving ? ('common.saving' | translate) : ((isEditMode ? 'category.update' : 'category.create') | translate) }}
           </button>
@@ -133,6 +144,8 @@ import { Subscription } from 'rxjs';
       flex-direction: column;
       gap: 1.5rem;
     }
+    .category-image-preview { display: flex; align-items: center; gap: 1rem; margin-bottom: .75rem; }
+    .category-image-preview img { width: 100px; height: 100px; object-fit: contain; border-radius: 10px; background: #f4f7f6; }
 
     /* Mobile Responsive (category-specific) */
     @media (max-width: 768px) {
@@ -150,6 +163,7 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
   categoryId?: number;
   isEditMode = false;
   saving = false;
+  uploadingImage = false;
   successMessage = '';
   errorMessage = '';
   headerActions: HeaderAction[] = [];
@@ -160,6 +174,7 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private categoryService: CategoryService,
+    private mediaService: MediaService,
     private translationService: TranslationService,
     private storeContext: StoreContextService
   ) {
@@ -167,6 +182,7 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
       name: ['', Validators.required],
       slug: ['', [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)]],
       description: [''],
+      imageUrl: [null],
       parentId: [null],
       sortOrder: [0, [Validators.min(0)]]
     });
@@ -234,9 +250,7 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
 
     this.categoryService.getCategories(this.storeId).subscribe({
       next: (categories) => {
-        this.availableParentCategories = categories.filter(
-          cat => !this.categoryId || cat.id !== this.categoryId
-        );
+        this.availableParentCategories = categories.filter(cat => !cat.parentId && cat.id !== this.categoryId);
 
         if (this.isEditMode && this.categoryId) {
           this.loadCategory(this.categoryId);
@@ -266,6 +280,7 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
           name: category.name,
           slug: category.slug,
           description: category.description,
+          imageUrl: category.imageUrl,
           parentId: category.parentId,
           sortOrder: category.sortOrder
         });
@@ -279,7 +294,28 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
     });
   }
 
+  uploadImage(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || this.storeId === null) return;
+    this.uploadingImage = true;
+    this.errorMessage = '';
+    this.mediaService.uploadMedia(this.storeId, file, 'IMAGE').subscribe({
+      next: response => {
+        this.categoryForm.patchValue({ imageUrl: response.url });
+        this.uploadingImage = false;
+        input.value = '';
+      },
+      error: () => {
+        this.errorMessage = 'Das Bild konnte nicht hochgeladen werden.';
+        this.uploadingImage = false;
+        input.value = '';
+      }
+    });
+  }
+
   onSubmit(): void {
+    if (this.uploadingImage) return;
     if (this.categoryForm.invalid) {
       Object.keys(this.categoryForm.controls).forEach(key => {
         this.categoryForm.get(key)?.markAsTouched();
@@ -298,7 +334,7 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
 
     const formData = {
       ...this.categoryForm.value,
-      parentId: this.categoryForm.value.parentId || undefined
+      parentId: this.categoryForm.value.parentId ?? null
     };
 
     if (this.isEditMode && this.categoryId) {

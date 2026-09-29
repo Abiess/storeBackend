@@ -1807,7 +1807,7 @@ import { environment } from '@env/environment';
     .sandbox-warning strong {
       color: #d32f2f;
     }
-    .checkout-container.invite-only .btn-submit { background: #c90020; border-color: #c90020; }
+    .checkout-container.invite-only .btn-submit { background: #187a73; border-color: #187a73; }
   `]
 })
 export class CheckoutComponent implements OnInit, OnDestroy {

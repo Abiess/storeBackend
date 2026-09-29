@@ -365,6 +365,7 @@ CREATE TABLE IF NOT EXISTS categories (
     parent_id BIGINT,
     sort_order INTEGER NOT NULL DEFAULT 0,
     description TEXT,
+    image_url VARCHAR(2048),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_categories_store FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,

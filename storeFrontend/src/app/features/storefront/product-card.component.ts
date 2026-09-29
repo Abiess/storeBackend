@@ -481,10 +481,10 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
     }
 
     :host-context(.invite-only-storefront) {
-      .btn-add-cart, .btn-add-cart:hover:not(:disabled), .badge-new, .badge-sale { background: #c90020; }
-      .btn-add-cart { box-shadow: 0 4px 14px #c9002044; }
-      .btn-add-cart:hover:not(:disabled) { box-shadow: 0 6px 20px #c9002066; }
-      .image-placeholder { background: #fff5f6; color: #c90020; }
+      .btn-add-cart, .btn-add-cart:hover:not(:disabled), .badge-new, .badge-sale { background: #187a73; }
+      .btn-add-cart { box-shadow: 0 4px 14px #187a7344; }
+      .btn-add-cart:hover:not(:disabled) { box-shadow: 0 6px 20px #187a7366; }
+      .image-placeholder { background: #edf7f4; color: #187a73; }
     }
   `]
 })

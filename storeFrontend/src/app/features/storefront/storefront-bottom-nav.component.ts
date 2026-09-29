@@ -150,8 +150,8 @@ import { AuthService } from '@app/core/services/auth.service';
       .nav-item.active {
         color: #667eea;
       }
-      .invite-only .nav-item.active { color: #c90020; }
-      .invite-only .nav-item.active .nav-icon-box { background: #c900201a; }
+      .invite-only .nav-item.active { color: #187a73; }
+      .invite-only .nav-item.active .nav-icon-box { background: #187a731a; }
       
       .nav-item.router-active {
         color: #667eea;
@@ -297,16 +297,16 @@ import { AuthService } from '@app/core/services/auth.service';
       }
 
       .invite-only .nav-item.router-active,
-      .invite-only .nav-item-cart .nav-label { color: #c90020; }
+      .invite-only .nav-item-cart .nav-label { color: #187a73; }
       .invite-only .nav-item.active::before,
-      .invite-only .nav-item.router-active::before { background: #c90020; }
+      .invite-only .nav-item.router-active::before { background: #187a73; }
       .invite-only .nav-item.active .nav-icon-box,
-      .invite-only .nav-item.router-active .nav-icon-box { background: #c900201a; }
+      .invite-only .nav-item.router-active .nav-icon-box { background: #187a731a; }
       .invite-only .nav-item.active .nav-icon-box svg,
-      .invite-only .nav-item.router-active .nav-icon-box svg { stroke: #c90020; }
-      .invite-only .cart-float-btn { background: #c90020; box-shadow: 0 4px 16px #c9002055; }
-      .invite-only .cart-ring { border-color: #c9002066; }
-      .invite-only .nav-badge { background: #c90020; }
+      .invite-only .nav-item.router-active .nav-icon-box svg { stroke: #187a73; }
+      .invite-only .cart-float-btn { background: #187a73; box-shadow: 0 4px 16px #187a7355; }
+      .invite-only .cart-ring { border-color: #187a7366; }
+      .invite-only .nav-badge { background: #187a73; }
       .invite-only .nav-item:first-child.router-active:not(.active) { color: #94a3b8; }
       .invite-only .nav-item:first-child.router-active:not(.active)::before { display: none; }
       .invite-only .nav-item:first-child.router-active:not(.active) .nav-icon-box { background: none; transform: none; }
