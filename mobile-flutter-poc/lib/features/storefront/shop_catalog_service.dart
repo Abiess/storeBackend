@@ -3,19 +3,26 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../config/api_config.dart';
+import '../../models/auth_response.dart';
+import '../../services/token_storage.dart';
 
-/// Read-only access to the existing public Storefront APIs.
-///
-/// This deliberately adds no Backend endpoints and sends no customer token.
+/// Store metadata/catalog access plus login to the existing invited-customer endpoint.
 class ShopCatalogService {
   ShopCatalogService({http.Client? client}) : _client = client ?? http.Client();
 
   final http.Client _client;
 
   Future<ShopCatalog> loadStore(String slug) async {
-    final storeJson = await _get(ApiConfig.publicStoreBySlugPath(slug));
-    final store = ShopStore.fromJson(storeJson as Map<String, dynamic>);
+    final store = await loadStoreMetadata(slug);
+    return loadCatalog(store);
+  }
 
+  Future<ShopStore> loadStoreMetadata(String slug) async {
+    final storeJson = await _get(ApiConfig.publicStoreBySlugPath(slug));
+    return ShopStore.fromJson(storeJson as Map<String, dynamic>);
+  }
+
+  Future<ShopCatalog> loadCatalog(ShopStore store) async {
     final responses = await Future.wait([
       _get(ApiConfig.publicStoreCategoriesPath(store.id)),
       _get(ApiConfig.publicStoreProductsPath(store.id)),
@@ -35,6 +42,38 @@ class ShopCatalogService {
     );
   }
 
+  Future<AuthResponse> loginCustomer({
+    required int storeId,
+    required String identifier,
+    required String password,
+    Future<void> Function(String token)? saveToken,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/public/stores/$storeId/customer-login');
+    final response = await _client.post(
+      uri,
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'identifier': identifier, 'password': password}),
+    );
+    if (response.statusCode != 200) {
+      if (response.statusCode == 401) {
+        throw const ShopCatalogException('Kunden-ID/Telefonnummer oder Passwort ist falsch.', statusCode: 401);
+      }
+      if (response.statusCode == 429) {
+        throw const ShopCatalogException('Zu viele Anmeldeversuche. Bitte später erneut versuchen.', statusCode: 429);
+      }
+      throw ShopCatalogException(_extractMessage(response.body), statusCode: response.statusCode);
+    }
+    try {
+      final auth = AuthResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      await (saveToken ?? TokenStorage.instance.saveToken)(auth.token);
+      return auth;
+    } on FormatException {
+      throw const ShopCatalogException('Das Backend hat eine ungültige Login-Antwort geliefert.');
+    }
+  }
+
+  Future<void> logoutCustomer() => TokenStorage.instance.clearToken();
+
   Future<dynamic> _get(String path) async {
     final response = await _client.get(Uri.parse('${ApiConfig.baseUrl}$path'));
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -47,6 +86,15 @@ class ShopCatalogService {
       return jsonDecode(response.body);
     } on FormatException {
       throw const ShopCatalogException('Das Backend hat ungültige Shop-Daten geliefert.');
+    }
+  }
+
+  String _extractMessage(String body) {
+    try {
+      return (jsonDecode(body) as Map<String, dynamic>)['message'] as String? ??
+          'Anmeldung fehlgeschlagen. Prüfe Kunden-ID/Telefonnummer und Passwort.';
+    } on FormatException {
+      return 'Anmeldung fehlgeschlagen. Prüfe Kunden-ID/Telefonnummer und Passwort.';
     }
   }
 
@@ -72,13 +120,21 @@ class ShopCatalog {
 }
 
 class ShopStore {
-  const ShopStore({required this.id, required this.name, required this.slug, this.logoUrl, this.currencyCode = 'EUR'});
+  const ShopStore({
+    required this.id,
+    required this.name,
+    required this.slug,
+    this.logoUrl,
+    this.currencyCode = 'EUR',
+    this.customerAccountMode = 'PUBLIC_REGISTRATION',
+  });
 
   final int id;
   final String name;
   final String slug;
   final String? logoUrl;
   final String currencyCode;
+  final String customerAccountMode;
 
   factory ShopStore.fromJson(Map<String, dynamic> json) => ShopStore(
         id: _readInt(json['storeId'] ?? json['id']),
@@ -86,6 +142,7 @@ class ShopStore {
         slug: json['slug'] as String? ?? '',
         logoUrl: _readString(json['logoUrl']),
         currencyCode: json['currencyCode'] as String? ?? 'EUR',
+        customerAccountMode: json['customerAccountMode'] as String? ?? 'PUBLIC_REGISTRATION',
       );
 }
 

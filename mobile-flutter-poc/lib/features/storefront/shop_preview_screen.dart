@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../../config/api_config.dart';
+import 'shop_customer_login_screen.dart';
 import 'shop_catalog_service.dart';
+
+typedef ShopCustomerLogin = Future<void> Function(int storeId, String identifier, String password);
 
 /// Customer storefront preview backed by the existing public catalog APIs.
 class ShopPreviewScreen extends StatefulWidget {
-  const ShopPreviewScreen({super.key, this.catalogService, this.storeSlug = ApiConfig.shopStoreSlug});
+  const ShopPreviewScreen({super.key, this.catalogService, this.customerLogin, this.storeSlug = ApiConfig.shopStoreSlug});
 
   final ShopCatalogService? catalogService;
+  final ShopCustomerLogin? customerLogin;
   final String storeSlug;
 
   @override
@@ -18,8 +22,11 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   late final ShopCatalogService _catalogService;
   late final bool _ownsCatalogService;
   ShopCatalog? _catalog;
+  ShopStore? _store;
   Object? _loadError;
   bool _isLoading = true;
+  bool _loginRequired = false;
+  bool _customerAuthenticated = false;
   int _selectedTab = 0;
   int _cartCount = 0;
   ShopCategory? _selectedCategory;
@@ -48,9 +55,20 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       _loadError = null;
     });
     try {
-      final catalog = await _catalogService.loadStore(widget.storeSlug);
+      final store = await _catalogService.loadStoreMetadata(widget.storeSlug);
+      if (store.customerAccountMode == 'INVITE_ONLY') {
+        if (!mounted) return;
+        setState(() {
+          _store = store;
+          _loginRequired = true;
+          _isLoading = false;
+        });
+        return;
+      }
+      final catalog = await _catalogService.loadCatalog(store);
       if (!mounted) return;
       setState(() {
+        _store = store;
         _catalog = catalog;
         _isLoading = false;
       });
@@ -61,6 +79,35 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _loginCustomer(String identifier, String password) async {
+    final store = _store;
+    if (store == null) throw StateError('Store-Information fehlt.');
+    final login = widget.customerLogin;
+    if (login != null) {
+      await login(store.id, identifier, password);
+    } else {
+      await _catalogService.loginCustomer(storeId: store.id, identifier: identifier, password: password);
+    }
+    final catalog = await _catalogService.loadCatalog(store);
+    if (!mounted) return;
+    setState(() {
+      _catalog = catalog;
+      _customerAuthenticated = true;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _logoutCustomer() async {
+    await _catalogService.logoutCustomer();
+    if (!mounted) return;
+    setState(() {
+      _catalog = null;
+      _customerAuthenticated = false;
+      _selectedTab = 0;
+      _cartCount = 0;
+    });
   }
 
   List<ShopProduct> get _visibleProducts {
@@ -81,9 +128,11 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             ? const Center(child: CircularProgressIndicator())
             : _loadError != null
                 ? _buildLoadError(colors)
+                : _loginRequired && !_customerAuthenticated
+                    ? ShopCustomerLoginScreen(storeName: _store?.name ?? 'Shop', onLogin: _loginCustomer)
                 : _buildCurrentPage(colors),
       ),
-      bottomNavigationBar: _loadError == null ? _buildBottomNavigation(colors) : null,
+      bottomNavigationBar: _loadError == null && (!_loginRequired || _customerAuthenticated) ? _buildBottomNavigation(colors) : null,
     );
   }
 
@@ -411,7 +460,14 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     ]);
   }
 
-  Widget _buildMorePage() => Column(children: [AppBar(title: const Text('Mehr'), centerTitle: true), const Expanded(child: Center(child: Text('Weitere Shop-Funktionen folgen.')))]);
+  Widget _buildMorePage() => Column(children: [
+        AppBar(title: const Text('Mehr'), centerTitle: true),
+        if (_loginRequired) ...[
+          ListTile(leading: const Icon(Icons.person_outline), title: Text(_store?.name ?? 'Kundenkonto')),
+          ListTile(key: const ValueKey('shop-logout'), leading: const Icon(Icons.logout), title: const Text('Abmelden'), onTap: _logoutCustomer),
+        ] else
+          const Expanded(child: Center(child: Text('Weitere Shop-Funktionen folgen.'))),
+      ]);
 
   Widget _buildBottomNavigation(ColorScheme colors) {
     const labels = ['Kategorien', 'Suche', 'Start', 'Warenkorb', 'Mehr'];

@@ -15,9 +15,10 @@ void main() {
 }
 
 class MarktShopPreviewApp extends StatelessWidget {
-  const MarktShopPreviewApp({super.key, this.catalogService, this.storeSlug});
+  const MarktShopPreviewApp({super.key, this.catalogService, this.customerLogin, this.storeSlug});
 
   final ShopCatalogService? catalogService;
+  final ShopCustomerLogin? customerLogin;
   final String? storeSlug;
 
   @override
@@ -30,6 +31,7 @@ class MarktShopPreviewApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       home: ShopPreviewScreen(
         catalogService: catalogService,
+        customerLogin: customerLogin,
         storeSlug: storeSlug ?? ApiConfig.shopStoreSlug,
       ),
     );
