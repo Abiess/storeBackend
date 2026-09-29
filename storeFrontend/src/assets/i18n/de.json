@@ -3363,6 +3363,25 @@
       "laterAriaLabel": "Update später durchführen"
     }
   },
+  "adminCustomerAccounts": {
+    "title": "Kundenkonten",
+    "subtitle": "Zugangsdaten für Kunden dieses Stores erstellen.",
+    "inviteOnlyRequired": "Stelle zuerst in den Store-Einstellungen den Anmeldemodus auf „Nur eingeladene Kunden“.",
+    "settingsLink": "Store-Einstellungen öffnen",
+    "name": "Kundenname",
+    "phone": "Telefonnummer",
+    "phoneHint": "Optional. Kunden können sich mit der Telefonnummer oder der Kunden-ID anmelden.",
+    "password": "Passwort",
+    "passwordHint": "Mindestens 8 Zeichen. Dieses Passwort gibst du dem Kunden weiter.",
+    "create": "Kundenkonto erstellen",
+    "createdTitle": "Kundenkonto erstellt",
+    "shareHint": "Teile diese Zugangsdaten sicher mit dem Kunden. Das Passwort wird nicht erneut vom Server abgerufen.",
+    "loginId": "Kunden-ID",
+    "copy": "Zugangsdaten kopieren",
+    "copied": "Zugangsdaten kopiert",
+    "createError": "Kundenkonto konnte nicht angelegt werden.",
+    "copyError": "Kopieren war nicht möglich. Bitte die Zugangsdaten manuell übernehmen."
+  },
   "sidebarAdmin": {
     "aria": {
       "mainNavigation": "Hauptnavigation",
