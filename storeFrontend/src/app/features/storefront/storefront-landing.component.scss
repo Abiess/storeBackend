@@ -43,6 +43,15 @@
   --t-spring: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+.storefront-wrapper.invite-only-storefront {
+  --primary: #c90020;
+  --primary-dark: #a9001b;
+  --accent: #c90020;
+  --gradient-main: #c90020;
+  --gradient-warm: #c90020;
+  --gradient-cool: #c90020;
+}
+
 /* ════════════════════════════════════════
    STICKY HEADER WRAPPER
    ════════════════════════════════════════ */
@@ -1065,13 +1074,14 @@
   margin-top: .75rem;
   border: 0;
   border-radius: .5rem;
-  background: #4f46e5;
+  background: #c90020;
   color: #fff;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
 .invite-only-login-card button:disabled { opacity: .6; cursor: wait; }
+.invite-only-login-card input:focus { border-color: #c90020; outline-color: #c90020; }
 .invite-only-login-error { color: #b91c1c; margin: .25rem 0; }
 
 .storefront-resolution-loading {

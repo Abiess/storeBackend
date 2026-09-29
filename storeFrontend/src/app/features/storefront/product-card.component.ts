@@ -479,6 +479,13 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       .image-count { left: auto; right: 14px; }
       .product-footer { flex-direction: row-reverse; }
     }
+
+    :host-context(.invite-only-storefront) {
+      .btn-add-cart, .btn-add-cart:hover:not(:disabled), .badge-new, .badge-sale { background: #c90020; }
+      .btn-add-cart { box-shadow: 0 4px 14px #c9002044; }
+      .btn-add-cart:hover:not(:disabled) { box-shadow: 0 6px 20px #c9002066; }
+      .image-placeholder { background: #fff5f6; color: #c90020; }
+    }
   `]
 })
 export class ProductCardComponent {

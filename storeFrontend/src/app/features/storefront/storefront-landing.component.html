@@ -64,7 +64,7 @@
 <app-store-not-found *ngIf="storeNotFound"></app-store-not-found>
 
 <!-- Normaler Store-Inhalt -->
-<div *ngIf="storeResolutionComplete && !storeNotFound && !maintenanceEnabled && (customerAccountMode !== 'INVITE_ONLY' || inviteOnlyAuthenticated)" class="storefront-wrapper">
+<div *ngIf="storeResolutionComplete && !storeNotFound && !maintenanceEnabled && (customerAccountMode !== 'INVITE_ONLY' || inviteOnlyAuthenticated)" class="storefront-wrapper" [class.invite-only-storefront]="customerAccountMode === 'INVITE_ONLY'">
   <!-- Sticky Header mit Store-Name und Warenkorb -->
   <!-- ✅ Nur für normale Shop-Templates, NICHT für Full-Page-Templates (SERVICE_PROFESSIONAL) -->
   <div class="sticky-header" *ngIf="!isServiceMode">

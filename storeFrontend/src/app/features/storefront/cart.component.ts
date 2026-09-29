@@ -9,12 +9,13 @@ import { TranslatePipe } from '../../core/pipes/translate.pipe';
 import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quantity-stepper.component';
 
 import { Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'app-cart',
     imports: [CommonModule, FormsModule, TranslatePipe, QuantityStepperComponent],
     template: `
-    <div class="cart-page">
+    <div class="cart-page" [class.invite-only]="inviteOnlyMode">
 
       <!-- ── Sticky Header ───────────────────────── -->
       <div class="cart-header">
@@ -897,6 +898,12 @@ import { Subscription } from 'rxjs';
       transition: transform 0.2s, box-shadow 0.2s;
     }
     .btn-primary:hover { transform: translateY(-2px); }
+    .cart-page.invite-only {
+      .back-btn, .unit-price, .line-total { color: #c90020; }
+      .item-badge, .btn-shop-now, .btn-checkout, .btn-checkout-mobile,
+      .progress-fill, .qty-btn:hover:not(:disabled) { background: #c90020; }
+      .total-amount, .mobile-bar-amount { background: none; color: #c90020; -webkit-text-fill-color: #c90020; }
+    }
   `]
 })
 export class CartComponent implements OnInit, OnDestroy {
@@ -905,6 +912,7 @@ export class CartComponent implements OnInit, OnDestroy {
   updatingItem: number | null = null;
   shipping = 4.99;
   storeId: number | null = null;
+  inviteOnlyMode = false;
   toast: string | null = null;
   private toastTimeout: any;
   
@@ -921,6 +929,12 @@ export class CartComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const subdomainInfo = this.subdomainService.getSubdomainInfo();
+    this.inviteOnlyMode = subdomainInfo?.customerAccountMode === 'INVITE_ONLY';
+    if (!subdomainInfo?.customerAccountMode) {
+      this.subdomainService.resolveStore().pipe(take(1)).subscribe({
+        next: info => { this.inviteOnlyMode = info.customerAccountMode === 'INVITE_ONLY'; }
+      });
+    }
     if (subdomainInfo?.storeId) {
       this.storeId = subdomainInfo.storeId;
     } else {

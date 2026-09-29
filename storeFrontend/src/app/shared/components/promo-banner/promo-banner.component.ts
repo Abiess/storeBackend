@@ -34,8 +34,8 @@ import { Renderer2, Inject } from '@angular/core';
       class="promo-banner"
       [class.banner-top]="settings.position !== 'bottom'"
       [class.banner-bottom]="settings.position === 'bottom'"
-      [style.background]="settings.bgColor"
-      [style.color]="settings.textColor"
+      [style.background]="inviteOnlyMode ? '#c90020' : settings.bgColor"
+      [style.color]="inviteOnlyMode ? '#ffffff' : settings.textColor"
       role="banner"
       aria-live="polite">
 
@@ -44,7 +44,7 @@ import { Renderer2, Inject } from '@angular/core';
         <div
           class="banner-track"
           [style.animation-duration.s]="animDuration"
-          [style.--banner-bg]="settings.bgColor">
+          [style.--banner-bg]="inviteOnlyMode ? '#c90020' : settings.bgColor">
           <span class="banner-content">
             <span *ngIf="settings.icon" class="banner-icon" aria-hidden="true">{{ settings.icon }}&nbsp;</span>
             {{ displayText }}
@@ -59,7 +59,7 @@ import { Renderer2, Inject } from '@angular/core';
       <button
         class="banner-close"
         (click)="dismiss()"
-        [style.color]="settings.textColor"
+        [style.color]="inviteOnlyMode ? '#ffffff' : settings.textColor"
         aria-label="Banner schließen"
         title="Schließen">
         ✕
@@ -173,6 +173,7 @@ import { Renderer2, Inject } from '@angular/core';
 export class PromoBannerComponent implements OnInit, OnDestroy {
 
   @Input() storeId!: number;
+  @Input() inviteOnlyMode = false;
 
   /** Immer mit sicheren Defaults initialisiert – niemals null/undefined */
   settings: BannerSettings = this.defaultSettings();
