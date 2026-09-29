@@ -62,9 +62,42 @@ void main() {
     expect(find.textContaining('Die Shop-Daten konnten nicht geladen werden'), findsOneWidget);
     expect(find.text('Erneut laden'), findsOneWidget);
   });
+
+  testWidgets('invite-only store shows login before fetching categories or products', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final requests = <String>[];
+    final logins = <String>[];
+    await tester.pumpWidget(MarktShopPreviewApp(
+      catalogService: _service(requests, accountMode: 'INVITE_ONLY'),
+      storeSlug: 'spm',
+      customerLogin: (storeId, identifier, password) async {
+        logins.add('$storeId:$identifier:$password');
+      },
+    ));
+    await tester.pumpAndSettle();
+
+    expect(requests, ['/api/public/store/by-slug/spm']);
+    expect(find.byKey(const ValueKey('shop-login-submit')), findsOneWidget);
+    expect(find.text('Registrieren'), findsNothing);
+    expect(find.text('Olivenöl'), findsNothing);
+
+    await tester.enterText(find.byKey(const ValueKey('shop-login-identifier')), 'C-AB12CD34');
+    await tester.enterText(find.byKey(const ValueKey('shop-login-password')), 'secret123');
+    await tester.tap(find.byKey(const ValueKey('shop-login-submit')));
+    await tester.pumpAndSettle();
+
+    expect(logins, ['130:C-AB12CD34:secret123']);
+    expect(requests, [
+      '/api/public/store/by-slug/spm',
+      '/api/stores/130/categories/root',
+      '/api/stores/130/products',
+    ]);
+    expect(find.text('Olivenöl'), findsOneWidget);
+  });
 }
 
-ShopCatalogService _service(List<String> requests) {
+ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION'}) {
   return ShopCatalogService(client: MockClient((request) async {
     requests.add(request.url.path);
     switch (request.url.path) {
@@ -74,6 +107,7 @@ ShopCatalogService _service(List<String> requests) {
           'name': 'SPM Shop',
           'slug': 'spm',
           'currencyCode': 'MAD',
+          'customerAccountMode': accountMode,
         }), 200);
       case '/api/stores/130/categories/root':
         return http.Response(jsonEncode([
