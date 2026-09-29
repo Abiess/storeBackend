@@ -4243,5 +4243,16 @@
       "social": "Social Media",
       "rights": "All rights reserved."
     }
+  },
+  "inviteOnlyOrder": {
+    "pageTitle": "Order request",
+    "requestTitle": "Send order request",
+    "requestHint": "Send your product list to the store. The team will review it and prepare your order. No payment is taken now.",
+    "noteLabel": "Message to the store (optional)",
+    "notePlaceholder": "For example, preferred pickup time or a question",
+    "sendRequest": "Send product list",
+    "loginRequired": "Please sign in with your prepared store account.",
+    "sentTitle": "Request sent",
+    "sentMessage": "Your product list was sent to the store. The team will contact you when your order is prepared."
   }
 }

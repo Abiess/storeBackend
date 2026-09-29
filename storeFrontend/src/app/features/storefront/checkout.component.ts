@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { CartService, Cart } from '../../core/services/cart.service';
 import { CheckoutService } from '../../core/services/checkout.service';
 import { AuthService } from '../../core/services/auth.service';
+import { TranslationService } from '../../core/services/translation.service';
 import { CustomerProfileService, SaveAddressRequest } from '../../core/services/customer-profile.service';
 import { SubdomainService } from '../../core/services/subdomain.service';
 import { CouponInputComponent } from '../../shared/components/coupon-input/coupon-input.component';
@@ -40,13 +41,13 @@ import { environment } from '@env/environment';
     template: `
     <div class="checkout-container">
       <app-page-header
-        [title]="'checkout.title'"
+        [title]="inviteOnlyMode ? 'inviteOnlyOrder.pageTitle' : 'checkout.title'"
         [showBackButton]="true"
         [backButtonText]="'checkout.back'"
         [actions]="headerActions"
       ></app-page-header>
 
-      <div class="step-indicator">
+      <div *ngIf="!inviteOnlyMode" class="step-indicator">
         <div class="step completed">
           <div class="step-number">✓</div>
           <div class="step-label">{{ 'checkout.step1' | translate }}</div>
@@ -63,7 +64,7 @@ import { environment } from '@env/environment';
         </div>
       </div>
 
-      <div *ngIf="!isUserLoggedIn() && !loading && cart && cart.items.length > 0" class="guest-login-hint">
+      <div *ngIf="!inviteOnlyMode && !isUserLoggedIn() && !loading && cart && cart.items.length > 0" class="guest-login-hint">
         <div class="hint-content">
           <div class="hint-icon">👤</div>
           <div class="hint-text">
@@ -80,7 +81,7 @@ import { environment } from '@env/environment';
         </div>
       </div>
 
-      <div *ngIf="isUserLoggedIn() && !loading && cart && cart.items.length > 0" class="logged-in-banner">
+      <div *ngIf="!inviteOnlyMode && isUserLoggedIn() && !loading && cart && cart.items.length > 0" class="logged-in-banner">
         <div class="banner-content">
           <span class="banner-icon">✅</span>
           <span class="banner-text">
@@ -104,6 +105,15 @@ import { environment } from '@env/environment';
       <div *ngIf="!loading && cart && cart.items.length > 0" class="checkout-content">
         <div class="checkout-form">
           <form [formGroup]="checkoutForm" (ngSubmit)="submitOrder()">
+            <section *ngIf="inviteOnlyMode" class="form-section invite-order-request">
+              <h2>{{ 'inviteOnlyOrder.requestTitle' | translate }}</h2>
+              <p>{{ 'inviteOnlyOrder.requestHint' | translate }}</p>
+              <label for="inviteOrderNotes">{{ 'inviteOnlyOrder.noteLabel' | translate }}</label>
+              <textarea id="inviteOrderNotes" formControlName="notes" rows="3"
+                [placeholder]="'inviteOnlyOrder.notePlaceholder' | translate"></textarea>
+            </section>
+
+            <ng-container *ngIf="!inviteOnlyMode">
             <section class="form-section">
               <h2>{{ 'checkout.contactInfo' | translate }}</h2>
               <div class="form-group">
@@ -323,7 +333,7 @@ import { environment } from '@env/environment';
                   <div class="delivery-price">
                     <span class="free-badge">{{ 'checkout.free' | translate }}</span>
                   </div>
-                  <div class="delivery-check" *ngIf="selectedDeliveryType === 'PICKUP'">✓</div>
+                  <div class="delivery-check" *ngIf="!inviteOnlyMode && selectedDeliveryType === 'PICKUP'">✓</div>
                 </label>
 
                 <!-- DHL Versand Option (wenn verfügbar) -->
@@ -438,13 +448,14 @@ import { environment } from '@env/environment';
                 <p class="help-text">{{ 'checkout.saveAddressHint' | translate }}</p>
               </div>
             </section>
+            </ng-container>
 
             <div *ngIf="errorMessage" class="alert alert-error">
               {{ errorMessage }}
             </div>
 
             <!-- PayPal-Button-Bereich -->
-            <div *ngIf="selectedPaymentMethod === 'PAYPAL'" class="paypal-checkout-section">
+            <div *ngIf="!inviteOnlyMode && selectedPaymentMethod === 'PAYPAL'" class="paypal-checkout-section">
               <!-- Sandbox-Test-Hinweis -->
               <div *ngIf="isPayPalSandbox" class="sandbox-notice">
                 <div class="sandbox-notice-header">
@@ -511,12 +522,12 @@ import { environment } from '@env/environment';
 
             <!-- Normaler Submit-Button (nicht bei PayPal) -->
             <button
-              *ngIf="selectedPaymentMethod !== 'PAYPAL'"
+              *ngIf="inviteOnlyMode || selectedPaymentMethod !== 'PAYPAL'"
               type="submit"
               class="btn btn-primary btn-submit"
-              [disabled]="checkoutForm.invalid || submitting"
+              [disabled]="(!inviteOnlyMode && checkoutForm.invalid) || submitting"
             >
-              {{ submitting ? ('common.loading' | translate) : ('checkout.placeOrder' | translate) }}
+              {{ submitting ? ('common.loading' | translate) : (inviteOnlyMode ? ('inviteOnlyOrder.sendRequest' | translate) : ('checkout.placeOrder' | translate)) }}
             </button>
           </form>
         </div>
@@ -549,7 +560,7 @@ import { environment } from '@env/environment';
             </div>
           </div>
 
-          <div class="coupon-section">
+          <div class="coupon-section" *ngIf="!inviteOnlyMode">
             <app-coupon-input
               [storeId]="cart.storeId"
               [cart]="getCartData()"
@@ -569,12 +580,12 @@ import { environment } from '@env/environment';
               <span class="discount-value">-{{ discountAmount | number:'1.2-2' }} €</span>
             </div>
 
-            <div class="summary-row" *ngIf="selectedDeliveryType === 'DELIVERY' && selectedGlobalDeliveryOption">
+            <div class="summary-row" *ngIf="!inviteOnlyMode && selectedDeliveryType === 'DELIVERY' && selectedGlobalDeliveryOption">
               <span>🚚 {{ selectedGlobalDeliveryOption.name }}</span>
               <span *ngIf="selectedGlobalDeliveryOption.price === 0" class="free-shipping">{{ 'checkout.free' | translate }}</span>
               <span *ngIf="selectedGlobalDeliveryOption.price > 0">{{ selectedGlobalDeliveryOption.price | storeCurrency:storeCurrencyCode }}</span>
             </div>
-            <div class="summary-row" *ngIf="selectedDeliveryType === 'PICKUP'">
+            <div class="summary-row" *ngIf="!inviteOnlyMode && selectedDeliveryType === 'PICKUP'">
               <span>{{ 'checkout.pickupLabel' | translate }}</span>
               <span class="free-shipping">{{ 'checkout.free' | translate }}</span>
             </div>
@@ -1812,6 +1823,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     hasFreeShipping = false;
     saveAddressForFuture = false;
     storeId: number | null = null;
+    inviteOnlyMode = false;
     selectedPaymentMethod: string | null = 'CASH_ON_DELIVERY';
     paypalEnabled = false;  // PayPal nur anzeigen, wenn konfiguriert
     isPayPalSandbox = false;  // Sandbox-Modus-Flag
@@ -1880,6 +1892,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         private checkoutService: CheckoutService,
         private router: Router,
         private authService: AuthService,
+        private translationService: TranslationService,
         private customerProfileService: CustomerProfileService,
         private subdomainService: SubdomainService,
         private phoneVerificationService: PhoneVerificationService,
@@ -1920,6 +1933,12 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.subdomainService.resolveStore().subscribe(subdomainInfo => {
             if (subdomainInfo && subdomainInfo.storeId) {
                 this.storeId = subdomainInfo.storeId;
+                this.inviteOnlyMode = subdomainInfo.customerAccountMode === 'INVITE_ONLY';
+                if (this.inviteOnlyMode) {
+                    this.selectedPaymentMethod = 'ORDER_REQUEST';
+                    this.selectedShippingProvider = 'PICKUP';
+                    this.selectedDeliveryType = 'PICKUP';
+                }
                 
                 // Load full PublicStore data for DHL shipping info
                 // SubdomainService liefert nur minimales SubdomainInfo, nicht das volle PublicStore
@@ -1958,8 +1977,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 
                 this.loadCart();
                 
-                // PayPal config NACH storeId-Setzung laden
-                this.checkPayPalConfiguration();
+                // Invite-only customers submit a request and never see payment methods.
+                if (!this.inviteOnlyMode) {
+                    this.checkPayPalConfiguration();
+                }
             }
         });
 
@@ -2210,8 +2231,12 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
 
     submitOrder(): void {
-        if (this.checkoutForm.invalid || !this.cart) {
+        if ((!this.inviteOnlyMode && this.checkoutForm.invalid) || !this.cart) {
             this.checkoutForm.markAllAsTouched();
+            return;
+        }
+        if (this.inviteOnlyMode && !this.authService.isLoggedInAsStoreCustomer(this.cart.storeId)) {
+            this.errorMessage = this.translationService.translate('inviteOnlyOrder.loginRequired');
             return;
         }
 
@@ -2230,14 +2255,14 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         const request: any = {
             storeId: this.cart.storeId,
             customerEmail: customerEmail,
-            shippingAddress: formValue.shippingAddress,
-            billingAddress: this.sameAsShipping ? formValue.shippingAddress : formValue.billingAddress,
-            paymentMethod: this.selectedPaymentMethod,
+            shippingAddress: this.inviteOnlyMode ? {} : formValue.shippingAddress,
+            billingAddress: this.inviteOnlyMode ? {} : (this.sameAsShipping ? formValue.shippingAddress : formValue.billingAddress),
+            paymentMethod: this.inviteOnlyMode ? 'ORDER_REQUEST' : this.selectedPaymentMethod,
             // Shipping Provider: DHL, PICKUP, GLOBAL_DELIVERY
-            shippingProvider: this.selectedShippingProvider,
+            shippingProvider: this.inviteOnlyMode ? 'PICKUP' : this.selectedShippingProvider,
             // PICKUP oder globale Lieferoption
-            deliveryType: this.selectedDeliveryType === 'PICKUP' ? 'PICKUP' : (this.selectedGlobalDeliveryOption?.deliveryType || 'STANDARD'),
-            deliveryOptionId: this.selectedDeliveryType === 'PICKUP' ? null : (this.selectedGlobalDeliveryOption?.id || null),
+            deliveryType: this.inviteOnlyMode || this.selectedDeliveryType === 'PICKUP' ? 'PICKUP' : (this.selectedGlobalDeliveryOption?.deliveryType || 'STANDARD'),
+            deliveryOptionId: this.inviteOnlyMode || this.selectedDeliveryType === 'PICKUP' ? null : (this.selectedGlobalDeliveryOption?.id || null),
             deliveryMode: null
         };
 
@@ -2284,7 +2309,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 this.router.navigate(['/order-confirmation'], {
                     queryParams: {
                         orderNumber: response.orderNumber,
-                        email: emailForConfirmation
+                        email: emailForConfirmation,
+                        orderRequest: this.inviteOnlyMode ? 'true' : undefined
                     }
                 });
             },

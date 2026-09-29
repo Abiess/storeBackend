@@ -194,6 +194,12 @@ public class OrderService {
                 order.setStatus(OrderStatus.CONFIRMED);
                 order.setPaymentStatus(null); // Keine Online-Zahlung
                 break;
+
+            case ORDER_REQUEST:
+                // Invite-only: owner must confirm the request before stock is reserved.
+                order.setStatus(OrderStatus.PENDING);
+                order.setPaymentStatus(null);
+                break;
                 
             case BANK_TRANSFER:
                 // Banküberweisung: Wartet auf manuelle Bestätigung
@@ -504,15 +510,15 @@ public class OrderService {
         // Clear cart
         cartItemRepository.deleteByCartId(cartId);
 
-        // ─── EVENT/E-MAIL NUR BEI SOFORTIGER BESTÄTIGUNG ─────────────────────────
-        // Event nur publishen wenn Order sofort bestätigt wurde (COD/Cash)
-        // Bei PayPal: Event kommt erst nach Webhook (confirmPaymentAndOrder)
-        if (savedOrder.getStatus() == OrderStatus.CONFIRMED) {
+        // Notify the owner for immediate COD orders and invite-only requests.
+        // Invite-only requests stay PENDING and do not reserve inventory.
+        if (savedOrder.getStatus() == OrderStatus.CONFIRMED ||
+                savedOrder.getPaymentMethod() == storebackend.enums.PaymentMethod.ORDER_REQUEST) {
             eventPublisher.publishEvent(new OrderStatusChangedEvent(
                 this, 
                 savedOrder, 
                 null, 
-                OrderStatus.CONFIRMED
+                savedOrder.getStatus()
             ));
         }
 

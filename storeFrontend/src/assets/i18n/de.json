@@ -4280,5 +4280,16 @@
       "social": "Social Media",
       "rights": "Alle Rechte vorbehalten."
     }
+  },
+  "inviteOnlyOrder": {
+    "pageTitle": "Bestellanfrage",
+    "requestTitle": "Bestellanfrage senden",
+    "requestHint": "Sende deine Produktliste an den Store. Das Team prüft sie und bereitet deine Bestellung vor. Es wird noch nichts bezahlt.",
+    "noteLabel": "Nachricht an den Store (optional)",
+    "notePlaceholder": "Zum Beispiel: gewünschte Abholung oder Fragen",
+    "sendRequest": "Produktliste absenden",
+    "loginRequired": "Bitte melde dich mit deinem vorbereiteten Store-Konto an.",
+    "sentTitle": "Anfrage gesendet",
+    "sentMessage": "Deine Produktliste wurde an den Store gesendet. Das Team meldet sich, sobald deine Bestellung vorbereitet ist."
   }
 }

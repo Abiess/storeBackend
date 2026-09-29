@@ -6,6 +6,7 @@ public enum PaymentMethod {
     PAYPAL,
     STRIPE,
     CASH_ON_DELIVERY,
+    ORDER_REQUEST,  // Invite-only storefront: submit cart for store confirmation
     
     // POS Payment Methods
     CASH,           // POS Barzahlung vor Ort

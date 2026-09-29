@@ -3448,5 +3448,16 @@
       "social": "Réseaux sociaux",
       "rights": "Tous droits réservés."
     }
+  },
+  "inviteOnlyOrder": {
+    "pageTitle": "Demande de commande",
+    "requestTitle": "Envoyer une demande",
+    "requestHint": "Envoyez votre liste de produits au magasin. L’équipe la vérifiera et préparera votre commande. Aucun paiement ne sera effectué maintenant.",
+    "noteLabel": "Message au magasin (facultatif)",
+    "notePlaceholder": "Par exemple, heure de retrait souhaitée ou question",
+    "sendRequest": "Envoyer la liste",
+    "loginRequired": "Veuillez vous connecter avec le compte préparé par le magasin.",
+    "sentTitle": "Demande envoyée",
+    "sentMessage": "Votre liste a été envoyée au magasin. L’équipe vous contactera lorsque la commande sera prête."
   }
 }

@@ -54,7 +54,8 @@ public class OrderStatusEventListener {
             lang = order.getCustomer().getPreferredLanguage();
         }
 
-        if (customerEmail == null || customerEmail.isEmpty()) {
+        boolean inviteOnlyRequest = order.getPaymentMethod() == storebackend.enums.PaymentMethod.ORDER_REQUEST;
+        if ((customerEmail == null || customerEmail.isEmpty()) && !inviteOnlyRequest) {
             log.warn("Cannot send email – customer email is null for order: {}", orderNumber);
             return;
         }
@@ -90,14 +91,32 @@ public class OrderStatusEventListener {
             // Orders werden jetzt direkt mit CONFIRMED (COD/Cash) oder PENDING_PAYMENT (PayPal) erstellt
             // ═══════════════════════════════════════════════════════════════════════════
             case PENDING:
-                // Legacy-Support: Falls doch eine Order mit PENDING erstellt wird
-                log.debug("Order in PENDING status - usually skipped, Orders go directly to CONFIRMED or PENDING_PAYMENT");
+                if (inviteOnlyRequest) {
+                    String customerName = order.getCustomer() != null ? order.getCustomer().getName() : "Invited customer";
+                    String customerPhone = order.getShippingAddress() != null ? order.getShippingAddress().getPhone() : null;
+                    if (customerPhone != null && !customerPhone.isBlank()) {
+                        customerName += " (" + customerPhone + ")";
+                    }
+                    boolean sent = emailService.sendNewOrderNotificationToOwner(
+                        ownerEmail, ownerLang,
+                        orderNumber, storeName, storeLogo,
+                        order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0,
+                        null, customerName, "Order request", items
+                    );
+                    log.info("Invite-only order request notification {} for order {}", sent ? "sent" : "failed", orderNumber);
+                } else {
+                    log.debug("Order in PENDING status - no notification required");
+                }
                 break;
 
             // ═══════════════════════════════════════════════════════════════════════════
             // CONFIRMED: E-MAIL NUR BEI BESTÄTIGTER ZAHLUNG!
             // ═══════════════════════════════════════════════════════════════════════════
             case CONFIRMED:
+                if (inviteOnlyRequest) {
+                    log.info("Invite-only request {} was updated to {}; no customer email is sent", orderNumber, newStatus);
+                    break;
+                }
                 // ═══ IDEMPOTENZ-CHECK: E-Mail bereits versendet? ═══
                 if (order.getConfirmationEmailSent()) {
                     log.info("Confirmation email already sent for order {} (idempotent)", orderNumber);
