@@ -26,11 +26,11 @@ import { toDate } from '../../core/utils/date.utils';
       <div *ngIf="!loading && !error && order" class="confirmation-content">
         <div class="success-header">
           <div class="success-icon">✅</div>
-          <h1>{{ 'order.thankYou' | translate }}</h1>
+          <h1>{{ (isOrderRequest ? 'inviteOnlyOrder.sentTitle' : 'order.thankYou') | translate }}</h1>
           <p class="order-number">{{ 'order.numberLabel' | translate }} <strong>{{ order.orderNumber }}</strong></p>
           <p class="confirmation-text">
-            {{ 'order.confirmationText' | translate }}
-            <span *ngIf="order.customer?.email">
+            {{ (isOrderRequest ? 'inviteOnlyOrder.sentMessage' : 'order.confirmationText') | translate }}
+            <span *ngIf="!isOrderRequest && order.customer?.email">
               {{ 'order.emailSent' | translate: { email: order.customer?.email } }}
             </span>
           </p>
@@ -54,7 +54,7 @@ import { toDate } from '../../core/utils/date.utils';
                 {{ getStatusLabel(order.status) }}
               </span>
             </div>
-            <div class="detail-row" *ngIf="order.customer?.email">
+            <div class="detail-row" *ngIf="!isOrderRequest && order.customer?.email">
               <span>{{ 'order.customerEmail' | translate }}:</span>
               <strong>{{ order.customer?.email }}</strong>
             </div>
@@ -80,7 +80,7 @@ import { toDate } from '../../core/utils/date.utils';
             </div>
           </section>
 
-          <section class="details-section" *ngIf="order.shippingAddress">
+          <section class="details-section" *ngIf="!isOrderRequest && order.shippingAddress">
             <h2>{{ 'order.shippingAddress' | translate }}</h2>
             <address>
               {{ order.shippingAddress.firstName }} {{ order.shippingAddress.lastName }}<br>
@@ -92,7 +92,7 @@ import { toDate } from '../../core/utils/date.utils';
             </address>
           </section>
 
-          <section class="details-section" *ngIf="order.billingAddress">
+          <section class="details-section" *ngIf="!isOrderRequest && order.billingAddress">
             <h2>{{ 'order.billingAddress' | translate }}</h2>
             <address>
               {{ order.billingAddress.firstName }} {{ order.billingAddress.lastName }}<br>
@@ -332,6 +332,7 @@ export class OrderConfirmationComponent implements OnInit {
   order: OrderDetails | null = null;
   loading = false;
   error = '';
+  isOrderRequest = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -343,6 +344,7 @@ export class OrderConfirmationComponent implements OnInit {
   ngOnInit(): void {
     const orderNumber = this.route.snapshot.queryParams['orderNumber'];
     const email = this.route.snapshot.queryParams['email'];
+    this.isOrderRequest = this.route.snapshot.queryParams['orderRequest'] === 'true';
 
     if (!orderNumber || !email) {
       this.error = this.translationService.translate('order.missingInfo');

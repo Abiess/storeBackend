@@ -7,9 +7,15 @@ import org.springframework.web.bind.annotation.*;
 import storebackend.dto.OrderDetailsDTO;
 import storebackend.entity.CartItem;
 import storebackend.entity.Order;
+import storebackend.entity.Store;
+import storebackend.entity.CustomerProfile;
 import storebackend.repository.CartItemRepository;
 import storebackend.repository.CartRepository;
+import storebackend.repository.CustomerProfileRepository;
+import storebackend.repository.StoreRepository;
 import storebackend.service.OrderService;
+import storebackend.enums.CustomerAccountMode;
+import storebackend.enums.PaymentMethod;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +29,8 @@ public class PublicOrderController {
     private final OrderService orderService;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
+    private final CustomerProfileRepository customerProfileRepository;
+    private final StoreRepository storeRepository;
     private final storebackend.repository.UserRepository userRepository;
     private final storebackend.security.JwtUtil jwtUtil; // FIXED: JwtUtil für Token-Parsing
 
@@ -68,9 +76,32 @@ public class PublicOrderController {
 
             // Zahlungsmethode extrahieren
             String paymentMethodStr = (String) request.get("paymentMethod");
-            storebackend.enums.PaymentMethod paymentMethod = paymentMethodStr != null
-                ? storebackend.enums.PaymentMethod.valueOf(paymentMethodStr)
+            PaymentMethod paymentMethod = paymentMethodStr != null
+                ? PaymentMethod.valueOf(paymentMethodStr)
                 : null;
+
+            Store store = storeRepository.findById(storeId).orElse(null);
+            if (store == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Store not found"));
+            }
+            boolean inviteOnlyStore = store.getCustomerAccountMode() == CustomerAccountMode.INVITE_ONLY;
+            CustomerProfile invitedCustomer = null;
+            if (inviteOnlyStore) {
+                if (userId == null || isGuest) {
+                    return ResponseEntity.status(401).body(Map.of("error", "Customer sign-in is required"));
+                }
+                invitedCustomer = customerProfileRepository.findByUserIdAndStoreId(userId, storeId).orElse(null);
+                if (invitedCustomer == null) {
+                    return ResponseEntity.status(403).body(Map.of("error", "This customer account does not belong to the store"));
+                }
+                if (paymentMethod != PaymentMethod.ORDER_REQUEST) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Invite-only stores accept order requests only"));
+                }
+                // The synthetic login email is internal and must not come from client input.
+                customerEmail = email;
+            } else if (paymentMethod == PaymentMethod.ORDER_REQUEST) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Order requests are only available for invite-only stores"));
+            }
 
             // Phone Verification ID für Cash on Delivery
             Long phoneVerificationId = null;
@@ -155,9 +186,26 @@ public class PublicOrderController {
             }
 
             // Extract addresses
-            Map<String, String> shippingAddress = (Map<String, String>) request.get("shippingAddress");
-            Map<String, String> billingAddress = (Map<String, String>) request.get("billingAddress");
+            Map<String, String> shippingAddress = request.get("shippingAddress") instanceof Map<?, ?> rawShipping
+                ? (Map<String, String>) rawShipping : new HashMap<>();
+            Map<String, String> billingAddress = request.get("billingAddress") instanceof Map<?, ?> rawBilling
+                ? (Map<String, String>) rawBilling : new HashMap<>();
             String notes = (String) request.get("notes");
+
+            if (invitedCustomer != null) {
+                String customerName = invitedCustomer.getFirstName();
+                if (customerName == null || customerName.isBlank()) customerName = invitedCustomer.getUser().getName();
+                shippingAddress.putIfAbsent("firstName", customerName != null ? customerName : "");
+                shippingAddress.putIfAbsent("lastName", invitedCustomer.getLastName() != null ? invitedCustomer.getLastName() : "");
+                shippingAddress.putIfAbsent("phone", invitedCustomer.getPhone() != null ? invitedCustomer.getPhone() : "");
+                billingAddress.putAll(shippingAddress);
+                String customerContact = "Invite-only request from " + (customerName != null ? customerName : "customer")
+                    + (invitedCustomer.getLoginId() != null ? " (" + invitedCustomer.getLoginId() + ")" : "")
+                    + (invitedCustomer.getPhone() != null ? ", phone " + invitedCustomer.getPhone() : "");
+                notes = notes == null || notes.isBlank()
+                    ? customerContact
+                    : customerContact + "\n\nCustomer note: " + notes;
+            }
 
             // Extract delivery information – default: PICKUP wenn nicht angegeben
             storebackend.enums.DeliveryType deliveryType = storebackend.enums.DeliveryType.PICKUP;
