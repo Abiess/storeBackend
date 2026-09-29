@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../config/api_config.dart';
 import 'shop_catalog_service.dart';
+import 'shop_product_detail_screen.dart';
 
 /// Customer storefront preview backed by the existing public catalog APIs.
 class ShopPreviewScreen extends StatefulWidget {
@@ -300,21 +301,23 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
 
   Widget _buildProductRow(ShopProduct product, ColorScheme colors) {
     return Container(
+      key: ValueKey('product-row-${product.id}'),
       decoration: BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: colors.outlineVariant))),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       child: Column(children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          SizedBox(width: 94, height: 102, child: ClipRRect(borderRadius: BorderRadius.circular(10), child: _productArtwork(product, colors))),
-          const SizedBox(width: 14),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            if (product.isFeatured) Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('IM ANGEBOT', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700, fontSize: 12))),
-            Text(product.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
-            Text('AUF LAGER', style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.w700, fontSize: 12)),
-            const SizedBox(height: 8),
-            Text(_formatPrice(product), style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700, fontSize: 18)),
-          ])),
-        ]),
+        InkWell(
+          onTap: () => _openProduct(product),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SizedBox(width: 94, height: 102, child: ClipRRect(borderRadius: BorderRadius.circular(10), child: _productArtwork(product, colors))),
+            const SizedBox(width: 14),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (product.isFeatured) Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('IM ANGEBOT', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700, fontSize: 12))),
+              Text(product.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
+              Text(_formatPrice(product), style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700, fontSize: 18)),
+            ])),
+          ]),
+        ),
         Align(alignment: Alignment.centerRight, child: OutlinedButton.icon(onPressed: () => _addToCart(), icon: const Icon(Icons.add_shopping_cart), label: const Text('In den Warenkorb'))),
       ]),
     );
@@ -383,12 +386,16 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
 
   Widget _buildProductCard(ShopProduct product, ColorScheme colors) {
     return Card(margin: EdgeInsets.zero, color: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: colors.outlineVariant)), clipBehavior: Clip.antiAlias, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Expanded(child: Stack(fit: StackFit.expand, children: [
-        _productArtwork(product, colors),
-        if (product.isFeatured) const Positioned(left: 8, top: 8, child: _ProductBadge(label: 'Im Angebot')),
-      ])),
+      Expanded(child: InkWell(
+        key: ValueKey('product-card-${product.id}'),
+        onTap: () => _openProduct(product),
+        child: Stack(fit: StackFit.expand, children: [
+          _productArtwork(product, colors),
+          if (product.isFeatured) const Positioned(left: 8, top: 8, child: _ProductBadge(label: 'Im Angebot')),
+        ]),
+      )),
       Padding(padding: const EdgeInsets.fromLTRB(10, 9, 8, 8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+        InkWell(onTap: () => _openProduct(product), child: Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
         const SizedBox(height: 5),
         Row(children: [Expanded(child: Text(_formatPrice(product), style: TextStyle(color: colors.primary, fontWeight: FontWeight.w800))), IconButton(tooltip: 'In den Warenkorb', onPressed: _addToCart, icon: const Icon(Icons.add_circle), color: colors.primary, padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36, minHeight: 36))]),
       ])),
@@ -436,6 +443,17 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   }
 
   void _openCategory(ShopCategory category) => setState(() { _selectedCategory = category; _selectedTab = 1; _query = ''; });
+
+  void _openProduct(ShopProduct product) {
+    Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => ShopProductDetailScreen(
+        product: product,
+        formatPrice: _formatPrice,
+        resolveImageUrl: _absoluteImageUrl,
+        onAddToCart: _addToCart,
+      ),
+    ));
+  }
 
   void _addToCart() => setState(() => _cartCount++);
 }
