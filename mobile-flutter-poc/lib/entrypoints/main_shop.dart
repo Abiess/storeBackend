@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../config/api_config.dart';
 import '../features/storefront/shop_preview_screen.dart';
+import '../features/storefront/shop_catalog_service.dart';
 import '../theme/markt_theme.dart';
 
 /// Eigenständiger Einstiegspunkt für die öffentliche Flutter-Shop-Vorschau.
@@ -13,7 +15,10 @@ void main() {
 }
 
 class MarktShopPreviewApp extends StatelessWidget {
-  const MarktShopPreviewApp({super.key});
+  const MarktShopPreviewApp({super.key, this.catalogService, this.storeSlug});
+
+  final ShopCatalogService? catalogService;
+  final String? storeSlug;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +28,10 @@ class MarktShopPreviewApp extends StatelessWidget {
       theme: MarktTheme.light(),
       darkTheme: MarktTheme.dark(),
       themeMode: ThemeMode.system,
-      home: const ShopPreviewScreen(),
+      home: ShopPreviewScreen(
+        catalogService: catalogService,
+        storeSlug: storeSlug ?? ApiConfig.shopStoreSlug,
+      ),
     );
   }
 }

@@ -37,6 +37,22 @@ class ApiConfig {
     defaultValue: 'https://api.markt.ma/api',
   );
 
+  /// Shop-Builds koennen pro Store erzeugt werden, ohne Store-IDs im UI zu
+  /// hinterlegen. Beispiel: `--dart-define=MARKT_MA_SHOP_SLUG=marrakesch`.
+  static const String shopStoreSlug = String.fromEnvironment(
+    'MARKT_MA_SHOP_SLUG',
+    defaultValue: 'spm',
+  );
+
+  static String publicStoreBySlugPath(String slug) =>
+      '/public/store/by-slug/${Uri.encodeComponent(slug)}';
+
+  static String publicStoreCategoriesPath(int storeId) =>
+      '/stores/$storeId/categories/root';
+
+  static String publicStoreProductsPath(int storeId) =>
+      '/stores/$storeId/products';
+
   static const String loginPath = '/auth/login';
 
   /// Bestehender, unveraenderter Endpoint `GET /api/auth/me` (siehe
