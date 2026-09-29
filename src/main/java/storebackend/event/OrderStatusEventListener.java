@@ -93,9 +93,9 @@ public class OrderStatusEventListener {
             case PENDING:
                 if (inviteOnlyRequest) {
                     String customerName = order.getCustomer() != null ? order.getCustomer().getName() : "Invited customer";
-                    String customerPhone = order.getShippingAddress() != null ? order.getShippingAddress().getPhone() : null;
-                    if (customerPhone != null && !customerPhone.isBlank()) {
-                        customerName += " (" + customerPhone + ")";
+                    String requestCustomerPhone = order.getShippingAddress() != null ? order.getShippingAddress().getPhone() : null;
+                    if (requestCustomerPhone != null && !requestCustomerPhone.isBlank()) {
+                        customerName += " (" + requestCustomerPhone + ")";
                     }
                     boolean sent = emailService.sendNewOrderNotificationToOwner(
                         ownerEmail, ownerLang,
