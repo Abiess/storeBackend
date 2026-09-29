@@ -4291,5 +4291,30 @@
     "loginRequired": "Bitte melde dich mit deinem vorbereiteten Store-Konto an.",
     "sentTitle": "Anfrage gesendet",
     "sentMessage": "Deine Produktliste wurde an den Store gesendet. Das Team meldet sich, sobald deine Bestellung vorbereitet ist."
+  },
+  "inviteOrders": {
+    "title": "Aufträge",
+    "detailTitle": "Auftragsdetails",
+    "sent": "Gesendete Aufträge",
+    "more": "Mehr",
+    "back": "Zurück",
+    "loading": "Aufträge werden geladen…",
+    "loadError": "Aufträge konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "empty": "Du hast noch keine Aufträge gesendet.",
+    "itemCount": "{count} Artikel",
+    "items": "Artikel",
+    "quantity": "{count} Stück",
+    "perUnit": "pro Stück",
+    "total": "Gesamtbetrag",
+    "status": {
+      "pending": "Anfrage gesendet",
+      "confirmed": "Bestätigt",
+      "processing": "Wird vorbereitet",
+      "shipped": "Versandt",
+      "delivered": "Zugestellt",
+      "cancelled": "Storniert",
+      "other": "In Bearbeitung"
+    }
   }
 }

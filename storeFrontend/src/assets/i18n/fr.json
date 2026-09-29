@@ -3459,5 +3459,30 @@
     "loginRequired": "Veuillez vous connecter avec le compte préparé par le magasin.",
     "sentTitle": "Demande envoyée",
     "sentMessage": "Votre liste a été envoyée au magasin. L’équipe vous contactera lorsque la commande sera prête."
+  },
+  "inviteOrders": {
+    "title": "Commandes",
+    "detailTitle": "Détails de la commande",
+    "sent": "Commandes envoyées",
+    "more": "Plus",
+    "back": "Retour",
+    "loading": "Chargement des commandes…",
+    "loadError": "Impossible de charger les commandes.",
+    "retry": "Réessayer",
+    "empty": "Vous n’avez pas encore envoyé de commande.",
+    "itemCount": "{count} articles",
+    "items": "Articles",
+    "quantity": "{count} pièces",
+    "perUnit": "par pièce",
+    "total": "Total",
+    "status": {
+      "pending": "Demande envoyée",
+      "confirmed": "Confirmée",
+      "processing": "En préparation",
+      "shipped": "Expédiée",
+      "delivered": "Livrée",
+      "cancelled": "Annulée",
+      "other": "En cours"
+    }
   }
 }

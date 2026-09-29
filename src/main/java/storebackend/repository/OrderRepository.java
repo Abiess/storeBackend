@@ -20,6 +20,7 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByStoreIdOrderByCreatedAtDesc(Long storeId);
     List<Order> findByCustomerIdOrderByCreatedAtDesc(Long customerId);
+    List<Order> findByCustomerIdAndStoreIdOrderByCreatedAtDesc(Long customerId, Long storeId);
     List<Order> findByCustomerId(Long customerId);  // NEUE Methode für Order Tracking
     List<Order> findByStoreIdAndStatusOrderByCreatedAtDesc(Long storeId, OrderStatus status);
     Optional<Order> findByOrderNumber(String orderNumber);

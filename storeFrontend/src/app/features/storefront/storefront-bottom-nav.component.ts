@@ -13,7 +13,7 @@ import { AuthService } from '@app/core/services/auth.service';
     selector: 'app-storefront-bottom-nav',
     imports: [CommonModule, RouterModule, TranslatePipe],
     template: `
-    <nav class="bottom-nav" [class.rtl]="isRtl" role="navigation" aria-label="Hauptnavigation">
+    <nav class="bottom-nav" [class.rtl]="isRtl" [class.invite-only]="inviteOnlyMode" role="navigation" aria-label="Hauptnavigation">
 
       <!-- Home -->
       <a class="nav-item"
@@ -82,16 +82,20 @@ import { AuthService } from '@app/core/services/auth.service';
 
       <!-- Konto -->
       <button class="nav-item"
+              [class.active]="inviteOnlyMode && onInviteOrdersPage"
               (click)="onProfileClick()"
               type="button"
-              [attr.aria-label]="'navigation.myAccount' | translate">
+              [attr.aria-label]="(inviteOnlyMode ? 'inviteOrders.more' : 'navigation.myAccount') | translate">
         <span class="nav-icon-box">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <svg *ngIf="!inviteOnlyMode" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
             <circle cx="12" cy="7" r="4"/>
           </svg>
+          <svg *ngIf="inviteOnlyMode" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="20" cy="12" r="2"/>
+          </svg>
         </span>
-        <span class="nav-label">{{ 'navigation.myAccount' | translate }}</span>
+        <span class="nav-label">{{ (inviteOnlyMode ? 'inviteOrders.more' : 'navigation.myAccount') | translate }}</span>
       </button>
 
     </nav>
@@ -145,6 +149,8 @@ import { AuthService } from '@app/core/services/auth.service';
       .nav-item.active {
         color: #667eea;
       }
+      .invite-only .nav-item.active { color: #c90020; }
+      .invite-only .nav-item.active .nav-icon-box { background: #c900201a; }
       
       .nav-item.router-active {
         color: #667eea;
@@ -295,6 +301,7 @@ export class StorefrontBottomNavComponent {
   @Input() cartCount = 0;
   @Input() categoryActive = false;
   @Input() searchActive = false;
+  @Input() inviteOnlyMode = false;
 
   @Output() categoryClick = new EventEmitter<void>();
   @Output() searchClick = new EventEmitter<void>();
@@ -306,6 +313,10 @@ export class StorefrontBottomNavComponent {
   ) {}
 
   onProfileClick(): void {
+    if (this.inviteOnlyMode) {
+      this.router.navigate(['/storefront/orders']);
+      return;
+    }
     // Wenn eingeloggt → Profil, sonst → Login-Trigger
     if (this.authService.currentUserValue) {
       this.router.navigate(['/storefront/profile']);
@@ -316,5 +327,9 @@ export class StorefrontBottomNavComponent {
 
   get isRtl(): boolean {
     return document.documentElement.dir === 'rtl';
+  }
+
+  get onInviteOrdersPage(): boolean {
+    return this.router.url.startsWith('/storefront/orders');
   }
 }

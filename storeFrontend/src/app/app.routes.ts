@@ -693,6 +693,14 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'storefront/orders',
+    loadComponent: () => import('./features/storefront/invite-order-history.component').then(m => m.InviteOrderHistoryComponent)
+  },
+  {
+    path: 'storefront/orders/:orderNumber',
+    loadComponent: () => import('./features/storefront/invite-order-history.component').then(m => m.InviteOrderHistoryComponent)
+  },
+  {
     path: 'storefront/order-confirmation',
     loadComponent: () => import('./features/storefront/order-confirmation.component').then(m => m.OrderConfirmationComponent)
   },
