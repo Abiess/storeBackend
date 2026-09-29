@@ -479,6 +479,7 @@ export interface Category {
   name: string;
   slug: string;
   description?: string;
+  imageUrl?: string | null;
   sortOrder?: number;
   parentId?: number;
   parent?: Category;
@@ -493,6 +494,7 @@ export interface CreateCategoryRequest {
   name: string;
   slug?: string;
   description?: string;
+  imageUrl?: string | null;
   parentId?: number;
   sortOrder?: number;
 }

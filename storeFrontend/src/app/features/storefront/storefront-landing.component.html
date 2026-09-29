@@ -166,7 +166,22 @@
        Hero bleibt immer gleich. Nur Produktgrid + Filter wechseln.
        ═══════════════════════════════════════════════════════════════ -->
   <main class="invite-category-page" *ngIf="!loading && customerAccountMode === 'INVITE_ONLY' && categoryTilesOpen">
-    <h1>{{ 'navigation.categories' | translate }}</h1>
+    <ng-container *ngIf="categoryDetail as detail; else inviteCategoryRoots">
+      <button type="button" class="invite-category-back" (click)="categoryDetail = null" aria-label="Zurück zu den Kategorien">←</button>
+      <h1>{{ detail.name }} ({{ categoryProductCount(detail) }} {{ 'storefront.filter.products' | translate }})</h1>
+      <div class="invite-category-hero" *ngIf="categoryImage(detail) as image"><img [src]="image" [alt]="detail.name"></div>
+      <div class="invite-subcategory-list">
+        <button type="button" class="invite-subcategory-row" (click)="selectCategoryFromSheet(detail)">
+          <span>{{ 'storefront.allProducts' | translate }}</span><span>{{ categoryProductCount(detail) }} ›</span>
+        </button>
+        <button type="button" class="invite-subcategory-row" *ngFor="let child of detailChildren" (click)="openCategory(child)">
+          <img *ngIf="categoryImage(child) as image" [src]="image" [alt]="child.name" loading="lazy">
+          <span class="invite-subcategory-label"><small>{{ categoryProductCount(child) }} {{ 'storefront.filter.products' | translate }}</small>{{ child.name }}</span>
+          <span aria-hidden="true">›</span>
+        </button>
+      </div>
+    </ng-container>
+    <ng-template #inviteCategoryRoots><h1>{{ 'navigation.categories' | translate }}</h1>
     <div class="invite-category-grid">
       <button type="button" class="invite-category-tile" (click)="selectCategoryFromSheet(null)">
         <span class="invite-category-picture invite-category-all">
@@ -175,7 +190,7 @@
         <span class="invite-category-name">{{ 'storefront.allProducts' | translate }}</span>
         <span class="invite-category-count">{{ products.length }} {{ 'storefront.filter.products' | translate }}</span>
       </button>
-      <button type="button" class="invite-category-tile" *ngFor="let category of categories" (click)="selectCategoryFromSheet(category)">
+      <button type="button" class="invite-category-tile" *ngFor="let category of rootCategories" (click)="openCategory(category)">
         <span class="invite-category-picture">
           <img *ngIf="categoryImage(category) as image" [src]="image" [alt]="category.name" loading="lazy">
           <span *ngIf="!categoryImage(category)" class="invite-category-placeholder" aria-hidden="true">▦</span>
@@ -184,6 +199,7 @@
         <span class="invite-category-count">{{ categoryProductCount(category) }} {{ 'storefront.filter.products' | translate }}</span>
       </button>
     </div>
+    </ng-template>
   </main>
 
   <main class="storefront-main" *ngIf="!loading && !isRestaurantMode && !isServiceMode && !categoryTilesOpen">

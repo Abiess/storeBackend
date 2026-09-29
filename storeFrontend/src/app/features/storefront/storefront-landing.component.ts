@@ -107,6 +107,7 @@ export class StorefrontLandingComponent implements OnInit {
   bottomNavSearchActive = false;
   categorySheetOpen = false;
   categoryTilesOpen = false;
+  categoryDetail: Category | null = null;
 
   // ✨ NEUE: Slider State
   sliderImages: SliderImage[] = [];
@@ -728,7 +729,8 @@ export class StorefrontLandingComponent implements OnInit {
 
     if (category) {
       console.log('🏷️ Filter nach Kategorie:', category.name, '(ID:', category.id, ')');
-      this.filteredProducts = this.products.filter(product => product.categoryId === category.id);
+      const categoryIds = this.categoryIdsUnder(category.id);
+      this.filteredProducts = this.products.filter(product => categoryIds.has(product.categoryId ?? -1));
       console.log(`📊 Gefilterte Produkte: ${this.filteredProducts.length} von ${this.products.length}`);
     } else {
       console.log('🏷️ Filter zurückgesetzt - zeige alle Produkte');
@@ -752,6 +754,7 @@ export class StorefrontLandingComponent implements OnInit {
     this.bottomNavCategoryActive = true;
     if (this.customerAccountMode === 'INVITE_ONLY') {
       this.categoryTilesOpen = true;
+      this.categoryDetail = null;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       this.categorySheetOpen = true;
@@ -761,22 +764,54 @@ export class StorefrontLandingComponent implements OnInit {
   selectCategoryFromSheet(category: Category | null): void {
     this.categorySheetOpen = false;
     this.categoryTilesOpen = false;
+    this.categoryDetail = null;
     this.bottomNavCategoryActive = false;
     this.filterByCategory(category);
   }
 
   onBottomNavHome(): void {
     this.categoryTilesOpen = false;
+    this.categoryDetail = null;
     this.categorySheetOpen = false;
     this.bottomNavCategoryActive = false;
     if (this.selectedCategory) this.filterByCategory(null);
   }
 
   categoryProductCount(category: Category): number {
-    return this.products.filter(product => product.categoryId === category.id).length;
+    const ids = this.categoryIdsUnder(category.id);
+    return this.products.filter(product => ids.has(product.categoryId ?? -1)).length;
+  }
+
+  get rootCategories(): Category[] { return this.categories.filter(category => !category.parentId); }
+  get detailChildren(): Category[] {
+    return this.categories.filter(category => category.parentId === this.categoryDetail?.id);
+  }
+
+  openCategory(category: Category): void {
+    if (this.categories.some(child => child.parentId === category.id)) {
+      this.categoryDetail = category;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      this.selectCategoryFromSheet(category);
+    }
+  }
+
+  private categoryIdsUnder(id: number): Set<number> {
+    const ids = new Set([id]);
+    for (let changed = true; changed;) {
+      changed = false;
+      for (const category of this.categories) {
+        if (category.parentId && ids.has(category.parentId) && !ids.has(category.id)) {
+          ids.add(category.id);
+          changed = true;
+        }
+      }
+    }
+    return ids;
   }
 
   categoryImage(category: Category): string | null {
+    if (category.imageUrl) return category.imageUrl;
     const label = `${category.slug || ''} ${category.name}`.toLocaleLowerCase();
     const illustrations: Array<[RegExp, string]> = [
       [/backwaren|baeckerei|bäckerei/, 'backwaren'],
@@ -787,7 +822,8 @@ export class StorefrontLandingComponent implements OnInit {
     const illustration = illustrations.find(([pattern]) => pattern.test(label));
     if (illustration) return `assets/images/invite-category-${illustration[1]}.webp`;
 
-    const product = this.products.find(item => item.categoryId === category.id &&
+    const ids = this.categoryIdsUnder(category.id);
+    const product = this.products.find(item => ids.has(item.categoryId ?? -1) &&
       (item.primaryImageUrl || item.media?.length || item.imageUrl));
     if (!product) return null;
     return product.primaryImageUrl || product.media?.find(media => media.isPrimary)?.url ||

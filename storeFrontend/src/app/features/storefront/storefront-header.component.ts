@@ -31,8 +31,8 @@ import { PromoBannerComponent } from '../../shared/components/promo-banner/promo
               <svg viewBox="0 0 32 32" fill="none">
                 <defs>
                   <linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" [attr.stop-color]="customerAccountMode === 'INVITE_ONLY' ? '#c90020' : '#667eea'"/>
-                    <stop offset="100%" [attr.stop-color]="customerAccountMode === 'INVITE_ONLY' ? '#c90020' : '#764ba2'"/>
+                    <stop offset="0%" [attr.stop-color]="customerAccountMode === 'INVITE_ONLY' ? '#187a73' : '#667eea'"/>
+                    <stop offset="100%" [attr.stop-color]="customerAccountMode === 'INVITE_ONLY' ? '#187a73' : '#764ba2'"/>
                   </linearGradient>
                 </defs>
                 <rect width="32" height="32" rx="10" fill="url(#brandGrad)"/>
@@ -614,12 +614,12 @@ import { PromoBannerComponent } from '../../shared/components/promo-banner/promo
     }
 
     .store-header.invite-only {
-      .store-name { background: none; color: #c90020; -webkit-text-fill-color: #c90020; }
-      .user-avatar, .cart-btn { background: #c90020; box-shadow: 0 4px 14px #c9002033; }
-      .icon-btn:hover, .search-bar.active .search-icon, .mobile-search-inner svg { color: #c90020; }
-      .search-bar.active, .search-bar:hover { border-color: #c90020; box-shadow: 0 0 0 4px #c900201a; }
-      .mobile-search-inner { border-color: #c90020; box-shadow: 0 0 0 4px #c900201a; }
-      .dropdown-item:hover, .dropdown-item:hover svg { color: #c90020; }
+      .store-name { background: none; color: #187a73; -webkit-text-fill-color: #187a73; }
+      .user-avatar, .cart-btn { background: #187a73; box-shadow: 0 4px 14px #187a7333; }
+      .icon-btn:hover, .search-bar.active .search-icon, .mobile-search-inner svg { color: #187a73; }
+      .search-bar.active, .search-bar:hover { border-color: #187a73; box-shadow: 0 0 0 4px #187a731a; }
+      .mobile-search-inner { border-color: #187a73; box-shadow: 0 0 0 4px #187a731a; }
+      .dropdown-item:hover, .dropdown-item:hover svg { color: #187a73; }
     }
   `]
 })

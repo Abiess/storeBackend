@@ -28,6 +28,18 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class CategoryController {
+    public record CategoryWriteRequest(String name, String slug, String description,
+                                       Integer sortOrder, Long parentId, String imageUrl) {
+        Category toEntity() {
+            Category category = new Category();
+            category.setName(name);
+            category.setSlug(slug);
+            category.setDescription(description);
+            category.setSortOrder(sortOrder == null ? 0 : sortOrder);
+            category.setImageUrl(imageUrl);
+            return category;
+        }
+    }
     private final CategoryService categoryService;
     private final StoreService storeService;
     private final StoreRepository storeRepository;
@@ -121,7 +133,7 @@ public class CategoryController {
     @RequiresApp(AppKey.SHOP) // Phase 3.2: authentifiziert (Kategorie erstellen)
     public ResponseEntity<Category> createCategory(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
-            @RequestBody Category category,
+            @RequestBody CategoryWriteRequest request,
             @AuthenticationPrincipal User user) {
 
         if (user == null) {
@@ -133,8 +145,9 @@ public class CategoryController {
         }
 
         Store store = storeService.getStoreById(storeId);
+        Category category = request.toEntity();
         category.setStore(store);
-        return ResponseEntity.ok(categoryService.createCategory(category));
+        return ResponseEntity.ok(categoryService.createCategory(category, request.parentId()));
     }
 
     @Operation(summary = "Update category", description = "Updates an existing category")
@@ -143,7 +156,7 @@ public class CategoryController {
     public ResponseEntity<Category> updateCategory(
             @Parameter(description = "Store ID") @PathVariable Long storeId,
             @Parameter(description = "Category ID") @PathVariable Long categoryId,
-            @RequestBody Category category,
+            @RequestBody CategoryWriteRequest request,
             @AuthenticationPrincipal User user) {
 
         if (user == null) {
@@ -154,7 +167,7 @@ public class CategoryController {
             return ResponseEntity.status(403).build();
         }
 
-        return ResponseEntity.ok(categoryService.updateCategory(categoryId, category));
+        return ResponseEntity.ok(categoryService.updateCategory(storeId, categoryId, request.toEntity(), request.parentId()));
     }
 
     @Operation(summary = "Delete category", description = "Deletes a category (products will have category_id set to null)")

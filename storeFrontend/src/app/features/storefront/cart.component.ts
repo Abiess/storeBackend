@@ -899,10 +899,10 @@ import { take } from 'rxjs/operators';
     }
     .btn-primary:hover { transform: translateY(-2px); }
     .cart-page.invite-only {
-      .back-btn, .unit-price, .line-total { color: #c90020; }
+      .back-btn, .unit-price, .line-total { color: #187a73; }
       .item-badge, .btn-shop-now, .btn-checkout, .btn-checkout-mobile,
-      .progress-fill, .qty-btn:hover:not(:disabled) { background: #c90020; }
-      .total-amount, .mobile-bar-amount { background: none; color: #c90020; -webkit-text-fill-color: #c90020; }
+      .progress-fill, .qty-btn:hover:not(:disabled) { background: #187a73; }
+      .total-amount, .mobile-bar-amount { background: none; color: #187a73; -webkit-text-fill-color: #187a73; }
     }
   `]
 })

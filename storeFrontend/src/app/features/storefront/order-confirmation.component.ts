@@ -326,7 +326,7 @@ import { toDate } from '../../core/utils/date.utils';
     .btn-secondary:hover {
       background: #5a6268;
     }
-    .confirmation-container.invite-only .success-header { background: #c90020; }
+    .confirmation-container.invite-only .success-header { background: #187a73; }
   `]
 })
 export class OrderConfirmationComponent implements OnInit {

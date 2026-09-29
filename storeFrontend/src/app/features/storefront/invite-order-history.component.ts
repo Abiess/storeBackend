@@ -43,7 +43,6 @@ import { StorefrontBottomNavComponent } from './storefront-bottom-nav.component'
             </div>
             <div class="request-price">{{ order.totalAmount | storeCurrency:order.currencyCode }}</div>
             <div class="request-state"><span class="state-mark" aria-hidden="true"></span>{{ statusKey(order.status) | translate }}</div>
-            <small>{{ 'inviteOrders.itemCount' | translate: { count: order.itemCount } }}</small>
           </button>
         </div>
       </ng-container>
@@ -86,20 +85,20 @@ import { StorefrontBottomNavComponent } from './storefront-bottom-nav.component'
     .page-header h1 { font-size: 1.2rem; margin: 0; font-weight: 650; }
     .back { position: absolute; left: 20px; width: 50px; height: 50px; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 5px 28px #0000000d; font-size: 1.8rem; cursor: pointer; }
     .request-tabs { display: flex; background: #fff; border-bottom: 1px solid #e6e6e6; }
-    .selected { color: #c90020; font-weight: 600; padding: 16px 28px; border-bottom: 4px solid #c90020; }
+    .selected { color: #187a73; font-weight: 600; padding: 16px 28px; border-bottom: 4px solid #187a73; }
     .request-list { padding: 18px; display: grid; gap: 16px; }
     .request-card { text-align: left; width: 100%; border: 1px solid #e2e2e2; border-radius: 12px; background: #fff; padding: 20px; cursor: pointer; color: inherit; }
     .request-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 18px; border-bottom: 1px solid #e3e3e3; }
     .request-card-heading strong { font-weight: 500; font-size: 1.1rem; overflow-wrap: anywhere; }
     .request-card-heading span { color: #777; white-space: nowrap; }
     .request-card-heading span span { margin-left: 8px; font-size: 1.6rem; vertical-align: middle; }
-    .request-price { color: #c90020; font-size: 1.25rem; font-weight: 650; margin: 20px 0; }
+    .request-price { color: #187a73; font-size: 1.25rem; font-weight: 650; margin: 20px 0; }
     .request-state { background: #eee; border-radius: 9px; padding: 15px; display: flex; align-items: center; gap: 16px; }
-    .state-mark { height: 25px; border-left: 3px solid #c90020; position: relative; margin-left: 4px; }
-    .state-mark::after { content: ''; position: absolute; left: -6px; bottom: -2px; width: 9px; height: 9px; background: #c90020; border-radius: 50%; }
+    .state-mark { height: 25px; border-left: 3px solid #187a73; position: relative; margin-left: 4px; }
+    .state-mark::after { content: ''; position: absolute; left: -6px; bottom: -2px; width: 9px; height: 9px; background: #187a73; border-radius: 50%; }
     .request-card small { display: block; color: #777; margin-top: 14px; }
     .state { text-align: center; padding: 42px 20px; color: #686868; }
-    .state button { padding: 10px 20px; color: #c90020; border: 1px solid #c90020; border-radius: 8px; background: #fff; }
+    .state button { padding: 10px 20px; color: #187a73; border: 1px solid #187a73; border-radius: 8px; background: #fff; }
     .detail-heading { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 22px 20px; gap: 10px; }
     .detail-heading strong { overflow-wrap: anywhere; }
     .detail-heading span { color: #777; white-space: nowrap; }
@@ -110,15 +109,15 @@ import { StorefrontBottomNavComponent } from './storefront-bottom-nav.component'
     .product-row img, .product-placeholder { flex: 0 0 64px; width: 64px; height: 72px; object-fit: contain; }
     .product-placeholder { display: grid; place-items: center; background: #f3f3f3; border-radius: 8px; color: #bbb; font-size: 2rem; }
     .product-row div { display: grid; gap: 4px; min-width: 0; }
-    .product-row small { color: #c90020; }
+    .product-row small { color: #187a73; }
     .product-row strong { font-size: 1.05rem; font-weight: 600; }
     .product-row span { color: #777; }
     .quantity-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; border: 1px solid #dedede; border-radius: 10px; padding: 16px; }
     .quantity-row div { display: grid; gap: 5px; }
     .quantity-row div span { color: #666; font-size: .9rem; }
-    .quantity-row > strong { color: #c90020; white-space: nowrap; }
+    .quantity-row > strong { color: #187a73; white-space: nowrap; }
     .request-total { display: flex; justify-content: space-between; padding: 20px; background: #fff; font-size: 1.05rem; }
-    .request-total strong { color: #c90020; }
+    .request-total strong { color: #187a73; }
     @media (min-width: 768px) { .request-page { padding-bottom: 36px; } .request-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   `]
 })

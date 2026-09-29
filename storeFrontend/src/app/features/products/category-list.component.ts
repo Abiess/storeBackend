@@ -15,6 +15,7 @@ interface Category {
   name: string;
   slug: string;
   description?: string;
+  imageUrl?: string;
   productCount?: number;
   parentId?: number;
   parent?: Category;
