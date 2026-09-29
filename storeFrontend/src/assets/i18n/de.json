@@ -623,11 +623,10 @@
     "general": "Allgemein",
     "customerAccounts": {
       "title": "Kundenkonten",
-      "mode": "Anmeldung und Registrierung",
-      "openRegistration": "Anmeldung und Registrierung anzeigen",
-      "loginOnly": "Nur Anmeldung anzeigen (eingeladene Kunden)",
-      "disabled": "Anmeldung und Registrierung ausblenden",
-      "hint": "Gilt für die Links im Store-Header. Gäste können weiterhin ohne Konto bestellen."
+      "mode": "Anmeldemodus",
+      "openRegistration": "Öffentlicher Shop: Login und Registrierung",
+      "loginOnly": "Geschlossener Shop: Nur Login für vom Admin eingerichtete Kunden",
+      "hint": "Im geschlossenen Modus müssen sich Kunden anmelden. Der Admin richtet Kunden-ID/Telefonnummer und Passwort ein."
     },
     "slider": "Slider",
     "whatsapp": {

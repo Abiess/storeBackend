@@ -38,7 +38,7 @@ public class Store {
     /** Public account-entry and registration behavior for this storefront. */
     @Enumerated(EnumType.STRING)
     @Column(name = "customer_account_mode", length = 24, nullable = false)
-    private CustomerAccountMode customerAccountMode = CustomerAccountMode.OPEN_REGISTRATION;
+    private CustomerAccountMode customerAccountMode = CustomerAccountMode.PUBLIC_REGISTRATION;
 
     @Column(columnDefinition = "TEXT")
     private String description;

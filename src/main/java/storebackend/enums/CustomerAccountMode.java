@@ -1,11 +1,9 @@
 package storebackend.enums;
 
-/** Storefront customer-account options. */
+/** Storefront customer-account access modes. */
 public enum CustomerAccountMode {
-    /** Customers can sign in and create accounts themselves. */
-    OPEN_REGISTRATION,
-    /** Only existing or store-invited customers can sign in. */
-    LOGIN_ONLY,
-    /** Customer account entry points are hidden in the storefront. */
-    DISABLED
+    /** Public storefront with the existing login and self-registration flow. */
+    PUBLIC_REGISTRATION,
+    /** Private storefront; login is available to admin-provisioned customers only. */
+    INVITE_ONLY
 }

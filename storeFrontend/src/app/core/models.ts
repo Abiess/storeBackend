@@ -917,7 +917,7 @@ export enum BusinessType {
   SERVICE = 'SERVICE'
 }
 
-export type CustomerAccountMode = 'OPEN_REGISTRATION' | 'LOGIN_ONLY' | 'DISABLED';
+export type CustomerAccountMode = 'PUBLIC_REGISTRATION' | 'INVITE_ONLY';
 
 export interface Store {
   id: number;

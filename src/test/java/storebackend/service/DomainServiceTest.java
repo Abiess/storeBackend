@@ -197,7 +197,7 @@ class DomainServiceTest {
 
     @Test
     void resolveStoreByHost_ExposesMaintenanceSettingsForPlatformSubdomain() {
-        testStore.setCustomerAccountMode(CustomerAccountMode.LOGIN_ONLY);
+        testStore.setCustomerAccountMode(CustomerAccountMode.INVITE_ONLY);
         testStore.setMaintenanceEnabled(true);
         testStore.setMaintenanceMode(MaintenanceMode.CUSTOM_IMAGE);
         testStore.setMaintenanceImageMediaId(42L);
@@ -216,6 +216,6 @@ class DomainServiceTest {
         assertTrue(resolved.get().isMaintenanceEnabled());
         assertEquals("CUSTOM_IMAGE", resolved.get().getMaintenanceMode());
         assertEquals("https://minio.markt.ma/store-assets/card.png", resolved.get().getMaintenanceImageUrl());
-        assertEquals("LOGIN_ONLY", resolved.get().getCustomerAccountMode());
+        assertEquals("INVITE_ONLY", resolved.get().getCustomerAccountMode());
     }
 }

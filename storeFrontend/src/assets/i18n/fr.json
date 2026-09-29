@@ -433,11 +433,10 @@
     "general": "Général",
     "customerAccounts": {
       "title": "Comptes clients",
-      "mode": "Connexion et inscription",
-      "openRegistration": "Afficher la connexion et l’inscription",
-      "loginOnly": "Afficher uniquement la connexion (clients invités)",
-      "disabled": "Masquer la connexion et l’inscription",
-      "hint": "Contrôle les liens dans l’en-tête de la boutique. Les invités peuvent toujours commander sans compte."
+      "mode": "Mode d’accès client",
+      "openRegistration": "Boutique publique : connexion et inscription",
+      "loginOnly": "Boutique privée : connexion pour les clients invités",
+      "hint": "En mode privé, les clients doivent se connecter. L’administrateur crée leur identifiant/téléphone et leur mot de passe."
     },
     "slider": "Curseur",
     "whatsapp": {

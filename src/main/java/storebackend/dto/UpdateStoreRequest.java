@@ -21,7 +21,7 @@ public class UpdateStoreRequest {
     // Status – optional, null = nicht ändern
     private String status;
 
-    /** OPEN_REGISTRATION | LOGIN_ONLY | DISABLED */
+    /** PUBLIC_REGISTRATION | INVITE_ONLY */
     private CustomerAccountMode customerAccountMode;
 
     // WhatsApp-Kontaktdaten – optional, null = nicht ändern
