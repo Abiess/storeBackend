@@ -39,7 +39,7 @@ import { environment } from '@env/environment';
         PayPalButtonComponent
     ],
     template: `
-    <div class="checkout-container">
+    <div class="checkout-container" [class.invite-only]="inviteOnlyMode">
       <app-page-header
         [title]="inviteOnlyMode ? 'inviteOnlyOrder.pageTitle' : 'checkout.title'"
         [showBackButton]="true"
@@ -1807,6 +1807,7 @@ import { environment } from '@env/environment';
     .sandbox-warning strong {
       color: #d32f2f;
     }
+    .checkout-container.invite-only .btn-submit { background: #c90020; border-color: #c90020; }
   `]
 })
 export class CheckoutComponent implements OnInit, OnDestroy {

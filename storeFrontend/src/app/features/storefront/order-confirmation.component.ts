@@ -10,7 +10,7 @@ import { toDate } from '../../core/utils/date.utils';
     selector: 'app-order-confirmation',
     imports: [CommonModule, TranslatePipe],
     template: `
-    <div class="confirmation-container">
+    <div class="confirmation-container" [class.invite-only]="isOrderRequest">
       <div *ngIf="loading" class="loading">
         <div class="spinner"></div>
         {{ 'order.loading' | translate }}
@@ -326,6 +326,7 @@ import { toDate } from '../../core/utils/date.utils';
     .btn-secondary:hover {
       background: #5a6268;
     }
+    .confirmation-container.invite-only .success-header { background: #c90020; }
   `]
 })
 export class OrderConfirmationComponent implements OnInit {

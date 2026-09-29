@@ -294,6 +294,18 @@ import { AuthService } from '@app/core/services/auth.service';
         color: #667eea;
         font-weight: 600;
       }
+
+      .invite-only .nav-item.router-active,
+      .invite-only .nav-item-cart .nav-label { color: #c90020; }
+      .invite-only .nav-item.active::before,
+      .invite-only .nav-item.router-active::before { background: #c90020; }
+      .invite-only .nav-item.active .nav-icon-box,
+      .invite-only .nav-item.router-active .nav-icon-box { background: #c900201a; }
+      .invite-only .nav-item.active .nav-icon-box svg,
+      .invite-only .nav-item.router-active .nav-icon-box svg { stroke: #c90020; }
+      .invite-only .cart-float-btn { background: #c90020; box-shadow: 0 4px 16px #c9002055; }
+      .invite-only .cart-ring { border-color: #c9002066; }
+      .invite-only .nav-badge { background: #c90020; }
     }
   `]
 })
