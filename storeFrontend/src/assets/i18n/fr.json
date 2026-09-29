@@ -1579,6 +1579,25 @@
   "items": {
     "chatbot": "Assistant conversationnel"
   },
+  "adminCustomerAccounts": {
+    "title": "Comptes clients",
+    "subtitle": "Créer des identifiants pour les clients de cette boutique.",
+    "inviteOnlyRequired": "Activez d’abord le mode « clients invités uniquement » dans les paramètres de la boutique.",
+    "settingsLink": "Ouvrir les paramètres de la boutique",
+    "name": "Nom du client",
+    "phone": "Numéro de téléphone",
+    "phoneHint": "Facultatif. Le client peut se connecter avec son numéro ou son identifiant client.",
+    "password": "Mot de passe",
+    "passwordHint": "8 caractères minimum. Communiquez ce mot de passe au client.",
+    "create": "Créer le compte client",
+    "createdTitle": "Compte client créé",
+    "shareHint": "Communiquez ces identifiants au client de manière sécurisée. Le mot de passe ne pourra pas être récupéré plus tard.",
+    "loginId": "Identifiant client",
+    "copy": "Copier les identifiants",
+    "copied": "Identifiants copiés",
+    "createError": "Impossible de créer le compte client.",
+    "copyError": "Copie impossible. Veuillez copier les identifiants manuellement."
+  },
   "sidebarAdmin": {
     "aria": {
       "mainNavigation": "Navigation principale",

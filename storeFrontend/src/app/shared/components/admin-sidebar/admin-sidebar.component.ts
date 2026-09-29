@@ -254,6 +254,13 @@ export class AdminSidebarComponent implements OnInit {
                 titleKey: 'sidebarAdmin.groups.customerService',
                 items: [
                     {
+                        labelKey: 'sidebarAdmin.items.customerAccounts',
+                        icon: 'users',
+                        route: `${baseRoute}/customer-accounts`,
+                        requiresStore: true,
+                        visibleForBusinessTypes: [BusinessType.SHOP]
+                    },
+                    {
                         labelKey: 'sidebarAdmin.items.reviews',
                         icon: 'star',
                         route: `${baseRoute}/reviews`,

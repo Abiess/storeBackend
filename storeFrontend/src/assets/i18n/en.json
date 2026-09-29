@@ -1715,6 +1715,25 @@
   "items": {
     "chatbot": "Chatbot"
   },
+  "adminCustomerAccounts": {
+    "title": "Customer accounts",
+    "subtitle": "Create sign-in credentials for customers of this store.",
+    "inviteOnlyRequired": "First set the store's sign-in mode to invited customers only.",
+    "settingsLink": "Open store settings",
+    "name": "Customer name",
+    "phone": "Phone number",
+    "phoneHint": "Optional. Customers can sign in with their phone number or customer ID.",
+    "password": "Password",
+    "passwordHint": "At least 8 characters. Share this password with the customer.",
+    "create": "Create customer account",
+    "createdTitle": "Customer account created",
+    "shareHint": "Share these credentials securely with the customer. The password cannot be retrieved from the server later.",
+    "loginId": "Customer ID",
+    "copy": "Copy credentials",
+    "copied": "Credentials copied",
+    "createError": "Could not create the customer account.",
+    "copyError": "Could not copy. Please copy the credentials manually."
+  },
   "sidebarAdmin": {
     "aria": {
       "mainNavigation": "Main navigation",
