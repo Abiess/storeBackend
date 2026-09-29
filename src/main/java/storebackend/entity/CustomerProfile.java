@@ -42,6 +42,10 @@ public class CustomerProfile {
     @Column(name = "phone")
     private String phone;
 
+    /** Store-scoped opaque identifier handed to an invited customer. */
+    @Column(name = "login_id", length = 32)
+    private String loginId;
+
     @Embedded
     @AttributeOverrides({
         @AttributeOverride(name = "company", column = @Column(name = "shipping_company")),
@@ -87,4 +91,3 @@ public class CustomerProfile {
         updatedAt = LocalDateTime.now();
     }
 }
-

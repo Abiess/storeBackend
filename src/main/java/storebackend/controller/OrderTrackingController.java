@@ -11,6 +11,7 @@ import storebackend.dto.UpdateOrderStatusRequest;
 import storebackend.entity.Order;
 import storebackend.entity.User;
 import storebackend.enums.OrderStatus;
+import storebackend.enums.CustomerAccountMode;
 import storebackend.repository.OrderRepository;
 import storebackend.repository.UserRepository;
 import storebackend.service.AuthService;
@@ -93,6 +94,15 @@ public class OrderTrackingController {
 
             Order order = orderRepository.findByOrderNumber(orderNumber)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderNumber));
+
+            // In invite-only stores, order numbers alone must never reveal order details.
+            if (order.getStore().getCustomerAccountMode() == CustomerAccountMode.INVITE_ONLY &&
+                (userId == null || order.getCustomer() == null || !order.getCustomer().getId().equals(userId))) {
+                return ResponseEntity.status(userId == null ? 401 : 403).body(Map.of(
+                    "error", userId == null ? "Authentication required" : "Access denied",
+                    "message", "This order is not available for this account"
+                ));
+            }
 
             // Security: Prüfe ob Order dem User gehört
             if (userId != null && order.getCustomer() != null &&
