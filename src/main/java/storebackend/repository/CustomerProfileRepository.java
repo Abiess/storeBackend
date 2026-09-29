@@ -16,6 +16,8 @@ public interface CustomerProfileRepository extends JpaRepository<CustomerProfile
     Optional<CustomerProfile> findByUserId(Long userId);
     Optional<CustomerProfile> findByUserIdAndStoreId(Long userId, Long storeId);
     Optional<CustomerProfile> findByStoreIdAndExternalSourceAndExternalId(Long storeId, String externalSource, String externalId);
+    Optional<CustomerProfile> findByStoreIdAndLoginIdIgnoreCase(Long storeId, String loginId);
+    List<CustomerProfile> findByStoreIdAndPhone(Long storeId, String phone);
 
     /**
      * Store-Kunden für Kundenauswahl (z.B. Loyalty-Code-Registrierung).
@@ -33,4 +35,3 @@ public interface CustomerProfileRepository extends JpaRepository<CustomerProfile
         "ORDER BY cp.id DESC")
     List<CustomerProfile> searchByStoreId(@Param("storeId") Long storeId, @Param("query") String query);
 }
-
