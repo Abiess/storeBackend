@@ -74,6 +74,13 @@ export class WooCommerceService {
     );
   }
 
+  /** Übernimmt Kategorie-Hierarchie und Bilder ohne Produkt- oder Kundenimport. */
+  syncCategories(storeId: number): Observable<{ categoryCount: number }> {
+    return this.http.post<{ categoryCount: number }>(
+      `${this.apiUrl}/stores/${storeId}/woocommerce/categories/sync`, {}
+    );
+  }
+
   /**
    * Bereinigt WooCommerce-Produktbeschreibungen (HTML → Klartext).
    */
