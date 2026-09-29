@@ -451,6 +451,10 @@
     "order": "استفسر"
   },
   "storefront": {
+    "privateShopTitle": "سجّل الدخول للمتابعة",
+    "privateShopMessage": "هذا المتجر متاح للعملاء المدعوين فقط.",
+    "customerIdentifier": "رقم العميل أو رقم الهاتف",
+    "invalidCustomerLogin": "بيانات الدخول غير صحيحة. تحقق من رقم العميل أو الهاتف وكلمة المرور.",
     "maintenanceTitle": "المتجر قيد الصيانة",
     "maintenanceMessage": "متجرنا قيد الصيانة حالياً. يرجى العودة قريباً.",
     "storeCurrency": "عملة المتجر",

@@ -1028,6 +1028,52 @@
   place-items: center;
 }
 
+.invite-only-store-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: #f8fafc;
+}
+
+.invite-only-login-card {
+  box-sizing: border-box;
+  width: min(100%, 26rem);
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #fff;
+  color: #1f2937;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+.invite-only-login-card h1 { margin: 0 0 .5rem; }
+.invite-only-login-card > p { color: #64748b; margin: 0 0 1.5rem; }
+.invite-only-login-card form { display: grid; gap: .6rem; }
+.invite-only-login-card label { font-weight: 600; margin-top: .5rem; }
+.invite-only-login-card input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.8rem;
+  padding: .65rem .75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: .5rem;
+  font: inherit;
+}
+.invite-only-login-card button {
+  min-height: 2.8rem;
+  margin-top: .75rem;
+  border: 0;
+  border-radius: .5rem;
+  background: #4f46e5;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.invite-only-login-card button:disabled { opacity: .6; cursor: wait; }
+.invite-only-login-error { color: #b91c1c; margin: .25rem 0; }
+
 .storefront-resolution-loading {
   background: #fff;
 }
