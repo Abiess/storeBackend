@@ -15,6 +15,7 @@ import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.enums.DomainType;
 import storebackend.enums.MaintenanceMode;
+import storebackend.enums.CustomerAccountMode;
 import storebackend.enums.Role;
 import storebackend.enums.StoreStatus;
 import storebackend.repository.DomainRepository;
@@ -196,6 +197,7 @@ class DomainServiceTest {
 
     @Test
     void resolveStoreByHost_ExposesMaintenanceSettingsForPlatformSubdomain() {
+        testStore.setCustomerAccountMode(CustomerAccountMode.LOGIN_ONLY);
         testStore.setMaintenanceEnabled(true);
         testStore.setMaintenanceMode(MaintenanceMode.CUSTOM_IMAGE);
         testStore.setMaintenanceImageMediaId(42L);
@@ -214,5 +216,6 @@ class DomainServiceTest {
         assertTrue(resolved.get().isMaintenanceEnabled());
         assertEquals("CUSTOM_IMAGE", resolved.get().getMaintenanceMode());
         assertEquals("https://minio.markt.ma/store-assets/card.png", resolved.get().getMaintenanceImageUrl());
+        assertEquals("LOGIN_ONLY", resolved.get().getCustomerAccountMode());
     }
 }

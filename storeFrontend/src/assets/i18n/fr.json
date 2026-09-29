@@ -431,6 +431,14 @@
     "usage_domains": "Domaines",
     "usage_customers": "Clients",
     "general": "Général",
+    "customerAccounts": {
+      "title": "Comptes clients",
+      "mode": "Connexion et inscription",
+      "openRegistration": "Afficher la connexion et l’inscription",
+      "loginOnly": "Afficher uniquement la connexion (clients invités)",
+      "disabled": "Masquer la connexion et l’inscription",
+      "hint": "Contrôle les liens dans l’en-tête de la boutique. Les invités peuvent toujours commander sans compte."
+    },
     "slider": "Curseur",
     "whatsapp": {
       "title": "Contact WhatsApp",

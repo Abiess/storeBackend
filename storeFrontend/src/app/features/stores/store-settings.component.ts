@@ -93,6 +93,22 @@ function integerValidator(control: AbstractControl): ValidationErrors | null {
                 placeholder="Beschreiben Sie Ihren Store..."></textarea>
             </div>
 
+            <div class="customer-account-section">
+              <h3 class="section-title">
+                <span class="section-icon">👤</span>
+                {{ 'settings.customerAccounts.title' | translate }}
+              </h3>
+              <div class="form-group">
+                <label for="customerAccountMode">{{ 'settings.customerAccounts.mode' | translate }}</label>
+                <select id="customerAccountMode" formControlName="customerAccountMode" class="form-control">
+                  <option value="OPEN_REGISTRATION">{{ 'settings.customerAccounts.openRegistration' | translate }}</option>
+                  <option value="LOGIN_ONLY">{{ 'settings.customerAccounts.loginOnly' | translate }}</option>
+                  <option value="DISABLED">{{ 'settings.customerAccounts.disabled' | translate }}</option>
+                </select>
+                <small class="form-text">{{ 'settings.customerAccounts.hint' | translate }}</small>
+              </div>
+            </div>
+
             <!-- ─── WhatsApp-Einstellungen ─── -->
             <div class="whatsapp-section">
               <h3 class="section-title">
@@ -2193,6 +2209,7 @@ export class StoreSettingsComponent implements OnInit {
       slug: ['', Validators.required],
       description: [''],
       status: ['ACTIVE'],
+      customerAccountMode: ['OPEN_REGISTRATION'],
       whatsappNumber: ['', [Validators.maxLength(20)]],
       greetingMessage: ['', [Validators.maxLength(500)]],
       whatsappNotificationsEnabled: [false],
@@ -2298,6 +2315,7 @@ export class StoreSettingsComponent implements OnInit {
           slug: store.slug,
           description: store.description,
           status: store.status,
+          customerAccountMode: store.customerAccountMode ?? 'OPEN_REGISTRATION',
           whatsappNumber: store.whatsappNumber ?? '',
           greetingMessage: store.greetingMessage ?? '',
           whatsappNotificationsEnabled: store.whatsappNotificationsEnabled ?? false,

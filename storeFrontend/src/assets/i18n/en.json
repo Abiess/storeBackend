@@ -504,6 +504,14 @@
     "usage_domains": "Domains",
     "usage_customers": "Customers",
     "general": "General",
+    "customerAccounts": {
+      "title": "Customer accounts",
+      "mode": "Sign-in and registration",
+      "openRegistration": "Show sign-in and registration",
+      "loginOnly": "Show sign-in only (invited customers)",
+      "disabled": "Hide sign-in and registration",
+      "hint": "Controls the links in the store header. Guests can still order without an account."
+    },
     "slider": "Slider",
     "whatsapp": {
       "title": "WhatsApp Contact",

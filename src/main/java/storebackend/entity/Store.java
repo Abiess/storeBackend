@@ -10,6 +10,7 @@ import storebackend.enums.CurrencyCode;
 import storebackend.enums.PriceMode;
 import storebackend.enums.ShippingTaxStrategy;
 import storebackend.enums.MaintenanceMode;
+import storebackend.enums.CustomerAccountMode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,6 +34,11 @@ public class Store {
 
     @Column(nullable = false, unique = true)
     private String slug;
+
+    /** Public account-entry and registration behavior for this storefront. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "customer_account_mode", length = 24, nullable = false)
+    private CustomerAccountMode customerAccountMode = CustomerAccountMode.OPEN_REGISTRATION;
 
     @Column(columnDefinition = "TEXT")
     private String description;

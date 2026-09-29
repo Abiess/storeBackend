@@ -16,6 +16,8 @@ public class PublicStoreDTO {
     private String logoUrl;      // ✅ Store-Logo URL
     private String primaryDomain;
     private String status;
+    /** OPEN_REGISTRATION | LOGIN_ONLY | DISABLED */
+    private String customerAccountMode;
     private String whatsappNumber;
     private String greetingMessage;
     // ─── Social & Kontakt ─────────────────────────────────

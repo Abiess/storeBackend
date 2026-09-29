@@ -621,6 +621,14 @@
     "usage_domains": "Domains",
     "usage_customers": "Kunden",
     "general": "Allgemein",
+    "customerAccounts": {
+      "title": "Kundenkonten",
+      "mode": "Anmeldung und Registrierung",
+      "openRegistration": "Anmeldung und Registrierung anzeigen",
+      "loginOnly": "Nur Anmeldung anzeigen (eingeladene Kunden)",
+      "disabled": "Anmeldung und Registrierung ausblenden",
+      "hint": "Gilt für die Links im Store-Header. Gäste können weiterhin ohne Konto bestellen."
+    },
     "slider": "Slider",
     "whatsapp": {
       "title": "WhatsApp-Kontakt",

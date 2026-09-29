@@ -71,6 +71,7 @@ export class StorefrontLandingComponent implements OnInit {
   maintenanceMode: 'DEFAULT' | 'CUSTOM_IMAGE' = 'DEFAULT';
   maintenanceImageUrl: string | null = null;
   maintenanceImageLoadFailed = false;
+  customerAccountMode: 'OPEN_REGISTRATION' | 'LOGIN_ONLY' | 'DISABLED' = 'OPEN_REGISTRATION';
   products: Product[] = [];
   categories: Category[] = [];
   loading = true;
@@ -229,6 +230,7 @@ export class StorefrontLandingComponent implements OnInit {
         this.maintenanceEnabled = info.maintenanceEnabled === true;
         this.maintenanceMode = info.maintenanceMode === 'CUSTOM_IMAGE' ? 'CUSTOM_IMAGE' : 'DEFAULT';
         this.maintenanceImageUrl = info.maintenanceImageUrl ?? null;
+        this.customerAccountMode = info.customerAccountMode ?? 'OPEN_REGISTRATION';
         this.maintenanceImageLoadFailed = false;
 
         if (info.isSubdomain && info.storeId) {
