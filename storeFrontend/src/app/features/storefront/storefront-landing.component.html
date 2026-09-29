@@ -165,7 +165,28 @@
        DYNAMIC LAYOUT SWITCH – basierend auf activeGridTemplate
        Hero bleibt immer gleich. Nur Produktgrid + Filter wechseln.
        ═══════════════════════════════════════════════════════════════ -->
-  <main class="storefront-main" *ngIf="!loading && !isRestaurantMode && !isServiceMode">
+  <main class="invite-category-page" *ngIf="!loading && customerAccountMode === 'INVITE_ONLY' && categoryTilesOpen">
+    <h1>{{ 'navigation.categories' | translate }}</h1>
+    <div class="invite-category-grid">
+      <button type="button" class="invite-category-tile" (click)="selectCategoryFromSheet(null)">
+        <span class="invite-category-picture invite-category-all">
+          <img src="assets/images/invite-category-all.webp" alt="" loading="lazy">
+        </span>
+        <span class="invite-category-name">{{ 'storefront.allProducts' | translate }}</span>
+        <span class="invite-category-count">{{ products.length }} {{ 'storefront.filter.products' | translate }}</span>
+      </button>
+      <button type="button" class="invite-category-tile" *ngFor="let category of categories" (click)="selectCategoryFromSheet(category)">
+        <span class="invite-category-picture">
+          <img *ngIf="categoryImage(category) as image" [src]="image" [alt]="category.name" loading="lazy">
+          <span *ngIf="!categoryImage(category)" class="invite-category-placeholder" aria-hidden="true">▦</span>
+        </span>
+        <span class="invite-category-name">{{ category.name }}</span>
+        <span class="invite-category-count">{{ categoryProductCount(category) }} {{ 'storefront.filter.products' | translate }}</span>
+      </button>
+    </div>
+  </main>
+
+  <main class="storefront-main" *ngIf="!loading && !isRestaurantMode && !isServiceMode && !categoryTilesOpen">
 
     <!-- ── HERO / SLIDER – immer sichtbar, unabhängig vom Template ── -->
     <ng-container *ngIf="customerAccountMode !== 'INVITE_ONLY'" [ngTemplateOutlet]="heroSection"></ng-container>
@@ -294,6 +315,7 @@
   [categoryActive]="bottomNavCategoryActive"
   [searchActive]="bottomNavSearchActive"
   (categoryClick)="onBottomNavCategory()"
+  (homeClick)="onBottomNavHome()"
   (searchClick)="onBottomNavSearch()"
   (profileClick)="onBottomNavProfile()">
 </app-storefront-bottom-nav>

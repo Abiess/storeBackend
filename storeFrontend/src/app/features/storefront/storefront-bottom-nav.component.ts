@@ -18,6 +18,7 @@ import { AuthService } from '@app/core/services/auth.service';
       <!-- Home -->
       <a class="nav-item"
          routerLink="/"
+         (click)="homeClick.emit()"
          routerLinkActive="router-active"
          [class.active]="!categoryActive && !searchActive"
          [routerLinkActiveOptions]="{exact: true}"
@@ -306,6 +307,10 @@ import { AuthService } from '@app/core/services/auth.service';
       .invite-only .cart-float-btn { background: #c90020; box-shadow: 0 4px 16px #c9002055; }
       .invite-only .cart-ring { border-color: #c9002066; }
       .invite-only .nav-badge { background: #c90020; }
+      .invite-only .nav-item:first-child.router-active:not(.active) { color: #94a3b8; }
+      .invite-only .nav-item:first-child.router-active:not(.active)::before { display: none; }
+      .invite-only .nav-item:first-child.router-active:not(.active) .nav-icon-box { background: none; transform: none; }
+      .invite-only .nav-item:first-child.router-active:not(.active) .nav-icon-box svg { stroke: currentColor; }
     }
   `]
 })
@@ -316,6 +321,7 @@ export class StorefrontBottomNavComponent {
   @Input() inviteOnlyMode = false;
 
   @Output() categoryClick = new EventEmitter<void>();
+  @Output() homeClick = new EventEmitter<void>();
   @Output() searchClick = new EventEmitter<void>();
   @Output() profileClick = new EventEmitter<void>();
 
