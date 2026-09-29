@@ -18,10 +18,10 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
     selector: 'app-product-grid-marketplace',
     imports: [CommonModule, FormsModule, ProductCardComponent, TranslatePipe],
     template: `
-    <div class="mp-wrapper">
+    <div class="mp-wrapper" [class.mp-wrapper--simple]="simpleCatalog">
 
       <!-- ── SEARCH BAR ── -->
-      <div class="mp-search-bar">
+      <div class="mp-search-bar" *ngIf="!simpleCatalog">
         <span class="mp-search-icon" aria-hidden="true">🔍</span>
         <input
           class="mp-search-input"
@@ -38,7 +38,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </div>
 
       <!-- ── FILTER STRIP (IMMER sichtbar) ── -->
-      <div class="mp-filter-strip">
+      <div class="mp-filter-strip" *ngIf="!simpleCatalog">
         <div class="strip-scroll">
           <button class="strip-chip"
                   [class.strip-chip--active]="!selectedCategory"
@@ -64,7 +64,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </div>
 
       <!-- ── META / BREADCRUMB ── -->
-      <div class="mp-meta">
+      <div class="mp-meta" *ngIf="!simpleCatalog">
         <span class="mp-count">
           {{ displayedProducts.length }}
           {{ displayedProducts.length === 1
@@ -122,7 +122,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       </div>
 
       <!-- ── MOBILE: Sticky Bottom Bar ── -->
-      <div class="mp-bottom-bar" role="toolbar" [attr.aria-label]="'storefront.filter.filter' | translate">
+      <div class="mp-bottom-bar" *ngIf="!simpleCatalog" role="toolbar" [attr.aria-label]="'storefront.filter.filter' | translate">
         <button class="mp-bottom-btn" (click)="toggleDrawer()"
                 [attr.aria-expanded]="drawerOpen"
                 [attr.aria-label]="'storefront.filter.filter' | translate">
@@ -205,6 +205,7 @@ import { TranslatePipe } from '@app/core/pipes/translate.pipe';
       /* Mobile: Platz für Bottom-Bar (54px) + Bottom-Nav (60px) + Safe-Area */
       padding: 1rem 1rem calc(54px + var(--bottom-nav-height, 60px) + var(--safe-area-bottom, 0px) + 1rem);
     }
+    .mp-wrapper--simple { padding-bottom: calc(var(--bottom-nav-height, 60px) + var(--safe-area-bottom, 0px) + 1rem); }
     @media (min-width: 768px) { .mp-wrapper { padding-bottom: 2rem; } }
 
     /* ── SEARCH BAR ── */
@@ -544,6 +545,7 @@ export class ProductGridMarketplaceComponent implements OnChanges {
   @Input() selectedCategory: Category | null = null;
   @Input() storeId: number = 0;
   @Input() externalSearchQuery = ''; // Von Header-Suche gesteuert
+  @Input() simpleCatalog = false; // INVITE_ONLY: Produkte direkt unter dem Store-Header anzeigen
 
   @Output() filterChange = new EventEmitter<Category | null>();
   @Output() addToCart = new EventEmitter<Product>();
@@ -709,4 +711,3 @@ export class ProductGridMarketplaceComponent implements OnChanges {
   @HostListener('document:keydown.escape')
   onEscape(): void { this.drawerOpen = false; this.sortDrawerOpen = false; }
 }
-

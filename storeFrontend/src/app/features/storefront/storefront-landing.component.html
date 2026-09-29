@@ -81,7 +81,7 @@
     </app-storefront-header>
 
     <!-- Category Pills Navigation - Mobile First -->
-    <div class="category-pills-wrapper" *ngIf="!loading && categories.length > 0">
+    <div class="category-pills-wrapper" *ngIf="customerAccountMode !== 'INVITE_ONLY' && !loading && categories.length > 0">
       <div class="category-pills">
         <button
           class="category-pill"
@@ -168,11 +168,11 @@
   <main class="storefront-main" *ngIf="!loading && !isRestaurantMode && !isServiceMode">
 
     <!-- ── HERO / SLIDER – immer sichtbar, unabhängig vom Template ── -->
-    <ng-container *ngTemplateOutlet="heroSection"></ng-container>
+    <ng-container *ngIf="customerAccountMode !== 'INVITE_ONLY'" [ngTemplateOutlet]="heroSection"></ng-container>
 
   <!-- ── PRODUCT GRID + FILTER – Template-Switch ── -->
   <div id="products">
-  <ng-container [ngSwitch]="activeGridTemplate">
+  <ng-container [ngSwitch]="customerAccountMode === 'INVITE_ONLY' ? 'MARKETPLACE' : activeGridTemplate">
 
       <!-- Template 1: Classic Sidebar Grid (CLASSIC_BOOTSTRAP, RESTAURANT_WARM) -->
       <app-product-grid-classic *ngSwitchCase="'CLASSIC'"
@@ -215,6 +215,7 @@
 
       <!-- Template 4: Mobile Marketplace Grid (MODERN_GRID, default) -->
       <app-product-grid-marketplace *ngSwitchDefault
+        [simpleCatalog]="customerAccountMode === 'INVITE_ONLY'"
         [products]="products"
         [categories]="categories"
         [filteredProducts]="filteredProducts"
