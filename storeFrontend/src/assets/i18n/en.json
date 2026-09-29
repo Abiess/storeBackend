@@ -1040,6 +1040,10 @@
   "storefront": {
     "maintenanceTitle": "Under maintenance",
     "maintenanceMessage": "Our store is currently being maintained. Please check back soon.",
+    "privateShopTitle": "Sign in to continue",
+    "privateShopMessage": "This store is available to invited customers only.",
+    "customerIdentifier": "Customer ID or phone number",
+    "invalidCustomerLogin": "Invalid credentials. Check your customer ID/phone number and password.",
     "storeCurrency": "Store currency",
     "currencyFixedByMerchant": "Prices are displayed in the currency set by the merchant.",
     "searchResults": "Search results",

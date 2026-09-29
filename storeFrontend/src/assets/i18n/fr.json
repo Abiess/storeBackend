@@ -927,6 +927,10 @@
     "order": "Demander"
   },
   "storefront": {
+    "privateShopTitle": "Connectez-vous pour continuer",
+    "privateShopMessage": "Cette boutique est réservée aux clients invités.",
+    "customerIdentifier": "Identifiant client ou numéro de téléphone",
+    "invalidCustomerLogin": "Identifiants incorrects. Vérifiez votre identifiant/numéro de téléphone et votre mot de passe.",
     "storeCurrency": "Devise du magasin",
     "currencyFixedByMerchant": "Les prix sont affichés dans la devise définie par le commerçant.",
     "searchResults": "Résultats de recherche",

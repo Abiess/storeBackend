@@ -25,11 +25,46 @@
   </ng-template>
 </main>
 
+<!-- Invite-only shops show no catalogue or public navigation until a customer signs in. -->
+<main
+  class="invite-only-store-page"
+  *ngIf="storeResolutionComplete && !storeNotFound && !maintenanceEnabled && customerAccountMode === 'INVITE_ONLY' && !inviteOnlyAuthenticated">
+  <section class="invite-only-login-card">
+    <img *ngIf="storeLogo" class="store-maintenance-logo" [src]="storeLogo" [alt]="storeName || ''" />
+    <h1>{{ 'storefront.privateShopTitle' | translate }}</h1>
+    <p>{{ 'storefront.privateShopMessage' | translate }}</p>
+    <form (ngSubmit)="loginInviteOnlyCustomer()">
+      <label for="inviteCustomerIdentifier">{{ 'storefront.customerIdentifier' | translate }}</label>
+      <input
+        id="inviteCustomerIdentifier"
+        name="inviteCustomerIdentifier"
+        type="text"
+        autocomplete="username"
+        [(ngModel)]="inviteOnlyIdentifier"
+        required />
+
+      <label for="inviteCustomerPassword">{{ 'auth.password' | translate }}</label>
+      <input
+        id="inviteCustomerPassword"
+        name="inviteCustomerPassword"
+        type="password"
+        autocomplete="current-password"
+        [(ngModel)]="inviteOnlyPassword"
+        required />
+
+      <p class="invite-only-login-error" *ngIf="inviteOnlyLoginError" role="alert">{{ 'storefront.invalidCustomerLogin' | translate }}</p>
+      <button type="submit" [disabled]="inviteOnlyLoginSubmitting || !inviteOnlyIdentifier.trim() || !inviteOnlyPassword">
+        {{ inviteOnlyLoginSubmitting ? ('common.loading' | translate) : ('common.login' | translate) }}
+      </button>
+    </form>
+  </section>
+</main>
+
 <!-- Store nicht gefunden / Reservierter Slug -->
 <app-store-not-found *ngIf="storeNotFound"></app-store-not-found>
 
 <!-- Normaler Store-Inhalt -->
-<div *ngIf="storeResolutionComplete && !storeNotFound && !maintenanceEnabled" class="storefront-wrapper">
+<div *ngIf="storeResolutionComplete && !storeNotFound && !maintenanceEnabled && (customerAccountMode !== 'INVITE_ONLY' || inviteOnlyAuthenticated)" class="storefront-wrapper">
   <!-- Sticky Header mit Store-Name und Warenkorb -->
   <!-- ✅ Nur für normale Shop-Templates, NICHT für Full-Page-Templates (SERVICE_PROFESSIONAL) -->
   <div class="sticky-header" *ngIf="!isServiceMode">

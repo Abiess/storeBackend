@@ -36,6 +36,7 @@ export class AuthService {
    * wird – siehe ARCHITECTURE_APP_FACTORY.md §M3a.
    */
   private tokenCache: string | null = null;
+  private storeCustomerStoreId: number | null = null;
 
   /** true sobald `initialize()` (App-Start) abgeschlossen ist. */
   private readySubject = new BehaviorSubject<boolean>(false);
@@ -56,6 +57,8 @@ export class AuthService {
     try {
       const token = await this.storage.get('auth_token');
       this.tokenCache = token;
+      const storeCustomerStoreId = await this.storage.get('store_customer_store_id');
+      this.storeCustomerStoreId = storeCustomerStoreId ? Number(storeCustomerStoreId) : null;
 
       if (token) {
         // FIXED: Zuerst prüfen ob Token client-seitig noch gültig ist
@@ -111,6 +114,8 @@ export class AuthService {
     this.currentUserSubject.next(null);
     void this.storage.remove('auth_token');
     void this.storage.remove('currentUser');
+    void this.storage.remove('store_customer_store_id');
+    this.storeCustomerStoreId = null;
     localStorage.removeItem('cart_session_id');
   }
 
@@ -143,8 +148,10 @@ export class AuthService {
           // im Hintergrund (fire-and-forget) – siehe `tokenCache`-Doku oben.
           this.tokenCache = response.token;
           this.currentUserSubject.next(response.user);
+          this.storeCustomerStoreId = null;
           void this.storage.set('auth_token', response.token);
           void this.storage.set('currentUser', JSON.stringify(response.user));
+          void this.storage.remove('store_customer_store_id');
 
           // FIXED: Nach Login - Trigger Warenkorb-Update (Guest-Cart wird migriert!)
           // WICHTIG: Wir rufen NICHT clearLocalCart() auf, weil das den Warenkorb leert
@@ -155,6 +162,21 @@ export class AuthService {
           }
         })
       );
+  }
+
+  loginStoreCustomer(storeId: number, identifier: string, password: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(
+      `${environment.apiUrl}/public/stores/${storeId}/customer-login`,
+      { identifier, password }
+    ).pipe(tap(response => {
+      this.tokenCache = response.token;
+      this.currentUserSubject.next(response.user);
+      this.storeCustomerStoreId = storeId;
+      void this.storage.set('auth_token', response.token);
+      void this.storage.set('currentUser', JSON.stringify(response.user));
+      void this.storage.set('store_customer_store_id', String(storeId));
+      if (this.cartService) this.cartService.triggerCartUpdate();
+    }));
   }
 
   /**
@@ -212,8 +234,10 @@ export class AuthService {
     // den korrekten "ausgeloggt"-Zustand), Persistenz async im Hintergrund.
     this.tokenCache = null;
     this.currentUserSubject.next(null);
+    this.storeCustomerStoreId = null;
     void this.storage.remove('auth_token');
     void this.storage.remove('currentUser');
+    void this.storage.remove('store_customer_store_id');
 
     // FIXED: Setze sessionId zurück, damit neuer User neuen Warenkorb bekommt.
     // `cart_session_id` läuft bewusst NICHT über StorageAdapter (kein
@@ -370,6 +394,10 @@ export class AuthService {
    */
   isLoggedIn(): boolean {
     return this.isAuthenticated();
+  }
+
+  isLoggedInAsStoreCustomer(storeId: number): boolean {
+    return this.isLoggedIn() && this.storeCustomerStoreId === storeId;
   }
 
   /**

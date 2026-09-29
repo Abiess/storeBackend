@@ -1231,6 +1231,10 @@
   "storefront": {
     "maintenanceTitle": "Wartungsarbeiten",
     "maintenanceMessage": "Unser Shop wird gerade gewartet. Bitte schau bald wieder vorbei.",
+    "privateShopTitle": "Bitte anmelden",
+    "privateShopMessage": "Dieser Shop ist nur für eingeladene Kunden zugänglich.",
+    "customerIdentifier": "Kunden-ID oder Telefonnummer",
+    "invalidCustomerLogin": "Anmeldedaten sind ungültig. Bitte Kunden-ID/Telefonnummer und Passwort prüfen.",
     "storeCurrency": "Store-Währung",
     "currencyFixedByMerchant": "Die Preise werden in der vom Händler festgelegten Währung angezeigt.",
     "searchResults": "Suchergebnisse",

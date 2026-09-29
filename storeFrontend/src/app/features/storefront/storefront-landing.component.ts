@@ -1,5 +1,7 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild, ElementRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { SubdomainService } from '@app/core/services/subdomain.service';
@@ -13,6 +15,7 @@ import { PublicApiService } from '@app/core/services/public-api.service';
 import { WhatsappConfigService } from '@app/core/services/whatsapp-config.service';
 import { SeoApiService } from '@app/core/services/seo-api.service';
 import { SeoMetaService } from '@app/core/services/seo-meta.service';
+import { AuthService } from '@app/core/services/auth.service';
 import { Product, Category } from '@app/core/models';
 import { StorefrontHeaderComponent } from './storefront-header.component';
 import { StorefrontBottomNavComponent } from './storefront-bottom-nav.component';
@@ -39,6 +42,7 @@ import { ServiceProfessionalLayoutComponent } from './components/service-profess
     selector: 'app-storefront-landing',
     imports: [
         CommonModule,
+        FormsModule,
         RouterModule,
         TranslatePipe,
         StorefrontHeaderComponent,
@@ -63,6 +67,7 @@ import { ServiceProfessionalLayoutComponent } from './components/service-profess
 })
 export class StorefrontLandingComponent implements OnInit {
   @ViewChild(StorefrontHeaderComponent) private storefrontHeader?: StorefrontHeaderComponent;
+  private readonly destroyRef = inject(DestroyRef);
 
   storeId: number | null = null;
   storeName: string | null = null;
@@ -72,6 +77,11 @@ export class StorefrontLandingComponent implements OnInit {
   maintenanceImageUrl: string | null = null;
   maintenanceImageLoadFailed = false;
   customerAccountMode: 'PUBLIC_REGISTRATION' | 'INVITE_ONLY' = 'PUBLIC_REGISTRATION';
+  inviteOnlyAuthenticated = false;
+  inviteOnlyIdentifier = '';
+  inviteOnlyPassword = '';
+  inviteOnlyLoginError = '';
+  inviteOnlyLoginSubmitting = false;
   products: Product[] = [];
   categories: Category[] = [];
   loading = true;
@@ -190,6 +200,7 @@ export class StorefrontLandingComponent implements OnInit {
     private whatsappConfig: WhatsappConfigService,
     private seoApi: SeoApiService,
     private seoMeta: SeoMetaService,
+    private authService: AuthService,
     public router: Router,
     private route: ActivatedRoute   // ← für Native: /s/:slug Route-Param
   ) {}
@@ -197,6 +208,14 @@ export class StorefrontLandingComponent implements OnInit {
   ngOnInit(): void {
     console.log('🏪 Storefront Landing: Initializing...');
     console.log('🌐 Current hostname:', window.location.hostname);
+
+    this.authService.currentUser$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      if (!this.storeId || this.customerAccountMode !== 'INVITE_ONLY') return;
+      const wasAuthenticated = this.inviteOnlyAuthenticated;
+      this.inviteOnlyAuthenticated = this.authService.isLoggedInAsStoreCustomer(this.storeId);
+      if (this.inviteOnlyAuthenticated && !wasAuthenticated) this.loadStorefrontContent();
+      if (!this.inviteOnlyAuthenticated && wasAuthenticated) this.loading = false;
+    });
 
     // ── Native App: Route-Param /s/:slug hat Vorrang vor Subdomain ──────────
     const routeSlug = this.route.snapshot.paramMap.get('slug');
@@ -235,6 +254,7 @@ export class StorefrontLandingComponent implements OnInit {
 
         if (info.isSubdomain && info.storeId) {
           this.storeId = info.storeId;
+          this.inviteOnlyAuthenticated = this.authService.isLoggedInAsStoreCustomer(info.storeId);
           this.storeName = info.storeName || `Store ${info.storeId}`;
 
           console.log('📋 Store Details:', {
@@ -242,18 +262,12 @@ export class StorefrontLandingComponent implements OnInit {
             storeName: this.storeName
           });
 
-          // FIXED: Lade Theme, Produkte und Kategorien
-          this.loadTheme();
-          this.loadStoreLogo();
-          this.loadStoreData();
-          this.loadSeoMeta(); // ← SEO-Tags aus gespeicherten Einstellungen
-
-          // FIXED: loadCartCount() wird ERST nach resolveStore() aufgerufen
-          // damit die storeId im SubdomainService bereits gesetzt ist
-          this.loadCartCount();
-
-          // ✅ WhatsApp-Config aus PublicStoreDTO laden (für Widget + Produkt-CTA)
-          this._loadStoreWhatsappConfig();
+          if (this.customerAccountMode === 'INVITE_ONLY' && !this.inviteOnlyAuthenticated) {
+            // Geschlossene Stores laden Produkt- und Store-Inhalte erst nach dem Kunden-Login.
+            this.loading = false;
+            return;
+          }
+          this.loadStorefrontContent();
         } else if (info.isSubdomain && !info.storeId) {
           // NEUE: Subdomain erkannt, aber kein Store gefunden
           console.warn('⚠️ Subdomain erkannt, aber Store nicht gefunden');
@@ -270,6 +284,37 @@ export class StorefrontLandingComponent implements OnInit {
         // NEUE: Bei Fehler "Store nicht gefunden" anzeigen
         this.storeNotFound = true;
         this.loading = false;
+      }
+    });
+  }
+
+  private loadStorefrontContent(): void {
+    this.loading = true;
+    this.loadTheme();
+    this.loadStoreLogo();
+    this.loadStoreData();
+    this.loadSeoMeta();
+    this.loadCartCount();
+    this._loadStoreWhatsappConfig();
+  }
+
+  loginInviteOnlyCustomer(): void {
+    if (!this.storeId || !this.inviteOnlyIdentifier.trim() || !this.inviteOnlyPassword) return;
+    this.inviteOnlyLoginSubmitting = true;
+    this.inviteOnlyLoginError = '';
+    this.authService.loginStoreCustomer(
+      this.storeId,
+      this.inviteOnlyIdentifier.trim(),
+      this.inviteOnlyPassword
+    ).subscribe({
+      next: () => {
+        this.inviteOnlyAuthenticated = true;
+        this.inviteOnlyLoginSubmitting = false;
+        this.inviteOnlyPassword = '';
+      },
+      error: () => {
+        this.inviteOnlyLoginSubmitting = false;
+        this.inviteOnlyLoginError = 'invalid';
       }
     });
   }
