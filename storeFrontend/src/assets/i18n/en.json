@@ -4254,5 +4254,30 @@
     "loginRequired": "Please sign in with your prepared store account.",
     "sentTitle": "Request sent",
     "sentMessage": "Your product list was sent to the store. The team will contact you when your order is prepared."
+  },
+  "inviteOrders": {
+    "title": "Orders",
+    "detailTitle": "Order details",
+    "sent": "Sent orders",
+    "more": "More",
+    "back": "Back",
+    "loading": "Loading orders…",
+    "loadError": "Could not load orders.",
+    "retry": "Try again",
+    "empty": "You have not sent any orders yet.",
+    "itemCount": "{count} items",
+    "items": "Items",
+    "quantity": "{count} pieces",
+    "perUnit": "per piece",
+    "total": "Total",
+    "status": {
+      "pending": "Request sent",
+      "confirmed": "Confirmed",
+      "processing": "Being prepared",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled",
+      "other": "In progress"
+    }
   }
 }

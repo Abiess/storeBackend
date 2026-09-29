@@ -107,7 +107,7 @@ import { PromoBannerComponent } from '../../shared/components/promo-banner/promo
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 {{ 'navigation.myAccount' | translate }}
               </a>
-              <a routerLink="/orders" class="dropdown-item" (click)="userMenuOpen = false">
+              <a [routerLink]="customerAccountMode === 'INVITE_ONLY' ? '/storefront/orders' : '/customer/orders'" class="dropdown-item" (click)="userMenuOpen = false">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                 {{ 'navigation.myOrders' | translate }}
               </a>

@@ -287,8 +287,9 @@
 
 <!-- Mobile Bottom Navigation (nur auf < 768px sichtbar, nicht bei SERVICE_PROFESSIONAL) -->
 <app-storefront-bottom-nav
-  *ngIf="!storeNotFound && !isServiceMode"
+  *ngIf="!storeNotFound && !isServiceMode && (customerAccountMode !== 'INVITE_ONLY' || inviteOnlyAuthenticated)"
   [cartCount]="cartItemCount"
+  [inviteOnlyMode]="customerAccountMode === 'INVITE_ONLY'"
   [categoryActive]="bottomNavCategoryActive"
   [searchActive]="bottomNavSearchActive"
   (categoryClick)="onBottomNavCategory()"
