@@ -111,7 +111,10 @@ class ShopProduct {
     required this.currencyCode,
     this.categoryId,
     this.categoryName,
+    this.description,
+    this.sku,
     this.imageUrl,
+    this.imageUrls = const [],
     this.isFeatured = false,
   });
 
@@ -121,7 +124,10 @@ class ShopProduct {
   final String currencyCode;
   final int? categoryId;
   final String? categoryName;
+  final String? description;
+  final String? sku;
   final String? imageUrl;
+  final List<String> imageUrls;
   final bool isFeatured;
 
   factory ShopProduct.fromJson(
@@ -134,6 +140,15 @@ class ShopProduct {
     final primaryMedia = media.where((item) => item['isPrimary'] == true);
     final firstMedia = primaryMedia.isNotEmpty ? primaryMedia.first : (media.isEmpty ? null : media.first);
     final rawImage = json['primaryImageUrl'] ?? json['imageUrl'] ?? firstMedia?['url'];
+    final images = media
+        .map((item) => _readString(item['url']))
+        .whereType<String>()
+        .toList();
+    final primaryImage = _readString(rawImage);
+    if (primaryImage != null) {
+      images.remove(primaryImage);
+      images.insert(0, primaryImage);
+    }
     final rawPrice = json['basePrice'];
     return ShopProduct(
       id: _readInt(json['id']),
@@ -142,7 +157,10 @@ class ShopProduct {
       currencyCode: json['currencyCode'] as String? ?? defaultCurrencyCode,
       categoryId: json['categoryId'] == null ? null : _readInt(json['categoryId']),
       categoryName: _readString(json['categoryName']),
-      imageUrl: _readString(rawImage),
+      description: _readString(json['description']),
+      sku: _readString(json['sku']),
+      imageUrl: primaryImage,
+      imageUrls: images,
       isFeatured: json['isFeatured'] == true,
     );
   }

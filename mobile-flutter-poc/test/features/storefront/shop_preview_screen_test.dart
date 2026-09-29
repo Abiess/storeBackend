@@ -35,6 +35,15 @@ void main() {
     expect(find.text('Olivenöl'), findsOneWidget);
     expect(find.text('EUR'), findsNothing);
     expect(find.text('12,50 MAD'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('product-row-2')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('shop-product-details')), findsOneWidget);
+    expect(find.text('Natives Olivenöl aus Marokko'), findsOneWidget);
+    expect(find.text('Artikelnummer: OL-5'), findsOneWidget);
+    await tester.tap(find.byType(BackButton).first);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('shop-category-products')), findsOneWidget);
   });
 
   testWidgets('search tab filters products loaded from the public API', (tester) async {
@@ -86,6 +95,8 @@ ShopCatalogService _service(List<String> requests) {
             'id': 2,
             'title': 'Olivenöl',
             'basePrice': 12.5,
+            'description': 'Natives Olivenöl aus Marokko',
+            'sku': 'OL-5',
             'categoryId': 5,
             'categoryName': 'Oliven',
             'isFeatured': true,
