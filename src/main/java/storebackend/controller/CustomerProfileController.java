@@ -28,12 +28,11 @@ public class CustomerProfileController {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-            if (authentication == null || !authentication.isAuthenticated()) {
+            if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User user)) {
                 return ResponseEntity.status(401)
                     .body(new ErrorResponse("User not authenticated"));
             }
 
-            User user = (User) authentication.getPrincipal();
             CustomerProfileDTO profile = customerProfileService.getOrCreateProfile(user.getId());
 
             return ResponseEntity.ok(profile);
@@ -48,12 +47,11 @@ public class CustomerProfileController {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-            if (authentication == null || !authentication.isAuthenticated()) {
+            if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User user)) {
                 return ResponseEntity.status(401)
                     .body(new ErrorResponse("User not authenticated"));
             }
 
-            User user = (User) authentication.getPrincipal();
             CustomerProfileDTO profile = customerProfileService.updateProfile(user.getId(), request);
 
             return ResponseEntity.ok(profile);
@@ -68,12 +66,11 @@ public class CustomerProfileController {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-            if (authentication == null || !authentication.isAuthenticated()) {
+            if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User user)) {
                 return ResponseEntity.status(401)
                     .body(new ErrorResponse("User not authenticated"));
             }
 
-            User user = (User) authentication.getPrincipal();
             CustomerProfileDTO profile = customerProfileService.saveAddress(user.getId(), request);
 
             return ResponseEntity.ok(profile);
@@ -88,12 +85,11 @@ public class CustomerProfileController {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-            if (authentication == null || !authentication.isAuthenticated()) {
+            if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof User user)) {
                 return ResponseEntity.status(401)
                     .body(new ErrorResponse("User not authenticated"));
             }
 
-            User user = (User) authentication.getPrincipal();
             customerProfileService.changePassword(user.getId(), request);
 
             return ResponseEntity.ok(Map.of("success", true, "message", "Password changed successfully"));
