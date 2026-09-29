@@ -299,7 +299,7 @@
 </app-storefront-bottom-nav>
 
 <!-- Footer -->
-<footer id="contact" class="storefront-footer" *ngIf="!maintenanceEnabled">
+<footer id="contact" class="storefront-footer" *ngIf="!maintenanceEnabled && customerAccountMode !== 'INVITE_ONLY'">
   <div class="footer-container">
     <!-- Footer Grid: 4 Spalten Desktop → 2 Tablet → 1 Mobile -->
     <div class="footer-grid">
