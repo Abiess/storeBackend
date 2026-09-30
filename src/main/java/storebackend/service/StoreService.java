@@ -315,6 +315,9 @@ public class StoreService {
         if (request.getWhatsappNumber() != null) {
             store.setWhatsappNumber(request.getWhatsappNumber().isBlank() ? null : request.getWhatsappNumber().trim());
         }
+        if (request.getWhatsappButtonEnabled() != null) {
+            store.setWhatsappButtonEnabled(request.getWhatsappButtonEnabled());
+        }
         if (request.getWhatsappNotificationsEnabled() != null) {
             store.setWhatsappNotificationsEnabled(request.getWhatsappNotificationsEnabled());
         }
@@ -914,6 +917,7 @@ public class StoreService {
         dto.setDescription(store.getDescription());
         dto.setCreatedAt(store.getCreatedAt());
         dto.setWhatsappNumber(store.getWhatsappNumber());
+        dto.setWhatsappButtonEnabled(store.isWhatsappButtonEnabled());
         dto.setWhatsappNotificationsEnabled(store.isWhatsappNotificationsEnabled());
         dto.setExpiryNotificationDays(store.getExpiryNotificationDays());
         dto.setGreetingMessage(store.getGreetingMessage());

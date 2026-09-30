@@ -176,6 +176,7 @@ public class DomainService {
                     dto.setStatus(store.getStatus().name());
                     dto.setCustomerAccountMode(store.getCustomerAccountMode().name());
                     dto.setWhatsappNumber(store.getWhatsappNumber());
+                    dto.setWhatsappButtonEnabled(store.isWhatsappButtonEnabled());
                     dto.setGreetingMessage(store.getGreetingMessage());
                     dto.setContactEmail(store.getContactEmail());
                     dto.setContactPhone(store.getContactPhone());
@@ -255,6 +256,7 @@ public class DomainService {
                             dto.setStatus(store.getStatus().name());
                             dto.setCustomerAccountMode(store.getCustomerAccountMode().name());
                             dto.setWhatsappNumber(store.getWhatsappNumber());
+                            dto.setWhatsappButtonEnabled(store.isWhatsappButtonEnabled());
                             dto.setGreetingMessage(store.getGreetingMessage());
                             dto.setContactEmail(store.getContactEmail());
                             dto.setContactPhone(store.getContactPhone());

@@ -57,6 +57,9 @@ public class Store {
     @Column(name = "whatsapp_number")
     private String whatsappNumber;
 
+    @Column(name = "whatsapp_button_enabled", nullable = false)
+    private boolean whatsappButtonEnabled = true;
+
     @Column(name = "greeting_message", columnDefinition = "TEXT")
     private String greetingMessage;
 

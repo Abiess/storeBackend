@@ -23,6 +23,7 @@ public class StoreDTO {
     private CustomerAccountMode customerAccountMode;
     private LocalDateTime createdAt;
     private String whatsappNumber;
+    private boolean whatsappButtonEnabled;
     private boolean whatsappNotificationsEnabled;
     private Integer expiryNotificationDays; // Tage vor Ablauf für MHD-Warnung (Default: 7)
     private String greetingMessage;

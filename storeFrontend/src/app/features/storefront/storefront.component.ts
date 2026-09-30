@@ -164,7 +164,8 @@ export class StorefrontComponent implements OnInit, OnDestroy {
 
         // ✅ WhatsApp-Konfiguration aus Store-Settings übernehmen (Priorität vor environment)
         this.whatsappConfig.setContext('store');
-        this.whatsappConfig.setNumber(store.whatsappNumber ?? null);
+        this.whatsappConfig.setNumber(store.customerAccountMode === 'INVITE_ONLY' || store.whatsappButtonEnabled === false
+          ? null : store.whatsappNumber ?? null);
         this.whatsappConfig.setMessage(
           store.greetingMessage?.trim()
             ? store.greetingMessage.trim()
