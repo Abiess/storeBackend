@@ -173,6 +173,7 @@ class ShopProduct {
     this.categoryId,
     this.categoryName,
     this.imageUrl,
+    this.taxRate,
     this.isFeatured = false,
   });
 
@@ -183,6 +184,7 @@ class ShopProduct {
   final int? categoryId;
   final String? categoryName;
   final String? imageUrl;
+  final double? taxRate;
   final bool isFeatured;
 
   factory ShopProduct.fromJson(
@@ -204,6 +206,11 @@ class ShopProduct {
       categoryId: json['categoryId'] == null ? null : _readInt(json['categoryId']),
       categoryName: _readString(json['categoryName']),
       imageUrl: _readString(rawImage),
+      taxRate: switch (json['taxRate']) {
+        num value => value.toDouble(),
+        String value => double.tryParse(value),
+        _ => null,
+      },
       isFeatured: json['isFeatured'] == true,
     );
   }

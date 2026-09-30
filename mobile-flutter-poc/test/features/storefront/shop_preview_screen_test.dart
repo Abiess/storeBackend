@@ -54,6 +54,40 @@ void main() {
     expect(find.text('Olivenöl'), findsNothing);
   });
 
+  testWidgets('invite-only product detail shows actual tax and quantity without WhatsApp', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MarktShopPreviewApp(
+      catalogService: _service([], accountMode: 'INVITE_ONLY'),
+      storeSlug: 'spm',
+      customerLogin: (_, __, ___) async {},
+    ));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('shop-login-identifier')), 'C-AB12CD34');
+    await tester.enterText(find.byKey(const ValueKey('shop-login-password')), 'secret123');
+    await tester.tap(find.byKey(const ValueKey('shop-login-submit')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('nav-Kategorien')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('category-card-Oliven')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('shop-product-2')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('shop-product-detail')), findsOneWidget);
+    expect(find.text('MwSt. 7 %'), findsOneWidget);
+    expect(find.textContaining('WhatsApp'), findsNothing);
+    expect(find.text('Beschreibung'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('detail-increase')));
+    await tester.pumpAndSettle();
+    expect(find.text('2'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('detail-add-to-cart')));
+    await tester.tap(find.byKey(const ValueKey('nav-Warenkorb')));
+    await tester.pumpAndSettle();
+    expect(find.text('2 Artikel im Warenkorb'), findsOneWidget);
+  });
+
   testWidgets('shows a retry action when a public catalog request fails', (tester) async {
     await tester.pumpWidget(MarktShopPreviewApp(
       catalogService: ShopCatalogService(client: MockClient((_) async => http.Response('', 503))),
@@ -152,6 +186,7 @@ ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC
             'basePrice': 12.5,
             'categoryId': withSubcategories ? 12 : 5,
             'categoryName': 'Oliven',
+            'taxRate': 7,
             'isFeatured': true,
           },
           {

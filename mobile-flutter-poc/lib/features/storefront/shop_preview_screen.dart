@@ -30,6 +30,8 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   int _selectedTab = 0;
   int _cartCount = 0;
   ShopCategory? _selectedCategory;
+  ShopProduct? _selectedProduct;
+  int _detailQuantity = 1;
   bool _showCategoryProducts = false;
   String _query = '';
 
@@ -130,6 +132,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       _selectedTab = 0;
       _cartCount = 0;
       _selectedCategory = null;
+      _selectedProduct = null;
       _showCategoryProducts = false;
     });
   }
@@ -181,6 +184,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   }
 
   Widget _buildCurrentPage(ColorScheme colors) {
+    if (_selectedProduct != null) return _buildProductDetailPage(_selectedProduct!, colors);
     if (_selectedTab == 1) {
       return _selectedCategory == null
           ? _buildCategoriesPage(colors)
@@ -397,7 +401,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       decoration: BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: colors.outlineVariant))),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       child: Column(children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        InkWell(key: ValueKey('shop-product-${product.id}'), onTap: () => _openProduct(product), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           SizedBox(width: 94, height: 102, child: ClipRRect(borderRadius: BorderRadius.circular(10), child: _productArtwork(product, colors))),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -408,7 +412,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             const SizedBox(height: 8),
             Text(_formatPrice(product), style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700, fontSize: 18)),
           ])),
-        ]),
+        ])),
         Align(alignment: Alignment.centerRight, child: OutlinedButton.icon(onPressed: () => _addToCart(), icon: const Icon(Icons.add_shopping_cart), label: const Text('In den Warenkorb'))),
       ]),
     );
@@ -481,10 +485,10 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
 
   Widget _buildProductCard(ShopProduct product, ColorScheme colors) {
     return Card(margin: EdgeInsets.zero, color: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: colors.outlineVariant)), clipBehavior: Clip.antiAlias, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Expanded(child: Stack(fit: StackFit.expand, children: [
+      Expanded(child: InkWell(key: ValueKey('shop-product-${product.id}'), onTap: () => _openProduct(product), child: Stack(fit: StackFit.expand, children: [
         _productArtwork(product, colors),
         if (product.isFeatured) const Positioned(left: 8, top: 8, child: _ProductBadge(label: 'Im Angebot')),
-      ])),
+      ]))),
       Padding(padding: const EdgeInsets.fromLTRB(10, 9, 8, 8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
         const SizedBox(height: 5),
@@ -499,6 +503,59 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       AppBar(title: const Text('Suche'), centerTitle: true),
       Padding(padding: const EdgeInsets.all(16), child: _buildSearchField(colors)),
       Expanded(child: products.isEmpty ? const Center(child: Text('Keine Produkte gefunden')) : ListView.builder(itemCount: products.length, itemBuilder: (context, index) => _buildProductRow(products[index], colors))),
+    ]);
+  }
+
+  Widget _buildProductDetailPage(ShopProduct product, ColorScheme colors) {
+    final tax = product.taxRate;
+    return CustomScrollView(key: const ValueKey('shop-product-detail'), slivers: [
+      SliverAppBar(
+        pinned: true,
+        leading: IconButton(
+          tooltip: 'Zurück zu Produkten',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => setState(() => _selectedProduct = null),
+        ),
+        title: const Text('Produkt'),
+        backgroundColor: colors.surface,
+      ),
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+        sliver: SliverToBoxAdapter(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(
+            height: 260,
+            width: double.infinity,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: ColoredBox(color: colors.surface, child: _productArtwork(product, colors)),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(product.name, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 12),
+          Text(_formatPrice(product), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: colors.primary, fontWeight: FontWeight.w700)),
+          if (tax != null) ...[
+            const SizedBox(height: 6),
+            Text('MwSt. ${tax.toStringAsFixed(tax == tax.roundToDouble() ? 0 : 2).replaceAll('.', ',')} %',
+                style: TextStyle(color: colors.onSurfaceVariant)),
+          ],
+          const SizedBox(height: 24),
+          Row(children: [
+            const Text('Menge', style: TextStyle(fontWeight: FontWeight.w600)),
+            const Spacer(),
+            IconButton(key: const ValueKey('detail-decrease'), tooltip: 'Menge verringern', onPressed: _detailQuantity > 1 ? () => setState(() => _detailQuantity--) : null, icon: const Icon(Icons.remove_circle_outline)),
+            Text('$_detailQuantity', key: const ValueKey('detail-quantity')),
+            IconButton(key: const ValueKey('detail-increase'), tooltip: 'Menge erhöhen', onPressed: () => setState(() => _detailQuantity++), icon: const Icon(Icons.add_circle_outline)),
+          ]),
+          const SizedBox(height: 16),
+          SizedBox(width: double.infinity, child: FilledButton.icon(
+            key: const ValueKey('detail-add-to-cart'),
+            onPressed: () => setState(() => _cartCount += _detailQuantity),
+            icon: const Icon(Icons.add_shopping_cart),
+            label: const Text('In den Warenkorb'),
+          )),
+        ])),
+      ),
     ]);
   }
 
@@ -530,6 +587,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             _ => _selectedTab == 4,
           };
           return Expanded(child: InkWell(key: ValueKey('nav-${labels[index]}'), onTap: () => setState(() {
+            _selectedProduct = null;
             _selectedTab = switch (index) { 0 => 1, 1 => 2, 2 => 0, _ => index };
             _selectedCategory = null;
             _showCategoryProducts = false;
@@ -542,6 +600,11 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   }
 
   void _openCategory(ShopCategory category) => setState(() { _selectedCategory = category; _selectedTab = 1; _showCategoryProducts = false; _query = ''; });
+
+  void _openProduct(ShopProduct product) => setState(() {
+    _selectedProduct = product;
+    _detailQuantity = 1;
+  });
 
   void _backFromCategory() => setState(() {
     final parentId = _selectedCategory?.parentId;
