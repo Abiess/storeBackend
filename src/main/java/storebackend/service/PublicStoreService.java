@@ -53,6 +53,7 @@ public class PublicStoreService {
             store.getStatus().name(),
             store.getCustomerAccountMode() != null ? store.getCustomerAccountMode().name() : null,
             store.getWhatsappNumber(),
+            store.isWhatsappButtonEnabled(),
             store.getGreetingMessage(),
             store.getContactEmail(),
             store.getContactPhone(),
@@ -104,7 +105,6 @@ public class PublicStoreService {
                 ? store.getShippingPolicyText() 
                 : null
         );
-        dto.setWhatsappButtonEnabled(store.isWhatsappButtonEnabled());
         dto.setMaintenanceEnabled(store.isMaintenanceEnabled());
         dto.setMaintenanceMode(store.getMaintenanceMode() != null
                 ? store.getMaintenanceMode().name()
