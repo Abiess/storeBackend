@@ -127,6 +127,17 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Build Marrakesch customer shop APK
+        run: flutter build apk --debug --flavor shop -t lib/entrypoints/main_shop.dart --dart-define=MARKT_MA_SHOP_SLUG=marrakesch
+
+      - name: Upload Marrakesch customer shop APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: markt-ma-flutter-marrakesch-preview-apk
+          path: mobile-flutter-poc/build/app/outputs/flutter-apk/app-shop-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Verify web/ exists (bootstrapped beforehand)
         run: |
           if [ ! -d "web" ]; then
