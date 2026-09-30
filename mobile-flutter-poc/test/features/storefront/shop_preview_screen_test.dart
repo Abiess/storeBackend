@@ -28,6 +28,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('category-card-Oliven')),
         findsOneWidget);
+    expect(find.byKey(const ValueKey('category-card-Leere Kategorie')),
+        findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('category-card-Oliven')));
     await tester.pumpAndSettle();
@@ -139,6 +141,7 @@ ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC
         return http.Response(jsonEncode([
           {'id': 5, 'name': 'Oliven', 'slug': 'oliven'},
           {'id': 9, 'name': 'Elektronik', 'slug': 'elektronik'},
+          {'id': 15, 'name': 'Leere Kategorie', 'slug': 'leere-kategorie'},
           if (withSubcategories) {'id': 12, 'name': 'Extra Virgin', 'slug': 'extra-virgin', 'parentId': 5},
         ]), 200);
       case '/api/stores/130/products':

@@ -34,11 +34,12 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   String _query = '';
 
   List<ShopCategory> get _categories => _catalog?.categories ?? const [];
-  List<ShopCategory> get _rootCategories => _categories.where((category) => category.parentId == null).toList();
+  List<ShopCategory> get _rootCategories =>
+      _categories.where((category) => category.parentId == null && _productCount(category) > 0).toList();
   List<ShopProduct> get _products => _catalog?.products ?? const [];
 
   List<ShopCategory> _childrenOf(ShopCategory category) =>
-      _categories.where((child) => child.parentId == category.id).toList();
+      _categories.where((child) => child.parentId == category.id && _productCount(child) > 0).toList();
 
   Set<int> _categoryIdsUnder(ShopCategory category) {
     final ids = <int>{category.id};
