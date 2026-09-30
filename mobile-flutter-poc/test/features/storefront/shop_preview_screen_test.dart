@@ -54,7 +54,7 @@ void main() {
     expect(find.text('Olivenöl'), findsNothing);
   });
 
-  testWidgets('invite-only product detail shows actual tax and quantity without WhatsApp', (tester) async {
+  testWidgets('invite-only product detail shows backend tax without local cart action', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(MarktShopPreviewApp(
@@ -79,13 +79,10 @@ void main() {
     expect(find.textContaining('WhatsApp'), findsNothing);
     expect(find.text('Beschreibung'), findsNothing);
 
-    await tester.tap(find.byKey(const ValueKey('detail-increase')));
-    await tester.pumpAndSettle();
-    expect(find.text('2'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('detail-add-to-cart')));
+    expect(find.text('In den Warenkorb'), findsNothing);
     await tester.tap(find.byKey(const ValueKey('nav-Warenkorb')));
     await tester.pumpAndSettle();
-    expect(find.text('2 Artikel im Warenkorb'), findsOneWidget);
+    expect(find.text('Warenkorb folgt mit Backend-Anbindung'), findsOneWidget);
   });
 
   testWidgets('shows a retry action when a public catalog request fails', (tester) async {

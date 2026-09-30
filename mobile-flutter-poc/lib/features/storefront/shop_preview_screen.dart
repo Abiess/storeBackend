@@ -28,10 +28,8 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   bool _loginRequired = false;
   bool _customerAuthenticated = false;
   int _selectedTab = 0;
-  int _cartCount = 0;
   ShopCategory? _selectedCategory;
   ShopProduct? _selectedProduct;
-  int _detailQuantity = 1;
   bool _showCategoryProducts = false;
   String _query = '';
 
@@ -130,7 +128,6 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       _catalog = null;
       _customerAuthenticated = false;
       _selectedTab = 0;
-      _cartCount = 0;
       _selectedCategory = null;
       _selectedProduct = null;
       _showCategoryProducts = false;
@@ -249,7 +246,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         Text(store.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
         Text('Store ${store.id} · Live-Daten', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant)),
       ])),
-      IconButton(tooltip: 'Warenkorb', onPressed: () => setState(() => _selectedTab = 3), icon: Badge(isLabelVisible: _cartCount > 0, label: Text('$_cartCount'), child: const Icon(Icons.shopping_cart_outlined))),
+      IconButton(tooltip: 'Warenkorb', onPressed: () => setState(() => _selectedTab = 3), icon: const Icon(Icons.shopping_cart_outlined)),
     ]);
   }
 
@@ -413,7 +410,6 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             Text(_formatPrice(product), style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700, fontSize: 18)),
           ])),
         ])),
-        Align(alignment: Alignment.centerRight, child: OutlinedButton.icon(onPressed: () => _addToCart(), icon: const Icon(Icons.add_shopping_cart), label: const Text('In den Warenkorb'))),
       ]),
     );
   }
@@ -492,7 +488,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       Padding(padding: const EdgeInsets.fromLTRB(10, 9, 8, 8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
         const SizedBox(height: 5),
-        Row(children: [Expanded(child: Text(_formatPrice(product), style: TextStyle(color: colors.primary, fontWeight: FontWeight.w800))), IconButton(tooltip: 'In den Warenkorb', onPressed: _addToCart, icon: const Icon(Icons.add_circle), color: colors.primary, padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36, minHeight: 36))]),
+        Text(_formatPrice(product), style: TextStyle(color: colors.primary, fontWeight: FontWeight.w800)),
       ])),
     ]));
   }
@@ -539,21 +535,6 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             Text('MwSt. ${tax.toStringAsFixed(tax == tax.roundToDouble() ? 0 : 2).replaceAll('.', ',')} %',
                 style: TextStyle(color: colors.onSurfaceVariant)),
           ],
-          const SizedBox(height: 24),
-          Row(children: [
-            const Text('Menge', style: TextStyle(fontWeight: FontWeight.w600)),
-            const Spacer(),
-            IconButton(key: const ValueKey('detail-decrease'), tooltip: 'Menge verringern', onPressed: _detailQuantity > 1 ? () => setState(() => _detailQuantity--) : null, icon: const Icon(Icons.remove_circle_outline)),
-            Text('$_detailQuantity', key: const ValueKey('detail-quantity')),
-            IconButton(key: const ValueKey('detail-increase'), tooltip: 'Menge erhöhen', onPressed: () => setState(() => _detailQuantity++), icon: const Icon(Icons.add_circle_outline)),
-          ]),
-          const SizedBox(height: 16),
-          SizedBox(width: double.infinity, child: FilledButton.icon(
-            key: const ValueKey('detail-add-to-cart'),
-            onPressed: () => setState(() => _cartCount += _detailQuantity),
-            icon: const Icon(Icons.add_shopping_cart),
-            label: const Text('In den Warenkorb'),
-          )),
         ])),
       ),
     ]);
@@ -562,7 +543,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   Widget _buildCartPage(ColorScheme colors) {
     return Column(children: [
       AppBar(title: const Text('Warenkorb'), centerTitle: true),
-      Expanded(child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.shopping_cart_outlined, size: 58, color: colors.primary), const SizedBox(height: 12), Text(_cartCount == 0 ? 'Dein Warenkorb ist noch leer' : '$_cartCount Artikel im Warenkorb', style: Theme.of(context).textTheme.titleMedium), const SizedBox(height: 6), const Text('Vorschau – Bestellen kommt später')])),),
+      Expanded(child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.shopping_cart_outlined, size: 58, color: colors.primary), const SizedBox(height: 12), Text('Warenkorb folgt mit Backend-Anbindung', style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center)])),),
     ]);
   }
 
@@ -603,7 +584,6 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
 
   void _openProduct(ShopProduct product) => setState(() {
     _selectedProduct = product;
-    _detailQuantity = 1;
   });
 
   void _backFromCategory() => setState(() {
@@ -612,7 +592,6 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     _showCategoryProducts = false;
   });
 
-  void _addToCart() => setState(() => _cartCount++);
 }
 
 const _categoryPalette = [Color(0xFFECEAFF), Color(0xFFFFE9D8), Color(0xFFE2F2E9), Color(0xFFFFE6EC)];
