@@ -249,6 +249,16 @@ public class OrderTrackingController {
         dto.setDeliveredAt(order.getDeliveredAt());
         dto.setCancelledAt(order.getCancelledAt());
         dto.setCustomerEmail(order.getCustomerEmail());
+        dto.setItems(orderItemRepository.findByOrderId(order.getId()).stream().map(item -> {
+            OrderDetailsDTO.OrderItemDTO itemDto = new OrderDetailsDTO.OrderItemDTO();
+            itemDto.setId(item.getId());
+            itemDto.setProductName(item.getProductName());
+            itemDto.setVariantName(item.getVariantTitle());
+            itemDto.setQuantity(item.getQuantity());
+            itemDto.setPrice(item.getPrice());
+            itemDto.setSubtotal(item.getTotal());
+            return itemDto;
+        }).collect(Collectors.toList()));
 
         // Status-Historie (Timeline) - FIXED: Explizite Liste statt Stream mit null-Werten
         List<Map<String, Object>> statusHistory = new java.util.ArrayList<>();
