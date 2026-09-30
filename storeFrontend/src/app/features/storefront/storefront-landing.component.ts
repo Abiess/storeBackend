@@ -782,9 +782,12 @@ export class StorefrontLandingComponent implements OnInit {
     return this.products.filter(product => ids.has(product.categoryId ?? -1)).length;
   }
 
-  get rootCategories(): Category[] { return this.categories.filter(category => !category.parentId); }
+  get rootCategories(): Category[] {
+    return this.categories.filter(category => !category.parentId && this.categoryProductCount(category) > 0);
+  }
   get detailChildren(): Category[] {
-    return this.categories.filter(category => category.parentId === this.categoryDetail?.id);
+    return this.categories.filter(category =>
+      category.parentId === this.categoryDetail?.id && this.categoryProductCount(category) > 0);
   }
 
   openCategory(category: Category): void {
