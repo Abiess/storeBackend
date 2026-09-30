@@ -2301,11 +2301,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                     );
                 }
 
-                const emailForConfirmation = this.checkoutForm.get('customerEmail')?.disabled
-                    ? this.checkoutForm.get('customerEmail')?.value
-                    : formValue.customerEmail;
-
-                console.log('📧 Navigiere zur Confirmation mit E-Mail:', emailForConfirmation);
+                const emailForConfirmation = this.inviteOnlyMode ? undefined : customerEmail;
 
                 this.router.navigate(['/order-confirmation'], {
                     queryParams: {

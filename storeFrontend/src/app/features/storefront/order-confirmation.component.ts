@@ -347,7 +347,7 @@ export class OrderConfirmationComponent implements OnInit {
     const email = this.route.snapshot.queryParams['email'];
     this.isOrderRequest = this.route.snapshot.queryParams['orderRequest'] === 'true';
 
-    if (!orderNumber || !email) {
+    if (!orderNumber || (!this.isOrderRequest && !email)) {
       this.error = this.translationService.translate('order.missingInfo');
       return;
     }
@@ -355,9 +355,12 @@ export class OrderConfirmationComponent implements OnInit {
     this.loadOrder(orderNumber, email);
   }
 
-  loadOrder(orderNumber: string, email: string): void {
+  loadOrder(orderNumber: string, email?: string): void {
     this.loading = true;
-    this.checkoutService.getOrderByNumber(orderNumber, email).subscribe({
+    const orderRequest = this.isOrderRequest
+      ? this.checkoutService.getCustomerOrderByNumber(orderNumber)
+      : this.checkoutService.getOrderByNumber(orderNumber, email!);
+    orderRequest.subscribe({
       next: (order: OrderDetails) => {
         this.order = order;
         this.loading = false;

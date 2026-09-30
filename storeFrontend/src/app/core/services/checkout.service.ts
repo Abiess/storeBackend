@@ -160,4 +160,12 @@ export class CheckoutService {
       `${environment.publicApiUrl}/orders/${orderNumber}?email=${email}`
     );
   }
+
+  /** Invite-only orders are read through the authenticated, owner-checked endpoint. */
+  getCustomerOrderByNumber(orderNumber: string): Observable<OrderDetails> {
+    return this.http.get<OrderDetails>(
+      `${environment.publicApiUrl}/customer/orders/${encodeURIComponent(orderNumber)}`,
+      { headers: this.getAuthHeaders() }
+    );
+  }
 }
