@@ -104,6 +104,7 @@ public class PublicStoreService {
                 ? store.getShippingPolicyText() 
                 : null
         );
+        dto.setWhatsappButtonEnabled(store.isWhatsappButtonEnabled());
         dto.setMaintenanceEnabled(store.isMaintenanceEnabled());
         dto.setMaintenanceMode(store.getMaintenanceMode() != null
                 ? store.getMaintenanceMode().name()

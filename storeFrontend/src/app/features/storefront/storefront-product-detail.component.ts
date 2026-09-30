@@ -20,6 +20,7 @@ interface Product {
   title: string;
   description: string;
   basePrice: number;
+  taxRate?: number | null;
   primaryImageUrl?: string;
   media?: any[];
   variants?: any[];
@@ -41,14 +42,16 @@ interface ProductTierPrice {
     selector: 'app-storefront-product-detail',
     imports: [CommonModule, FormsModule, TranslatePipe, ProductVariantPickerComponent, QuantityStepperComponent],
     template: `
-    <div class="product-detail-page" *ngIf="product">
+    <div class="product-detail-page" [class.invite-detail]="inviteOnly" *ngIf="product">
       <div class="breadcrumb">
         <button class="btn-back" (click)="goBack()">
           <span class="back-icon">←</span>
-          <span>{{ 'common.back' | translate }}</span>
+          <span *ngIf="!inviteOnly">{{ 'common.back' | translate }}</span>
         </button>
-        <span *ngIf="product.categoryName"> / {{ product.categoryName }}</span>
-        <span> / {{ product.title }}</span>
+        <ng-container *ngIf="!inviteOnly">
+          <span *ngIf="product.categoryName"> / {{ product.categoryName }}</span>
+          <span> / {{ product.title }}</span>
+        </ng-container>
       </div>
 
       <div class="product-detail-grid">
@@ -114,7 +117,7 @@ interface ProductTierPrice {
           <h1 class="product-title">{{ product.title }}</h1>
           
           <!-- Reviews -->
-          <div class="reviews-section" *ngIf="product.reviewCount && product.reviewCount > 0">
+          <div class="reviews-section" *ngIf="!inviteOnly && product.reviewCount && product.reviewCount > 0">
             <div class="stars">
               <span *ngFor="let star of [1,2,3,4,5]" 
                     [class.filled]="star <= (product.averageRating || 0)">
@@ -187,8 +190,12 @@ interface ProductTierPrice {
             </div>
           </div>
 
+          <div class="invite-tax" *ngIf="inviteOnly && product.taxRate != null">
+            MwSt. {{ product.taxRate | number:'1.0-2' }} %
+          </div>
+
           <!-- Description – direkt nach dem Preis für bessere Lesbarkeit (vor Varianten/CTA) -->
-          <div class="description-section" *ngIf="product.description">
+          <div class="description-section" *ngIf="!inviteOnly && product.description">
             <h2>{{ 'product.description' | translate }}</h2>
             <p>{{ product.description }}</p>
           </div>
@@ -227,7 +234,7 @@ interface ProductTierPrice {
               <span *ngIf="adding">{{ 'product.adding' | translate }}</span>
             </button>
             
-            <button class="btn-wishlist"
+            <button *ngIf="!inviteOnly" class="btn-wishlist"
               [class.active]="isInWishlist"
               [disabled]="wishlistLoading"
               [title]="(isInWishlist ? 'product.removeFromWishlist' : 'product.addToWishlist') | translate"
@@ -258,7 +265,7 @@ interface ProductTierPrice {
           </div>
 
           <!-- Stock Info -->
-          <div class="stock-info">
+          <div class="stock-info" *ngIf="!inviteOnly">
             <span 
               class="stock-badge"
               [class.in-stock]="getStockQuantity() > 5"
@@ -327,6 +334,23 @@ interface ProductTierPrice {
       max-width: 1200px;
       margin: 0 auto;
       padding: 2rem;
+    }
+
+    .invite-detail .invite-tax {
+      margin: 12px 0 20px;
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    .invite-detail .breadcrumb { margin-bottom: 1rem; }
+    .invite-detail .btn-back { min-width: 44px; min-height: 44px; justify-content: center; }
+    .invite-detail .product-images .main-image { max-height: 360px; }
+    .invite-detail .product-images .main-img { max-height: 360px; object-fit: contain; }
+
+    @media (max-width: 767px) {
+      .invite-detail .product-images .main-image,
+      .invite-detail .product-images .main-img { max-height: 280px; }
+      .invite-detail.product-detail-page { padding-bottom: 1rem; }
     }
 
     .breadcrumb {
@@ -1188,6 +1212,7 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
 
   /** WhatsApp-Nummer aus Service (null = CTA versteckt) */
   whatsappNumber: string | null = null;
+  inviteOnly = false;
   private waSub?: Subscription;
 
   /** Gecachtes Galerie-Array */
@@ -1210,6 +1235,9 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
+    // Die Shop-Konfiguration wird erst geladen; eine Nummer des vorherigen Stores
+    // darf auf der Produktseite nicht kurz als WhatsApp-Aktion erscheinen.
+    this.whatsappConfig.setNumber(null);
     // productId immer aus Route
     this.productId = Number(
       this.route.snapshot.paramMap.get('productId') ||
@@ -1220,6 +1248,7 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
     const routeStoreId = Number(this.route.snapshot.paramMap.get('storeId'));
     if (routeStoreId) {
       this.storeId = routeStoreId;
+      this._loadStoreWhatsappConfig();
       this._initAfterStoreId();
     } else {
       // Kein storeId im URL (z.B. /products/:productId auf Subdomain)
@@ -1265,15 +1294,17 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
     const host = window.location.hostname;
     this.publicApiService.resolveStore(host).subscribe({
       next: (store) => {
+        this.inviteOnly = store.customerAccountMode === 'INVITE_ONLY';
         this.whatsappConfig.setContext('store');
-        this.whatsappConfig.setNumber(store.whatsappNumber ?? null);
+        this.whatsappConfig.setNumber(this.inviteOnly || store.whatsappButtonEnabled === false
+          ? null : store.whatsappNumber ?? null);
         this.whatsappConfig.setMessage(
           store.greetingMessage?.trim()
             ? store.greetingMessage.trim()
             : WhatsappConfigService.DEFAULT_MESSAGE
         );
       },
-      error: () => { /* Silently ignore – Service hat bereits env-Fallback */ }
+      error: () => { this.whatsappConfig.setNumber(null); }
     });
   }
 
@@ -1845,6 +1876,4 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
     this.wishlistToastTimer = setTimeout(() => { this.wishlistToast = ''; }, 3000);
   }
 }
-
-
 

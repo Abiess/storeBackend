@@ -116,6 +116,14 @@ function integerValidator(control: AbstractControl): ValidationErrors | null {
               </h3>
 
               <div class="form-group">
+                <label class="toggle-label">
+                  <input type="checkbox" formControlName="whatsappButtonEnabled" />
+                  <span class="toggle-text">WhatsApp-Button im Shop anzeigen</span>
+                </label>
+                <small class="form-text">Im Invite-Modus wird der Button immer ausgeblendet. Die Nummer bleibt für Benachrichtigungen gespeichert.</small>
+              </div>
+
+              <div class="form-group">
                 <label for="whatsappNumber">{{ 'settings.whatsapp.number' | translate }}</label>
                 <input
                   id="whatsappNumber"
@@ -2210,6 +2218,7 @@ export class StoreSettingsComponent implements OnInit {
       status: ['ACTIVE'],
       customerAccountMode: ['PUBLIC_REGISTRATION'],
       whatsappNumber: ['', [Validators.maxLength(20)]],
+      whatsappButtonEnabled: [true],
       greetingMessage: ['', [Validators.maxLength(500)]],
       whatsappNotificationsEnabled: [false],
       expiryNotificationDays: [7, [Validators.required, Validators.min(1), Validators.max(365)]],
@@ -2316,6 +2325,7 @@ export class StoreSettingsComponent implements OnInit {
           status: store.status,
           customerAccountMode: store.customerAccountMode ?? 'PUBLIC_REGISTRATION',
           whatsappNumber: store.whatsappNumber ?? '',
+          whatsappButtonEnabled: store.whatsappButtonEnabled ?? true,
           greetingMessage: store.greetingMessage ?? '',
           whatsappNotificationsEnabled: store.whatsappNotificationsEnabled ?? false,
           expiryNotificationDays:       store.expiryNotificationDays      ?? 7,

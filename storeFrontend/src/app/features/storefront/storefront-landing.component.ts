@@ -972,7 +972,8 @@ export class StorefrontLandingComponent implements OnInit {
     this.publicApiService.resolveStore(host).subscribe({
       next: (store) => {
         this.whatsappConfig.setContext('store');
-        this.whatsappConfig.setNumber(store.whatsappNumber ?? null);
+        this.whatsappConfig.setNumber(store.customerAccountMode === 'INVITE_ONLY' || store.whatsappButtonEnabled === false
+          ? null : store.whatsappNumber ?? null);
         this.whatsappConfig.setMessage(
           store.greetingMessage?.trim()
             ? store.greetingMessage.trim()

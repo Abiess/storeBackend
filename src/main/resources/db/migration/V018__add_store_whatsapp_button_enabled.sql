@@ -1,0 +1,2 @@
+ALTER TABLE stores
+    ADD COLUMN IF NOT EXISTS whatsapp_button_enabled BOOLEAN NOT NULL DEFAULT TRUE;

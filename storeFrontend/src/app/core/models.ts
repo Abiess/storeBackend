@@ -937,6 +937,7 @@ export interface Store {
   updatedAt: string;
   /** WhatsApp-Kontaktnummer im internationalen Format, z. B. +212600123456 */
   whatsappNumber?: string;
+  whatsappButtonEnabled?: boolean;
   /** Vorbefüllte Begrüßungsnachricht beim WhatsApp-Klick */
   greetingMessage?: string;
   /** Kunden automatisch per WhatsApp bei Bestellungen benachrichtigen */
@@ -1026,6 +1027,7 @@ export interface PublicStore {
   status: StoreStatus;
   /** WhatsApp-Kontaktnummer (optional) */
   whatsappNumber?: string;
+  whatsappButtonEnabled?: boolean;
   /** Vorbefüllte WhatsApp-Begrüßungsnachricht (optional) */
   greetingMessage?: string;
   // ─── Social Media & Kontakt ───────────────────────────────────

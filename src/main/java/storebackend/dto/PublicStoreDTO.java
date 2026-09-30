@@ -19,6 +19,7 @@ public class PublicStoreDTO {
     /** PUBLIC_REGISTRATION | INVITE_ONLY */
     private String customerAccountMode;
     private String whatsappNumber;
+    private boolean whatsappButtonEnabled;
     private String greetingMessage;
     // ─── Social & Kontakt ─────────────────────────────────
     private String contactEmail;
