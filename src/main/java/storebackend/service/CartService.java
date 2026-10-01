@@ -29,18 +29,26 @@ public class CartService {
     @Transactional
     public Cart getOrCreateCart(String sessionId, User user, Store store) {
         if (user != null) {
-            return cartRepository.findByUserId(user.getId())
+            return activeUserCart(user.getId(), store.getId())
                     .orElseGet(() -> createCartSafely(null, user, store));
         } else {
             // Versuche zuerst den existierenden Cart zu finden
             Optional<Cart> existingCart = cartRepository.findBySessionId(sessionId);
             if (existingCart.isPresent()) {
+                if (!existingCart.get().getStore().getId().equals(store.getId())) {
+                    throw new IllegalArgumentException("Session belongs to another store");
+                }
                 log.info("✅ Existierender Cart gefunden für sessionId: {}", sessionId);
                 return existingCart.get();
             }
             // Wenn nicht gefunden, erstelle neuen Cart mit Fehlerbehandlung
             return createCartSafely(sessionId, null, store);
         }
+    }
+
+    private Optional<Cart> activeUserCart(Long userId, Long storeId) {
+        return cartRepository.findByUserIdAndStoreIdAndNotExpired(userId, storeId, LocalDateTime.now())
+                .stream().findFirst();
     }
 
     @Transactional(readOnly = true)
@@ -60,11 +68,13 @@ public class CartService {
      * Verhindert LazyInitializationException durch vollständiges Laden in einer Transaktion
      */
     @Transactional(readOnly = true)
-    public CartWithItemsDTO loadCartWithItemsForDisplay(String sessionId, Long userId) {
+    public CartWithItemsDTO loadCartWithItemsForDisplay(String sessionId, Long userId, Long storeId) {
         Cart cart;
         
         if (userId != null) {
-            cart = cartRepository.findByUserIdWithDetails(userId)
+            cart = storeId == null ? cartRepository.findByUserIdWithDetails(userId)
+                    .orElseThrow(() -> new RuntimeException("Cart not found"))
+                    : activeUserCart(userId, storeId)
                     .orElseThrow(() -> new RuntimeException("Cart not found"));
             log.info("🛒 Cart für userId {} gefunden: cartId={}, storeId={}", userId, cart.getId(), cart.getStore().getId());
         } else {
@@ -138,8 +148,10 @@ public class CartService {
     }
 
     @Transactional
-    public Cart getCartByUser(Long userId) {
-        return cartRepository.findByUserId(userId)
+    public Cart getCartByUser(Long userId, Long storeId) {
+        return storeId == null ? cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Cart not found"))
+                : activeUserCart(userId, storeId)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
     }
 
@@ -163,6 +175,10 @@ public class CartService {
             ProductVariant variant = productVariantRepository.findById(variantId)
                     .orElseThrow(() -> new RuntimeException("Product variant not found"));
 
+            if (!variant.getProduct().getStore().getId().equals(cart.getStore().getId())) {
+                throw new IllegalArgumentException("Product does not belong to cart store");
+            }
+
             Optional<CartItem> existingItem = cartItemRepository.findByCartIdAndVariantId(cartId, variantId);
             if (existingItem.isPresent()) {
                 CartItem item = existingItem.get();
@@ -182,6 +198,10 @@ public class CartService {
             // Produkt-basierter Pfad (keine Variante) → Default-Variante holen/erstellen
             Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new RuntimeException("Product not found"));
+
+            if (!product.getStore().getId().equals(cart.getStore().getId())) {
+                throw new IllegalArgumentException("Product does not belong to cart store");
+            }
 
             // Default-Variante für dieses Produkt holen oder anlegen
             ProductVariant defaultVariant = getOrCreateDefaultVariant(product);
@@ -295,7 +315,7 @@ public class CartService {
             }
 
             // Prüfe ob der Benutzer bereits einen Warenkorb hat
-            Optional<Cart> userCartOpt = cartRepository.findByUserId(user.getId());
+            Optional<Cart> userCartOpt = activeUserCart(user.getId(), guestCart.getStore().getId());
             Cart userCart;
 
             if (userCartOpt.isPresent()) {
@@ -353,9 +373,10 @@ public class CartService {
 
             if (sessionId != null) {
                 return cartRepository.findBySessionId(sessionId)
+                        .filter(cart -> cart.getStore().getId().equals(store.getId()))
                         .orElseThrow(() -> new RuntimeException("Cart konnte nicht erstellt oder gefunden werden für sessionId: " + sessionId));
             } else if (user != null) {
-                return cartRepository.findByUserId(user.getId())
+                return activeUserCart(user.getId(), store.getId())
                         .orElseThrow(() -> new RuntimeException("Cart konnte nicht erstellt oder gefunden werden für userId: " + user.getId()));
             }
             throw new RuntimeException("Cart konnte nicht erstellt werden", e);
