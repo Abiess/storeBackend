@@ -54,11 +54,13 @@ void main() {
     expect(find.text('Olivenöl'), findsNothing);
   });
 
-  testWidgets('invite-only product detail shows backend tax without local cart action', (tester) async {
+  testWidgets('invite-only product detail adds to backend cart and shows its response', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
+    final requests = <String>[];
+    final additions = <Map<String, dynamic>>[];
     await tester.pumpWidget(MarktShopPreviewApp(
-      catalogService: _service([], accountMode: 'INVITE_ONLY'),
+      catalogService: _service(requests, accountMode: 'INVITE_ONLY', additions: additions),
       storeSlug: 'spm',
       customerLogin: (_, __, ___) async {},
     ));
@@ -79,10 +81,14 @@ void main() {
     expect(find.textContaining('WhatsApp'), findsNothing);
     expect(find.text('Beschreibung'), findsNothing);
 
-    expect(find.text('In den Warenkorb'), findsNothing);
-    await tester.tap(find.byKey(const ValueKey('nav-Warenkorb')));
+    await tester.tap(find.byTooltip('Menge erhöhen'));
+    await tester.tap(find.byKey(const ValueKey('shop-add-to-cart')));
     await tester.pumpAndSettle();
-    expect(find.text('Warenkorb folgt mit Backend-Anbindung'), findsOneWidget);
+    expect(additions, [{'storeId': 130, 'productId': 2, 'quantity': 2}]);
+    expect(requests.where((path) => path == '/api/public/cart').length, 2);
+    expect(find.text('2 Artikel'), findsOneWidget);
+    expect(find.text('Olivenöl'), findsOneWidget);
+    expect(find.text('25,00 MAD'), findsOneWidget);
   });
 
   testWidgets('shows a retry action when a public catalog request fails', (tester) async {
@@ -125,6 +131,7 @@ void main() {
       '/api/public/store/by-slug/spm',
       '/api/stores/130/categories',
       '/api/stores/130/products',
+      '/api/public/cart',
     ]);
     expect(find.text('Olivenöl'), findsOneWidget);
   });
@@ -156,9 +163,20 @@ void main() {
   });
 }
 
-ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool withSubcategories = false}) {
-  return ShopCatalogService(client: MockClient((request) async {
+ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool withSubcategories = false, List<Map<String, dynamic>>? additions}) {
+  return ShopCatalogService(readToken: () async => 'invite-jwt', client: MockClient((request) async {
     requests.add(request.url.path);
+    if (request.url.path == '/api/public/cart' || request.url.path == '/api/public/cart/items') {
+      expect(request.headers['Authorization'], 'Bearer invite-jwt');
+      if (request.method == 'POST') {
+        additions?.add(jsonDecode(request.body) as Map<String, dynamic>);
+        return http.Response('{}', 200);
+      }
+      expect(request.url.queryParameters['storeId'], '130');
+      return http.Response(jsonEncode(additions?.isNotEmpty == true
+          ? {'items': [{'productTitle': 'Olivenöl', 'quantity': 2}], 'itemCount': 2, 'subtotal': 25}
+          : {'items': [], 'itemCount': 0, 'subtotal': 0}), 200);
+    }
     switch (request.url.path) {
       case '/api/public/store/by-slug/spm':
         return http.Response(jsonEncode({

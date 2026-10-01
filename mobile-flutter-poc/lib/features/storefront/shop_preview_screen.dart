@@ -30,6 +30,11 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   int _selectedTab = 0;
   ShopCategory? _selectedCategory;
   ShopProduct? _selectedProduct;
+  ShopCart? _cart;
+  Object? _cartError;
+  bool _cartLoading = false;
+  bool _addingProduct = false;
+  int _quantity = 1;
   bool _showCategoryProducts = false;
   String _query = '';
 
@@ -119,6 +124,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       _customerAuthenticated = true;
       _isLoading = false;
     });
+    await _loadCart();
   }
 
   Future<void> _logoutCustomer() async {
@@ -130,6 +136,8 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       _selectedTab = 0;
       _selectedCategory = null;
       _selectedProduct = null;
+      _cart = null;
+      _cartError = null;
       _showCategoryProducts = false;
     });
   }
@@ -246,7 +254,10 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         Text(store.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
         Text('Store ${store.id} · Live-Daten', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant)),
       ])),
-      IconButton(tooltip: 'Warenkorb', onPressed: () => setState(() => _selectedTab = 3), icon: const Icon(Icons.shopping_cart_outlined)),
+      IconButton(tooltip: 'Warenkorb', onPressed: () {
+        setState(() => _selectedTab = 3);
+        if (_customerAuthenticated) _loadCart();
+      }, icon: const Icon(Icons.shopping_cart_outlined)),
     ]);
   }
 
@@ -535,15 +546,45 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             Text('MwSt. ${tax.toStringAsFixed(tax == tax.roundToDouble() ? 0 : 2).replaceAll('.', ',')} %',
                 style: TextStyle(color: colors.onSurfaceVariant)),
           ],
+          if (_loginRequired && _customerAuthenticated) ...[
+            const SizedBox(height: 24),
+            Row(children: [
+              IconButton(tooltip: 'Menge verringern', onPressed: _quantity > 1 && !_addingProduct ? () => setState(() => _quantity--) : null, icon: const Icon(Icons.remove_circle_outline)),
+              Text('$_quantity', key: const ValueKey('shop-quantity')),
+              IconButton(tooltip: 'Menge erhöhen', onPressed: _addingProduct ? null : () => setState(() => _quantity++), icon: const Icon(Icons.add_circle_outline)),
+            ]),
+            const SizedBox(height: 10),
+            FilledButton.icon(
+              key: const ValueKey('shop-add-to-cart'),
+              onPressed: _addingProduct ? null : () => _addProduct(product),
+              icon: const Icon(Icons.add_shopping_cart),
+              label: Text(_addingProduct ? 'Wird hinzugefügt …' : 'In den Warenkorb'),
+            ),
+            if (_cartError != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text('Warenkorb konnte nicht aktualisiert werden. Bitte erneut versuchen.', style: TextStyle(color: colors.error))),
+          ],
         ])),
       ),
     ]);
   }
 
   Widget _buildCartPage(ColorScheme colors) {
+    if (!_loginRequired || !_customerAuthenticated) {
+      return Column(children: [AppBar(title: const Text('Warenkorb'), centerTitle: true), const Expanded(child: Center(child: Text('Warenkorb folgt mit Backend-Anbindung')))]);
+    }
+    final cart = _cart;
     return Column(children: [
-      AppBar(title: const Text('Warenkorb'), centerTitle: true),
-      Expanded(child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.shopping_cart_outlined, size: 58, color: colors.primary), const SizedBox(height: 12), Text('Warenkorb folgt mit Backend-Anbindung', style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center)])),),
+      AppBar(title: const Text('Warenkorb'), centerTitle: true, actions: [IconButton(tooltip: 'Warenkorb aktualisieren', onPressed: _cartLoading ? null : _loadCart, icon: const Icon(Icons.refresh))]),
+      Expanded(child: _cartLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _cartError != null
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [const Text('Warenkorb konnte nicht geladen werden.'), TextButton(onPressed: _loadCart, child: const Text('Erneut laden'))]))
+              : cart == null || cart.items.isEmpty
+                  ? const Center(child: Text('Dein Warenkorb ist noch leer'))
+                  : ListView(children: [
+                      for (final item in cart.items) ListTile(title: Text(item.name), trailing: Text('${item.quantity} ×')),
+                      const Divider(),
+                      ListTile(title: Text('${cart.itemCount} Artikel'), trailing: Text(_formatAmount(cart.subtotal, _store?.currencyCode ?? 'EUR'))),
+                    ])),
     ]);
   }
 
@@ -567,12 +608,15 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             3 => _selectedTab == 3,
             _ => _selectedTab == 4,
           };
-          return Expanded(child: InkWell(key: ValueKey('nav-${labels[index]}'), onTap: () => setState(() {
-            _selectedProduct = null;
-            _selectedTab = switch (index) { 0 => 1, 1 => 2, 2 => 0, _ => index };
-            _selectedCategory = null;
-            _showCategoryProducts = false;
-          }), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          return Expanded(child: InkWell(key: ValueKey('nav-${labels[index]}'), onTap: () {
+            setState(() {
+              _selectedProduct = null;
+              _selectedTab = switch (index) { 0 => 1, 1 => 2, 2 => 0, _ => index };
+              _selectedCategory = null;
+              _showCategoryProducts = false;
+            });
+            if (index == 3 && _customerAuthenticated) _loadCart();
+          }, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Icon(icons[index], color: selected ? colors.primary : colors.onSurfaceVariant, size: index == 2 ? 26 : 22),
         const SizedBox(height: 3),
         Text(labels[index], maxLines: 1, style: TextStyle(fontSize: 10, color: selected ? colors.primary : colors.onSurfaceVariant, fontWeight: selected ? FontWeight.w600 : FontWeight.normal)),
@@ -584,7 +628,46 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
 
   void _openProduct(ShopProduct product) => setState(() {
     _selectedProduct = product;
+    _quantity = 1;
+    _cartError = null;
   });
+
+  Future<void> _loadCart() async {
+    final store = _store;
+    if (store == null || !_customerAuthenticated) return;
+    setState(() { _cartLoading = true; _cartError = null; });
+    try {
+      final cart = await _catalogService.loadCart(store.id);
+      if (!mounted || !_customerAuthenticated) return;
+      setState(() => _cart = cart);
+    } catch (error) {
+      if (!mounted || !_customerAuthenticated) return;
+      setState(() => _cartError = error);
+    } finally {
+      if (mounted) setState(() => _cartLoading = false);
+    }
+  }
+
+  Future<void> _addProduct(ShopProduct product) async {
+    final store = _store;
+    if (store == null) return;
+    setState(() { _addingProduct = true; _cartError = null; });
+    try {
+      final cart = await _catalogService.addToCart(storeId: store.id, productId: product.id, quantity: _quantity);
+      if (!mounted || !_customerAuthenticated) return;
+      setState(() { _cart = cart; _selectedProduct = null; _selectedTab = 3; });
+    } catch (error) {
+      if (!mounted || !_customerAuthenticated) return;
+      setState(() => _cartError = error);
+    } finally {
+      if (mounted) setState(() => _addingProduct = false);
+    }
+  }
+
+  String _formatAmount(double amount, String currency) {
+    final value = amount.toStringAsFixed(2).replaceAll('.', ',');
+    return currency == 'EUR' ? '$value €' : '$value $currency';
+  }
 
   void _backFromCategory() => setState(() {
     final parentId = _selectedCategory?.parentId;

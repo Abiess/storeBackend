@@ -8,9 +8,12 @@ import '../../services/token_storage.dart';
 
 /// Store metadata/catalog access plus login to the existing invited-customer endpoint.
 class ShopCatalogService {
-  ShopCatalogService({http.Client? client}) : _client = client ?? http.Client();
+  ShopCatalogService({http.Client? client, Future<String?> Function()? readToken})
+      : _client = client ?? http.Client(),
+        _readToken = readToken ?? TokenStorage.instance.readToken;
 
   final http.Client _client;
+  final Future<String?> Function() _readToken;
 
   Future<ShopCatalog> loadStore(String slug) async {
     final store = await loadStoreMetadata(slug);
@@ -74,6 +77,48 @@ class ShopCatalogService {
 
   Future<void> logoutCustomer() => TokenStorage.instance.clearToken();
 
+  Future<ShopCart> loadCart(int storeId) async {
+    final token = await _cartToken();
+    final response = await _client.get(
+      Uri.parse('${ApiConfig.baseUrl}/public/cart?storeId=$storeId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    _checkCartResponse(response);
+    try {
+      return ShopCart.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    } on FormatException {
+      throw const ShopCatalogException('Das Backend hat ungültige Warenkorb-Daten geliefert.');
+    }
+  }
+
+  Future<ShopCart> addToCart({required int storeId, required int productId, required int quantity}) async {
+    final token = await _cartToken();
+    final response = await _client.post(
+      Uri.parse('${ApiConfig.baseUrl}/public/cart/items'),
+      headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+      body: jsonEncode({'storeId': storeId, 'productId': productId, 'quantity': quantity}),
+    );
+    _checkCartResponse(response);
+    return loadCart(storeId);
+  }
+
+  Future<String> _cartToken() async {
+    final token = await _readToken();
+    if (token == null || token.isEmpty) {
+      throw const ShopCatalogException('Bitte erneut anmelden.', statusCode: 401);
+    }
+    return token;
+  }
+
+  void _checkCartResponse(http.Response response) {
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      throw ShopCatalogException('Bitte erneut anmelden.', statusCode: response.statusCode);
+    }
+    throw ShopCatalogException('Warenkorb konnte nicht aktualisiert werden (${response.statusCode}).',
+        statusCode: response.statusCode);
+  }
+
   Future<dynamic> _get(String path) async {
     final response = await _client.get(Uri.parse('${ApiConfig.baseUrl}$path'));
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -109,6 +154,33 @@ class ShopCatalogException implements Exception {
 
   @override
   String toString() => message;
+}
+
+class ShopCart {
+  const ShopCart({required this.items, required this.itemCount, required this.subtotal});
+
+  final List<ShopCartItem> items;
+  final int itemCount;
+  final double subtotal;
+
+  factory ShopCart.fromJson(Map<String, dynamic> json) => ShopCart(
+        items: (json['items'] as List<dynamic>? ?? const [])
+            .map((item) => ShopCartItem.fromJson(item as Map<String, dynamic>)).toList(),
+        itemCount: _readInt(json['itemCount']),
+        subtotal: _readDouble(json['subtotal']),
+      );
+}
+
+class ShopCartItem {
+  const ShopCartItem({required this.name, required this.quantity});
+
+  final String name;
+  final int quantity;
+
+  factory ShopCartItem.fromJson(Map<String, dynamic> json) => ShopCartItem(
+        name: json['productTitle'] as String? ?? 'Produkt',
+        quantity: _readInt(json['quantity']),
+      );
 }
 
 class ShopCatalog {
@@ -217,6 +289,8 @@ class ShopProduct {
 }
 
 int _readInt(dynamic value) => value is num ? value.toInt() : int.tryParse('$value') ?? 0;
+
+double _readDouble(dynamic value) => value is num ? value.toDouble() : double.tryParse('$value') ?? 0;
 
 String? _readString(dynamic value) {
   if (value is! String || value.trim().isEmpty) return null;
