@@ -28,8 +28,8 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   bool _loginRequired = false;
   bool _customerAuthenticated = false;
   int _selectedTab = 0;
-  int _cartCount = 0;
   ShopCategory? _selectedCategory;
+  ShopProduct? _selectedProduct;
   bool _showCategoryProducts = false;
   String _query = '';
 
@@ -128,8 +128,8 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       _catalog = null;
       _customerAuthenticated = false;
       _selectedTab = 0;
-      _cartCount = 0;
       _selectedCategory = null;
+      _selectedProduct = null;
       _showCategoryProducts = false;
     });
   }
@@ -181,6 +181,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   }
 
   Widget _buildCurrentPage(ColorScheme colors) {
+    if (_selectedProduct != null) return _buildProductDetailPage(_selectedProduct!, colors);
     if (_selectedTab == 1) {
       return _selectedCategory == null
           ? _buildCategoriesPage(colors)
@@ -245,7 +246,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         Text(store.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
         Text('Store ${store.id} · Live-Daten', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant)),
       ])),
-      IconButton(tooltip: 'Warenkorb', onPressed: () => setState(() => _selectedTab = 3), icon: Badge(isLabelVisible: _cartCount > 0, label: Text('$_cartCount'), child: const Icon(Icons.shopping_cart_outlined))),
+      IconButton(tooltip: 'Warenkorb', onPressed: () => setState(() => _selectedTab = 3), icon: const Icon(Icons.shopping_cart_outlined)),
     ]);
   }
 
@@ -397,7 +398,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       decoration: BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: colors.outlineVariant))),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       child: Column(children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        InkWell(key: ValueKey('shop-product-${product.id}'), onTap: () => _openProduct(product), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           SizedBox(width: 94, height: 102, child: ClipRRect(borderRadius: BorderRadius.circular(10), child: _productArtwork(product, colors))),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -408,8 +409,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             const SizedBox(height: 8),
             Text(_formatPrice(product), style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700, fontSize: 18)),
           ])),
-        ]),
-        Align(alignment: Alignment.centerRight, child: OutlinedButton.icon(onPressed: () => _addToCart(), icon: const Icon(Icons.add_shopping_cart), label: const Text('In den Warenkorb'))),
+        ])),
       ]),
     );
   }
@@ -481,14 +481,14 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
 
   Widget _buildProductCard(ShopProduct product, ColorScheme colors) {
     return Card(margin: EdgeInsets.zero, color: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: colors.outlineVariant)), clipBehavior: Clip.antiAlias, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Expanded(child: Stack(fit: StackFit.expand, children: [
+      Expanded(child: InkWell(key: ValueKey('shop-product-${product.id}'), onTap: () => _openProduct(product), child: Stack(fit: StackFit.expand, children: [
         _productArtwork(product, colors),
         if (product.isFeatured) const Positioned(left: 8, top: 8, child: _ProductBadge(label: 'Im Angebot')),
-      ])),
+      ]))),
       Padding(padding: const EdgeInsets.fromLTRB(10, 9, 8, 8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
         const SizedBox(height: 5),
-        Row(children: [Expanded(child: Text(_formatPrice(product), style: TextStyle(color: colors.primary, fontWeight: FontWeight.w800))), IconButton(tooltip: 'In den Warenkorb', onPressed: _addToCart, icon: const Icon(Icons.add_circle), color: colors.primary, padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36, minHeight: 36))]),
+        Text(_formatPrice(product), style: TextStyle(color: colors.primary, fontWeight: FontWeight.w800)),
       ])),
     ]));
   }
@@ -502,10 +502,48 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     ]);
   }
 
+  Widget _buildProductDetailPage(ShopProduct product, ColorScheme colors) {
+    final tax = product.taxRate;
+    return CustomScrollView(key: const ValueKey('shop-product-detail'), slivers: [
+      SliverAppBar(
+        pinned: true,
+        leading: IconButton(
+          tooltip: 'Zurück zu Produkten',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => setState(() => _selectedProduct = null),
+        ),
+        title: const Text('Produkt'),
+        backgroundColor: colors.surface,
+      ),
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+        sliver: SliverToBoxAdapter(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(
+            height: 260,
+            width: double.infinity,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: ColoredBox(color: colors.surface, child: _productArtwork(product, colors)),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(product.name, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 12),
+          Text(_formatPrice(product), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: colors.primary, fontWeight: FontWeight.w700)),
+          if (tax != null) ...[
+            const SizedBox(height: 6),
+            Text('MwSt. ${tax.toStringAsFixed(tax == tax.roundToDouble() ? 0 : 2).replaceAll('.', ',')} %',
+                style: TextStyle(color: colors.onSurfaceVariant)),
+          ],
+        ])),
+      ),
+    ]);
+  }
+
   Widget _buildCartPage(ColorScheme colors) {
     return Column(children: [
       AppBar(title: const Text('Warenkorb'), centerTitle: true),
-      Expanded(child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.shopping_cart_outlined, size: 58, color: colors.primary), const SizedBox(height: 12), Text(_cartCount == 0 ? 'Dein Warenkorb ist noch leer' : '$_cartCount Artikel im Warenkorb', style: Theme.of(context).textTheme.titleMedium), const SizedBox(height: 6), const Text('Vorschau – Bestellen kommt später')])),),
+      Expanded(child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.shopping_cart_outlined, size: 58, color: colors.primary), const SizedBox(height: 12), Text('Warenkorb folgt mit Backend-Anbindung', style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center)])),),
     ]);
   }
 
@@ -530,6 +568,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             _ => _selectedTab == 4,
           };
           return Expanded(child: InkWell(key: ValueKey('nav-${labels[index]}'), onTap: () => setState(() {
+            _selectedProduct = null;
             _selectedTab = switch (index) { 0 => 1, 1 => 2, 2 => 0, _ => index };
             _selectedCategory = null;
             _showCategoryProducts = false;
@@ -543,13 +582,16 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
 
   void _openCategory(ShopCategory category) => setState(() { _selectedCategory = category; _selectedTab = 1; _showCategoryProducts = false; _query = ''; });
 
+  void _openProduct(ShopProduct product) => setState(() {
+    _selectedProduct = product;
+  });
+
   void _backFromCategory() => setState(() {
     final parentId = _selectedCategory?.parentId;
     _selectedCategory = parentId == null ? null : _categories.where((category) => category.id == parentId).firstOrNull;
     _showCategoryProducts = false;
   });
 
-  void _addToCart() => setState(() => _cartCount++);
 }
 
 const _categoryPalette = [Color(0xFFECEAFF), Color(0xFFFFE9D8), Color(0xFFE2F2E9), Color(0xFFFFE6EC)];
