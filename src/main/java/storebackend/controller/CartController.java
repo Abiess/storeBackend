@@ -60,7 +60,7 @@ public class CartController {
             }
             
             // ✅ Lade Cart MIT Items UND allen lazy-Beziehungen in EINER Transaktion
-            CartService.CartWithItemsDTO cartData = cartService.loadCartWithItemsForDisplay(sessionId, userId);
+            CartService.CartWithItemsDTO cartData = cartService.loadCartWithItemsForDisplay(sessionId, userId, storeId);
             cart = cartData.cart;
             items = cartData.items;
             
@@ -159,6 +159,7 @@ public class CartController {
     @DeleteMapping("/clear")
     public ResponseEntity<Void> clearCart(
             @RequestParam(required = false) String sessionId,
+            @RequestParam(required = false) Long storeId,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         try {
@@ -167,9 +168,12 @@ public class CartController {
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
                 Long userId = extractUserIdFromToken(token);
-                cart = cartService.getCartByUser(userId);
+                cart = cartService.getCartByUser(userId, storeId);
             } else if (sessionId != null) {
                 cart = cartService.getCartBySessionId(sessionId);
+                if (storeId != null && !cart.getStore().getId().equals(storeId)) {
+                    return ResponseEntity.notFound().build();
+                }
             } else {
                 return ResponseEntity.badRequest().build();
             }
@@ -198,9 +202,12 @@ public class CartController {
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
                 Long userId = extractUserIdFromToken(token);
-                cart = cartService.getCartByUser(userId);
+                cart = cartService.getCartByUser(userId, storeId);
             } else if (sessionId != null) {
                 cart = cartService.getCartBySessionId(sessionId);
+                if (storeId != null && !cart.getStore().getId().equals(storeId)) {
+                    return ResponseEntity.ok(Map.of("count", 0, "itemCount", 0));
+                }
             } else {
                 // Kein Cart vorhanden - return 0
                 return ResponseEntity.ok(Map.of("count", 0, "itemCount", 0));

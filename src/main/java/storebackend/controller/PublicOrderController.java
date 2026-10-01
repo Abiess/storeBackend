@@ -20,6 +20,7 @@ import storebackend.enums.PaymentMethod;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/public/orders")
@@ -146,7 +147,8 @@ public class PublicOrderController {
             } else {
                 // Authenticated Checkout: Suche Cart anhand userId
                 log.info("🔍 Suche User-Cart für userId: {}", userId);
-                cartOptional = cartRepository.findByUserId(userId);
+                cartOptional = cartRepository.findByUserIdAndStoreIdAndNotExpired(userId, storeId, LocalDateTime.now())
+                    .stream().findFirst();
 
                 if (cartOptional.isEmpty()) {
                     return ResponseEntity.badRequest().body(Map.of(
