@@ -91,6 +91,56 @@ void main() {
     expect(find.text('25,00 MAD'), findsOneWidget);
   });
 
+  testWidgets('invite-only order request requires confirmation and uses backend checkout', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final requests = <String>[];
+    final additions = <Map<String, dynamic>>[];
+    final orders = <Map<String, dynamic>>[];
+    await tester.pumpWidget(MarktShopPreviewApp(
+      catalogService: _service(requests, accountMode: 'INVITE_ONLY', additions: additions, orders: orders),
+      storeSlug: 'spm',
+      customerLogin: (_, __, ___) async {},
+    ));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('shop-login-identifier')), 'C-AB12CD34');
+    await tester.enterText(find.byKey(const ValueKey('shop-login-password')), 'secret123');
+    await tester.tap(find.byKey(const ValueKey('shop-login-submit')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('nav-Kategorien')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('category-card-Oliven')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('shop-product-2')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('shop-add-to-cart')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('shop-submit-order')));
+    await tester.pumpAndSettle();
+    expect(orders, isEmpty);
+    await tester.tap(find.text('Abbrechen'));
+    await tester.pumpAndSettle();
+    expect(orders, isEmpty);
+    await tester.tap(find.byKey(const ValueKey('shop-submit-order')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('shop-confirm-order')));
+    await tester.pumpAndSettle();
+
+    expect(orders, [{
+      'storeId': 130,
+      'paymentMethod': 'ORDER_REQUEST',
+      'shippingProvider': 'PICKUP',
+      'deliveryType': 'PICKUP',
+      'shippingAddress': {},
+      'billingAddress': {},
+    }]);
+    expect(find.byKey(const ValueKey('shop-order-success')), findsOneWidget);
+    expect(find.textContaining('ORD-123'), findsOneWidget);
+    expect(find.byKey(const ValueKey('shop-submit-order')), findsNothing);
+    expect(requests.where((path) => path == '/api/public/orders/checkout').length, 1);
+  });
+
   testWidgets('shows a retry action when a public catalog request fails', (tester) async {
     await tester.pumpWidget(MarktShopPreviewApp(
       catalogService: ShopCatalogService(client: MockClient((_) async => http.Response('', 503))),
@@ -163,9 +213,14 @@ void main() {
   });
 }
 
-ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool withSubcategories = false, List<Map<String, dynamic>>? additions}) {
+ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool withSubcategories = false, List<Map<String, dynamic>>? additions, List<Map<String, dynamic>>? orders}) {
   return ShopCatalogService(readToken: () async => 'invite-jwt', client: MockClient((request) async {
     requests.add(request.url.path);
+    if (request.url.path == '/api/public/orders/checkout') {
+      expect(request.headers['Authorization'], 'Bearer invite-jwt');
+      orders?.add(jsonDecode(request.body) as Map<String, dynamic>);
+      return http.Response(jsonEncode({'orderNumber': 'ORD-123'}), 200);
+    }
     if (request.url.path == '/api/public/cart' || request.url.path == '/api/public/cart/items') {
       expect(request.headers['Authorization'], 'Bearer invite-jwt');
       if (request.method == 'POST') {
@@ -173,7 +228,7 @@ ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC
         return http.Response('{}', 200);
       }
       expect(request.url.queryParameters['storeId'], '130');
-      return http.Response(jsonEncode(additions?.isNotEmpty == true
+      return http.Response(jsonEncode(additions?.isNotEmpty == true && orders?.isNotEmpty != true
           ? {'items': [{'productTitle': 'Olivenöl', 'quantity': 2}], 'itemCount': 2, 'subtotal': 25}
           : {'items': [], 'itemCount': 0, 'subtotal': 0}), 200);
     }
