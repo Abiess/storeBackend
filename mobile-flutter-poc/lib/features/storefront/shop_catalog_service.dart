@@ -102,6 +102,31 @@ class ShopCatalogService {
     return loadCart(storeId);
   }
 
+  Future<String> submitOrderRequest(int storeId) async {
+    final token = await _cartToken();
+    final response = await _client.post(
+      Uri.parse('${ApiConfig.baseUrl}/public/orders/checkout'),
+      headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'storeId': storeId,
+        'paymentMethod': 'ORDER_REQUEST',
+        'shippingProvider': 'PICKUP',
+        'deliveryType': 'PICKUP',
+        'shippingAddress': <String, String>{},
+        'billingAddress': <String, String>{},
+      }),
+    );
+    _checkCartResponse(response);
+    try {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final orderNumber = json['orderNumber'] as String?;
+      if (orderNumber == null || orderNumber.isEmpty) throw const FormatException();
+      return orderNumber;
+    } on FormatException {
+      throw const ShopCatalogException('Das Backend hat keine Bestellnummer geliefert.');
+    }
+  }
+
   Future<String> _cartToken() async {
     final token = await _readToken();
     if (token == null || token.isEmpty) {

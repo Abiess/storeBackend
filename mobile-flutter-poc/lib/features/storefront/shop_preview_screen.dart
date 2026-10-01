@@ -34,6 +34,9 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   Object? _cartError;
   bool _cartLoading = false;
   bool _addingProduct = false;
+  bool _submittingOrder = false;
+  String? _submittedOrderNumber;
+  Object? _orderError;
   int _quantity = 1;
   bool _showCategoryProducts = false;
   String _query = '';
@@ -138,6 +141,8 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       _selectedProduct = null;
       _cart = null;
       _cartError = null;
+      _submittedOrderNumber = null;
+      _orderError = null;
       _showCategoryProducts = false;
     });
   }
@@ -574,6 +579,11 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     final cart = _cart;
     return Column(children: [
       AppBar(title: const Text('Warenkorb'), centerTitle: true, actions: [IconButton(tooltip: 'Warenkorb aktualisieren', onPressed: _cartLoading ? null : _loadCart, icon: const Icon(Icons.refresh))]),
+      if (_submittedOrderNumber != null) Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text('Anfrage $_submittedOrderNumber gesendet. Der Shop bereitet deine Bestellung vor.',
+            key: const ValueKey('shop-order-success'), style: TextStyle(color: colors.primary)),
+      ),
       Expanded(child: _cartLoading
           ? const Center(child: CircularProgressIndicator())
           : _cartError != null
@@ -584,6 +594,12 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
                       for (final item in cart.items) ListTile(title: Text(item.name), trailing: Text('${item.quantity} ×')),
                       const Divider(),
                       ListTile(title: Text('${cart.itemCount} Artikel'), trailing: Text(_formatAmount(cart.subtotal, _store?.currencyCode ?? 'EUR'))),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), child: FilledButton(
+                        key: const ValueKey('shop-submit-order'),
+                        onPressed: _submittingOrder ? null : _confirmOrderRequest,
+                        child: Text(_submittingOrder ? 'Wird gesendet …' : 'Anfrage absenden'),
+                      )),
+                      if (_orderError != null) const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Anfrage konnte nicht gesendet werden. Bitte den Warenkorb prüfen und erneut versuchen.')),
                     ])),
     ]);
   }
@@ -655,12 +671,42 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     try {
       final cart = await _catalogService.addToCart(storeId: store.id, productId: product.id, quantity: _quantity);
       if (!mounted || !_customerAuthenticated) return;
-      setState(() { _cart = cart; _selectedProduct = null; _selectedTab = 3; });
+      setState(() { _cart = cart; _selectedProduct = null; _selectedTab = 3; _submittedOrderNumber = null; });
     } catch (error) {
       if (!mounted || !_customerAuthenticated) return;
       setState(() => _cartError = error);
     } finally {
       if (mounted) setState(() => _addingProduct = false);
+    }
+  }
+
+  Future<void> _confirmOrderRequest() async {
+    if (_cart == null || _cart!.items.isEmpty || _submittingOrder) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Anfrage absenden?'),
+        content: const Text('Der Shop erhält deine Artikelliste und bereitet die Bestellung vor. Die Zahlung erfolgt später.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Abbrechen')),
+          FilledButton(key: const ValueKey('shop-confirm-order'), onPressed: () => Navigator.pop(context, true), child: const Text('Absenden')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted || !_customerAuthenticated) return;
+    final store = _store;
+    if (store == null) return;
+    setState(() { _submittingOrder = true; _orderError = null; });
+    try {
+      final orderNumber = await _catalogService.submitOrderRequest(store.id);
+      if (!mounted || !_customerAuthenticated) return;
+      setState(() { _submittedOrderNumber = orderNumber; _cart = null; });
+      await _loadCart();
+    } catch (error) {
+      if (!mounted || !_customerAuthenticated) return;
+      setState(() => _orderError = error);
+    } finally {
+      if (mounted) setState(() => _submittingOrder = false);
     }
   }
 
