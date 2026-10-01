@@ -1,0 +1,13 @@
+// Only the storebackend systemd unit; do not ship unrelated VPS logs.
+loki.source.journal "storebackend" {
+  matches    = "_SYSTEMD_UNIT=storebackend.service"
+  max_age    = "24h"
+  labels     = {service = "storebackend"}
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://127.0.0.1:3100/loki/api/v1/push"
+  }
+}

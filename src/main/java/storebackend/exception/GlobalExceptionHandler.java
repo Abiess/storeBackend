@@ -1,5 +1,6 @@
 package storebackend.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -380,11 +381,12 @@ public class GlobalExceptionHandler {
      * Allgemeiner Exception Handler als Fallback → HTTP 500.
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGeneralException(Exception ex) {
+    public ResponseEntity<Map<String, Object>> handleGeneralException(Exception ex, HttpServletRequest request) {
         // WICHTIG: Bisher wurde die Exception hier nur in ex.getMessage() extrahiert und
         // danach verworfen -> kein Stacktrace in den Logs (Root Cause für "500 ohne Details").
         // Stacktrace geht NUR in die Server-Logs, NICHT an den Client (keine Exception-Details im Response-Body).
-        log.error("Unhandled exception while processing request", ex);
+        // URI excludes query parameters, which can contain tokens or customer data.
+        log.error("Unhandled exception while processing {} {}", request.getMethod(), request.getRequestURI(), ex);
 
         Map<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("timestamp", LocalDateTime.now().toString());
