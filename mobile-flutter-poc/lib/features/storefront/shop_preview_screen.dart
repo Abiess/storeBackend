@@ -31,6 +31,18 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   int _selectedTab = 0;
   ShopCategory? _selectedCategory;
   ShopProduct? _selectedProduct;
+  List<ShopVariant> _variants = const [];
+  ShopVariant? _selectedVariant;
+  bool _hasVariants = false;
+  bool _variantsLoading = false;
+  Object? _variantError;
+  int _variantRequest = 0;
+
+  int? get _availableStock => _selectedVariant?.stock ?? (_hasVariants ? null : _selectedProduct?.stock);
+
+  bool get _canAddProduct => !_addingProduct && !_variantsLoading && _variantError == null &&
+      (!_hasVariants || _selectedVariant != null) &&
+      (_availableStock == null || (_availableStock! > 0 && _quantity <= _availableStock!));
   ShopCart? _cart;
   Object? _cartError;
   bool _cartLoading = false;
@@ -494,7 +506,9 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             if (product.isFeatured) Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('IM ANGEBOT', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700, fontSize: 12))),
             Text(product.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
-            Text('AUF LAGER', style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.w700, fontSize: 12)),
+            Text(product.stock == null ? 'VERFÜGBARKEIT PRÜFEN' : product.stock! > 0 ? 'AUF LAGER' : 'AUSVERKAUFT',
+                style: TextStyle(color: product.stock == null ? colors.onSurfaceVariant : product.stock! > 0 ? Colors.green.shade700 : colors.error,
+                  fontWeight: FontWeight.w700, fontSize: 12)),
             const SizedBox(height: 8),
             Text(_formatPrice(product), style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700, fontSize: 18)),
           ])),
@@ -593,6 +607,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
 
   Widget _buildProductDetailPage(ShopProduct product, ColorScheme colors) {
     final tax = product.taxRate;
+    final stock = _availableStock;
     return CustomScrollView(key: const ValueKey('shop-product-detail'), slivers: [
       SliverAppBar(
         pinned: true,
@@ -612,29 +627,60 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             width: double.infinity,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: ColoredBox(color: colors.surface, child: _productArtwork(product, colors)),
+              child: ColoredBox(color: colors.surface, child: _selectedVariant?.imageUrl != null
+                  ? _networkImage(_selectedVariant!.imageUrl!, colors, Icons.inventory_2_outlined, fit: BoxFit.contain)
+                  : _productArtwork(product, colors)),
             ),
           ),
           const SizedBox(height: 24),
           Text(product.name, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
-          Text(_formatPrice(product), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: colors.primary, fontWeight: FontWeight.w700)),
+          Text(_formatAmount(_selectedVariant?.price ?? product.price, product.currencyCode), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: colors.primary, fontWeight: FontWeight.w700)),
           if (tax != null) ...[
             const SizedBox(height: 6),
             Text('MwSt. ${tax.toStringAsFixed(tax == tax.roundToDouble() ? 0 : 2).replaceAll('.', ',')} %',
                 style: TextStyle(color: colors.onSurfaceVariant)),
           ],
+          if (_variantsLoading)
+            const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: LinearProgressIndicator())
+          else if (_variantError != null)
+            TextButton.icon(key: const ValueKey('shop-retry-variants'),
+              onPressed: () => _loadProductVariants(product),
+              icon: const Icon(Icons.refresh), label: const Text('Varianten erneut laden'))
+          else if (_variants.isNotEmpty)
+            DropdownButton<int>(
+              key: const ValueKey('shop-variant-picker'),
+              isExpanded: true,
+              value: _selectedVariant?.id,
+              hint: const Text('Variante auswählen'),
+              onChanged: _addingProduct ? null : (id) => setState(() {
+                _selectedVariant = _variants.firstWhere((variant) => variant.id == id);
+                _quantity = 1;
+              }),
+              items: [for (final variant in _variants) DropdownMenuItem(
+                value: variant.id,
+                child: Text('${variant.label}${variant.stock == 0 ? ' – Ausverkauft' : ''}',
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
+              )],
+            ),
+          if (!_variantsLoading && _variantError == null)
+            Padding(padding: const EdgeInsets.only(top: 8),
+              child: Text(_hasVariants && _selectedVariant == null ? 'Keine verfügbare Variante'
+                : stock == null ? 'Verfügbarkeit beim Bestellen prüfen'
+                : stock <= 0 ? 'Ausverkauft' : '$stock verfügbar',
+                key: const ValueKey('shop-stock'))),
           if (_loginRequired && _customerAuthenticated) ...[
             const SizedBox(height: 24),
             Row(children: [
               IconButton(tooltip: 'Menge verringern', onPressed: _quantity > 1 && !_addingProduct ? () => setState(() => _quantity--) : null, icon: const Icon(Icons.remove_circle_outline)),
               Text('$_quantity', key: const ValueKey('shop-quantity')),
-              IconButton(tooltip: 'Menge erhöhen', onPressed: _addingProduct ? null : () => setState(() => _quantity++), icon: const Icon(Icons.add_circle_outline)),
+              IconButton(tooltip: 'Menge erhöhen', onPressed: _variantsLoading || _variantError != null || _addingProduct ||
+                  (stock != null && _quantity >= stock) ? null : () => setState(() => _quantity++), icon: const Icon(Icons.add_circle_outline)),
             ]),
             const SizedBox(height: 10),
             FilledButton.icon(
               key: const ValueKey('shop-add-to-cart'),
-              onPressed: _addingProduct ? null : () => _addProduct(product),
+              onPressed: _canAddProduct ? () => _addProduct(product) : null,
               icon: const Icon(Icons.add_shopping_cart),
               label: Text(_addingProduct ? 'Wird hinzugefügt …' : 'In den Warenkorb'),
             ),
@@ -741,11 +787,40 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
 
   void _openCategory(ShopCategory category) => setState(() { _selectedCategory = category; _selectedTab = 1; _showCategoryProducts = false; _query = ''; });
 
-  void _openProduct(ShopProduct product) => setState(() {
-    _selectedProduct = product;
-    _quantity = 1;
-    _cartError = null;
-  });
+  void _openProduct(ShopProduct product) {
+    setState(() {
+      _selectedProduct = product;
+      _selectedVariant = null;
+      _variants = const [];
+      _hasVariants = false;
+      _quantity = 1;
+      _cartError = null;
+    });
+    _loadProductVariants(product);
+  }
+
+  Future<void> _loadProductVariants(ShopProduct product) async {
+    final store = _store;
+    if (store == null) return;
+    final request = ++_variantRequest;
+    setState(() { _variantsLoading = true; _variantError = null; });
+    try {
+      final variants = await _catalogService.loadVariants(store.id, product.id);
+      if (!mounted || request != _variantRequest || _selectedProduct != product) return;
+      final active = variants.where((variant) => variant.isActive).toList();
+      setState(() {
+        _hasVariants = variants.isNotEmpty;
+        _variants = active;
+        _selectedVariant = active.where((variant) => variant.stock == null || variant.stock! > 0).firstOrNull
+            ?? active.firstOrNull;
+        _quantity = 1;
+        _variantsLoading = false;
+      });
+    } catch (error) {
+      if (!mounted || request != _variantRequest || _selectedProduct != product) return;
+      setState(() { _variantError = error; _variantsLoading = false; });
+    }
+  }
 
   Future<void> _editCartItem(ShopCartItem item, {int? quantity}) async {
     final store = _store;
@@ -789,10 +864,10 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
 
   Future<void> _addProduct(ShopProduct product) async {
     final store = _store;
-    if (store == null) return;
+    if (store == null || !_canAddProduct) return;
     setState(() { _addingProduct = true; _cartError = null; });
     try {
-      final cart = await _catalogService.addToCart(storeId: store.id, productId: product.id, quantity: _quantity);
+      final cart = await _catalogService.addToCart(storeId: store.id, productId: product.id, variantId: _selectedVariant?.id, quantity: _quantity);
       if (!mounted || !_customerAuthenticated) return;
       setState(() { _cart = cart; _selectedProduct = null; _selectedTab = 3; _submittedOrderNumber = null; });
     } catch (error) {
