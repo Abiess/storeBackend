@@ -224,6 +224,9 @@ class ShopStore {
     this.logoUrl,
     this.currencyCode = 'EUR',
     this.customerAccountMode = 'PUBLIC_REGISTRATION',
+    this.whatsappButtonEnabled = true,
+    this.whatsappNumber,
+    this.greetingMessage,
   });
 
   final int id;
@@ -232,6 +235,20 @@ class ShopStore {
   final String? logoUrl;
   final String currencyCode;
   final String customerAccountMode;
+  final bool whatsappButtonEnabled;
+  final String? whatsappNumber;
+  final String? greetingMessage;
+
+  Uri? get whatsappUri {
+    if (customerAccountMode == 'INVITE_ONLY' || !whatsappButtonEnabled) return null;
+    final number = (whatsappNumber ?? '').replaceAll(RegExp(r'[^0-9]'), '');
+    if (number.isEmpty) return null;
+    return Uri.https('wa.me', '/$number', {
+      'text': greetingMessage?.trim().isNotEmpty == true
+          ? greetingMessage!.trim()
+          : 'Hallo, ich interessiere mich für eure Produkte auf markt.ma',
+    });
+  }
 
   factory ShopStore.fromJson(Map<String, dynamic> json) => ShopStore(
         id: _readInt(json['storeId'] ?? json['id']),
@@ -240,6 +257,9 @@ class ShopStore {
         logoUrl: _readString(json['logoUrl']),
         currencyCode: json['currencyCode'] as String? ?? 'EUR',
         customerAccountMode: json['customerAccountMode'] as String? ?? 'PUBLIC_REGISTRATION',
+        whatsappButtonEnabled: json['whatsappButtonEnabled'] != false,
+        whatsappNumber: _readString(json['whatsappNumber']),
+        greetingMessage: _readString(json['greetingMessage']),
       );
 }
 
