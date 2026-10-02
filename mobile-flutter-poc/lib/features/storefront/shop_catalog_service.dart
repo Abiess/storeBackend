@@ -252,6 +252,9 @@ class ShopStore {
     this.logoUrl,
     this.currencyCode = 'EUR',
     this.customerAccountMode = 'PUBLIC_REGISTRATION',
+    this.maintenanceEnabled = false,
+    this.maintenanceMode = 'DEFAULT',
+    this.maintenanceImageUrl,
     this.whatsappButtonEnabled = true,
     this.whatsappNumber,
     this.greetingMessage,
@@ -263,12 +266,15 @@ class ShopStore {
   final String? logoUrl;
   final String currencyCode;
   final String customerAccountMode;
+  final bool maintenanceEnabled;
+  final String maintenanceMode;
+  final String? maintenanceImageUrl;
   final bool whatsappButtonEnabled;
   final String? whatsappNumber;
   final String? greetingMessage;
 
   Uri? get whatsappUri {
-    if (customerAccountMode == 'INVITE_ONLY' || !whatsappButtonEnabled) return null;
+    if (maintenanceEnabled || customerAccountMode == 'INVITE_ONLY' || !whatsappButtonEnabled) return null;
     final number = (whatsappNumber ?? '').replaceAll(RegExp(r'[^0-9]'), '');
     if (number.isEmpty) return null;
     return Uri.https('wa.me', '/$number', {
@@ -285,6 +291,9 @@ class ShopStore {
         logoUrl: _readString(json['logoUrl']),
         currencyCode: json['currencyCode'] as String? ?? 'EUR',
         customerAccountMode: json['customerAccountMode'] as String? ?? 'PUBLIC_REGISTRATION',
+        maintenanceEnabled: json['maintenanceEnabled'] == true,
+        maintenanceMode: json['maintenanceMode'] as String? ?? 'DEFAULT',
+        maintenanceImageUrl: _readString(json['maintenanceImageUrl']),
         whatsappButtonEnabled: json['whatsappButtonEnabled'] != false,
         whatsappNumber: _readString(json['whatsappNumber']),
         greetingMessage: _readString(json['greetingMessage']),
