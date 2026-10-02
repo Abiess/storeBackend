@@ -34,6 +34,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   ShopCart? _cart;
   Object? _cartError;
   bool _cartLoading = false;
+  bool _cartMutating = false;
   bool _addingProduct = false;
   bool _submittingOrder = false;
   String? _submittedOrderNumber;
@@ -603,7 +604,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     }
     final cart = _cart;
     return Column(children: [
-      AppBar(title: const Text('Warenkorb'), centerTitle: true, actions: [IconButton(tooltip: 'Warenkorb aktualisieren', onPressed: _cartLoading ? null : _loadCart, icon: const Icon(Icons.refresh))]),
+      AppBar(title: const Text('Warenkorb'), centerTitle: true, actions: [IconButton(tooltip: 'Warenkorb aktualisieren', onPressed: _cartLoading || _cartMutating || _submittingOrder ? null : _loadCart, icon: const Icon(Icons.refresh))]),
       if (_submittedOrderNumber != null) Padding(
         padding: const EdgeInsets.all(16),
         child: Text('Anfrage $_submittedOrderNumber gesendet. Der Shop bereitet deine Bestellung vor.',
@@ -616,12 +617,38 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
               : cart == null || cart.items.isEmpty
                   ? const Center(child: Text('Dein Warenkorb ist noch leer'))
                   : ListView(children: [
-                      for (final item in cart.items) ListTile(title: Text(item.name), trailing: Text('${item.quantity} ×')),
+                      for (final item in cart.items) ListTile(
+                        title: Text(item.name),
+                        subtitle: Row(mainAxisSize: MainAxisSize.min, children: [
+                          IconButton(
+                            key: ValueKey('cart-decrease-${item.id}'),
+                            tooltip: 'Menge verringern',
+                            onPressed: item.id == null || item.quantity <= 1 || _cartMutating || _submittingOrder
+                                ? null : () => _editCartItem(item, quantity: item.quantity - 1),
+                            icon: const Icon(Icons.remove_circle_outline),
+                          ),
+                          Text('${item.quantity}', key: ValueKey('cart-quantity-${item.id}')),
+                          IconButton(
+                            key: ValueKey('cart-increase-${item.id}'),
+                            tooltip: 'Menge erhöhen',
+                            onPressed: item.id == null || _cartMutating || _submittingOrder
+                                ? null : () => _editCartItem(item, quantity: item.quantity + 1),
+                            icon: const Icon(Icons.add_circle_outline),
+                          ),
+                        ]),
+                        trailing: IconButton(
+                          key: ValueKey('cart-remove-${item.id}'),
+                          tooltip: 'Artikel entfernen',
+                          onPressed: item.id == null || _cartMutating || _submittingOrder
+                              ? null : () => _editCartItem(item),
+                          icon: const Icon(Icons.delete_outline),
+                        ),
+                      ),
                       const Divider(),
                       ListTile(title: Text('${cart.itemCount} Artikel'), trailing: Text(_formatAmount(cart.subtotal, _store?.currencyCode ?? 'EUR'))),
                       Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), child: FilledButton(
                         key: const ValueKey('shop-submit-order'),
-                        onPressed: _submittingOrder ? null : _confirmOrderRequest,
+                        onPressed: _submittingOrder || _cartMutating ? null : _confirmOrderRequest,
                         child: Text(_submittingOrder ? 'Wird gesendet …' : 'Anfrage absenden'),
                       )),
                       if (_orderError != null) const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Anfrage konnte nicht gesendet werden. Bitte den Warenkorb prüfen und erneut versuchen.')),
@@ -673,6 +700,28 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     _cartError = null;
   });
 
+  Future<void> _editCartItem(ShopCartItem item, {int? quantity}) async {
+    final store = _store;
+    final itemId = item.id;
+    if (store == null || itemId == null || !_customerAuthenticated ||
+        _cartMutating || _cartLoading || _submittingOrder) return;
+    setState(() => _cartMutating = true);
+    try {
+      final cart = quantity == null
+          ? await _catalogService.removeCartItem(storeId: store.id, itemId: itemId)
+          : await _catalogService.updateCartItem(storeId: store.id, itemId: itemId, quantity: quantity);
+      if (!mounted || !_customerAuthenticated || _store?.id != store.id) return;
+      setState(() { _cart = cart; _submittedOrderNumber = null; _orderError = null; });
+    } catch (_) {
+      if (!mounted || !_customerAuthenticated) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Warenkorb konnte nicht aktualisiert werden. Bitte erneut versuchen.')),
+      );
+    } finally {
+      if (mounted) setState(() => _cartMutating = false);
+    }
+  }
+
   Future<void> _loadCart() async {
     final store = _store;
     if (store == null || !_customerAuthenticated) return;
@@ -706,7 +755,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   }
 
   Future<void> _confirmOrderRequest() async {
-    if (_cart == null || _cart!.items.isEmpty || _submittingOrder) return;
+    if (_cart == null || _cart!.items.isEmpty || _submittingOrder || _cartMutating || _cartLoading) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
