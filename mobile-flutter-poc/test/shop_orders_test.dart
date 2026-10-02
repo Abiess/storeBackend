@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import '../lib/features/storefront/shop_orders_service.dart';
-import '../lib/features/storefront/shop_orders_screen.dart';
+import 'package:markt_ma_documents_poc/features/storefront/shop_orders_service.dart';
+import 'package:markt_ma_documents_poc/features/storefront/shop_orders_screen.dart';
 
 void main() {
   test('loads only the selected shop with customer authorization', () async {
