@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Product, ProductVariant } from '@app/core/models';
 import { ProductImageGalleryComponent } from './product-image-gallery.component';
-import { ProductReviewsComponent } from './product-reviews.component';
 import { TranslatePipe } from '@app/core/pipes/translate.pipe';
 import { TranslationService } from '@app/core/services/translation.service';
 import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quantity-stepper.component';
@@ -14,7 +13,7 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
  */
 @Component({
     selector: 'app-product-quick-view',
-    imports: [CommonModule, FormsModule, ProductImageGalleryComponent, ProductReviewsComponent, TranslatePipe, QuantityStepperComponent],
+    imports: [CommonModule, FormsModule, ProductImageGalleryComponent, TranslatePipe, QuantityStepperComponent],
     template: `
     <div *ngIf="isOpen" class="quick-view-overlay" (click)="closeModal()">
       <div class="quick-view-modal" (click)="$event.stopPropagation()">
@@ -56,27 +55,6 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
               </div>
             </div>
 
-            <p class="product-description">{{ product?.description }}</p>
-
-            <!-- Produkt-Informationen (SKU, EAN, etc.) -->
-            <div *ngIf="selectedVariant || product" class="product-info-grid">
-              <div class="info-row" *ngIf="getCurrentSku()">
-                <span class="info-label">{{ 'quickView.sku' | translate }}</span>
-                <span class="info-value">{{ getCurrentSku() }}</span>
-              </div>
-              <div class="info-row" *ngIf="selectedVariant?.barcode">
-                <span class="info-label">{{ 'quickView.ean' | translate }}</span>
-                <span class="info-value">{{ selectedVariant?.barcode }}</span>
-              </div>
-              <div class="info-row" *ngIf="getComparePrice() > 0">
-                <span class="info-label">{{ 'quickView.rrp' | translate }}</span>
-                <span class="info-value compare-price">
-                  <span class="strikethrough">{{ getComparePrice() | number:'1.2-2' }} €</span>
-                  <span class="savings">{{ getYouSaveText() }}</span>
-                </span>
-              </div>
-            </div>
-
             <!-- Varianten-Auswahl – intelligente Option-Chips -->
             <div *ngIf="hasVariants()" class="variants-section">
 
@@ -87,13 +65,8 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
               </div>
 
               <!-- Ausgewählte Variante – Zusammenfassung -->
-              <div *ngIf="selectedVariant" class="selected-variant-summary">
-                <div class="summary-left">
-                  <span class="summary-label">{{ 'quickView.chosen' | translate }}</span>
-                  <span class="summary-value">{{ getVariantDisplayName(selectedVariant) }}</span>
-                </div>
+              <div *ngIf="selectedVariant" class="selected-variant-stock">
                 <div class="summary-right">
-                  <span class="summary-price">{{ selectedVariant.price | number:'1.2-2' }} €</span>
                   <span *ngIf="getStockBadge(selectedVariant) as badge"
                         class="stock-badge"
                         [ngClass]="getStockBadgeClass(selectedVariant)">
@@ -188,28 +161,9 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
               </button>
             </div>
 
-            <!-- Zusatzinformationen -->
-            <div class="additional-info">
-              <div class="info-item">
-                <span class="info-icon">✓</span>
-                <span class="info-text">{{ 'quickView.freeShippingInfo' | translate }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-icon">↩</span>
-                <span class="info-text">{{ 'quickView.returnsInfo' | translate }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-icon">🔒</span>
-                <span class="info-text">{{ 'quickView.securePaymentInfo' | translate }}</span>
-              </div>
-            </div>
           </div>
         </div>
 
-        <!-- Reviews Section (full width unterhalb der Produktinfo) -->
-        <div class="reviews-section" *ngIf="product?.id">
-          <app-product-reviews [productId]="product!.id"></app-product-reviews>
-        </div>
       </div>
     </div>
   `,
@@ -242,9 +196,9 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
     .quick-view-modal {
       background: white;
       border-radius: 16px;
-      max-width: 1200px;
+      max-width: 880px;
       width: 100%;
-      max-height: 95vh;
+      max-height: 90dvh;
       overflow-y: auto;
       overflow-x: hidden;
       position: relative;
@@ -295,8 +249,8 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
     .modal-content {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      padding: 2rem;
+      gap: 1.25rem;
+      padding: 1.5rem;
     }
 
     .image-section {
@@ -405,7 +359,7 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
     .info-section {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 0.75rem;
     }
 
     .product-header {
@@ -414,8 +368,8 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
     }
 
     .product-title {
-      margin: 0 0 1rem;
-      font-size: 1.75rem;
+      margin: 0 2rem 0.5rem 0;
+      font-size: 1.5rem;
       font-weight: 700;
       color: #333;
       line-height: 1.3;
@@ -498,7 +452,7 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
     }
 
     .variants-section {
-      padding: 1rem 0;
+      padding: 0.5rem 0;
       border-top: 1px solid #e9ecef;
       display: flex;
       flex-direction: column;
@@ -527,48 +481,7 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
 
     .hint-icon { font-size: 1.1rem; }
 
-    /* Ausgewählte Variante – Zusammenfassung */
-    .selected-variant-summary {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.6rem 1rem;
-      background: linear-gradient(135deg, #f0f4ff, #e8ecff);
-      border: 1.5px solid #667eea;
-      border-radius: 10px;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
-
-    .summary-left {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    .summary-label {
-      font-size: 0.8rem;
-      color: #888;
-      font-weight: 500;
-    }
-
-    .summary-value {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: #333;
-    }
-
-    .summary-right {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-    }
-
-    .summary-price {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #667eea;
-    }
+    .selected-variant-stock:empty { display: none; }
 
     /* Stock Badges */
     .stock-badge {
@@ -852,8 +765,8 @@ import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quanti
       }
 
       .modal-content {
-        padding: 1.5rem;
-        gap: 1.5rem;
+        padding: 1rem;
+        gap: 0.75rem;
       }
 
       .product-title {
