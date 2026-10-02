@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../config/api_config.dart';
 import 'shop_customer_login_screen.dart';
@@ -173,8 +174,32 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
                     ? ShopCustomerLoginScreen(storeName: _store?.name ?? 'Shop', onLogin: _loginCustomer)
                 : _buildCurrentPage(colors),
       ),
+      floatingActionButton: !_isLoading && _loadError == null && _store?.whatsappUri != null
+          ? FloatingActionButton.extended(
+              key: const ValueKey('shop-whatsapp'),
+              onPressed: _openWhatsapp,
+              backgroundColor: const Color(0xFF25D366),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.chat_outlined),
+              label: const Text('WhatsApp'),
+            )
+          : null,
       bottomNavigationBar: _loadError == null && (!_loginRequired || _customerAuthenticated) ? _buildBottomNavigation(colors) : null,
     ));
+  }
+
+  Future<void> _openWhatsapp() async {
+    final uri = _store?.whatsappUri;
+    if (uri == null) return;
+    try {
+      if (await launchUrl(uri, mode: LaunchMode.externalApplication)) return;
+    } catch (_) {
+      // Show the same recoverable message when the platform rejects the link.
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('WhatsApp konnte nicht geöffnet werden. Bitte erneut versuchen.')),
+    );
   }
 
   Widget _buildLoadError(ColorScheme colors) {
