@@ -36,6 +36,62 @@ void main() {
     expect(find.byKey(const ValueKey('nav-Kategorien')), findsNothing);
   });
 
+
+  testWidgets('cart edits use item ID and backend totals; last removal shows empty cart', (tester) async {
+    final edits = <String>[];
+    await tester.pumpWidget(MarktShopPreviewApp(
+      catalogService: _service([], accountMode: 'INVITE_ONLY',
+        additions: [{'existing': true}], cartEdits: edits),
+      storeSlug: 'spm', customerLogin: (_, __, ___) async {},
+    ));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('shop-login-identifier')), 'C-AB12CD34');
+    await tester.enterText(find.byKey(const ValueKey('shop-login-password')), 'secret123');
+    await tester.tap(find.byKey(const ValueKey('shop-login-submit')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('nav-Warenkorb')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('cart-increase-41')));
+    await tester.pumpAndSettle();
+    expect(edits, ['PUT:41:3']);
+    expect(find.text('3 Artikel'), findsOneWidget);
+    expect(find.text('37,50 MAD'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('cart-decrease-41')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('cart-decrease-41')));
+    await tester.pumpAndSettle();
+    expect(find.text('1 Artikel'), findsOneWidget);
+    expect(tester.widget<IconButton>(find.byKey(const ValueKey('cart-decrease-41'))).onPressed, isNull);
+
+    await tester.tap(find.byKey(const ValueKey('cart-remove-41')));
+    await tester.pumpAndSettle();
+    expect(edits.last, 'DELETE:41');
+    expect(find.text('Dein Warenkorb ist noch leer'), findsOneWidget);
+    expect(find.byKey(const ValueKey('shop-submit-order')), findsNothing);
+  });
+
+  testWidgets('failed cart mutation preserves items and can be retried', (tester) async {
+    await tester.pumpWidget(MarktShopPreviewApp(
+      catalogService: _service([], accountMode: 'INVITE_ONLY',
+        additions: [{'existing': true}], failCartEdit: true),
+      storeSlug: 'spm', customerLogin: (_, __, ___) async {},
+    ));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('shop-login-identifier')), 'C-AB12CD34');
+    await tester.enterText(find.byKey(const ValueKey('shop-login-password')), 'secret123');
+    await tester.tap(find.byKey(const ValueKey('shop-login-submit')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('nav-Warenkorb')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('cart-remove-41')));
+    await tester.pumpAndSettle();
+    expect(find.text('2 Artikel'), findsOneWidget);
+    expect(find.text('Warenkorb konnte nicht aktualisiert werden. Bitte erneut versuchen.'), findsOneWidget);
+    expect(tester.widget<IconButton>(find.byKey(const ValueKey('cart-remove-41'))).onPressed, isNotNull);
+  });
+
   for (final enabled in [true, false]) {
     testWidgets('public store WhatsApp visibility follows backend flag $enabled', (tester) async {
       await tester.pumpWidget(MarktShopPreviewApp(
@@ -269,9 +325,25 @@ void main() {
   });
 }
 
-ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool whatsappEnabled = true, bool maintenanceEnabled = false, String maintenanceMode = 'DEFAULT', String? maintenanceImageUrl, bool withSubcategories = false, List<Map<String, dynamic>>? additions, List<Map<String, dynamic>>? orders}) {
+ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool whatsappEnabled = true, bool maintenanceEnabled = false, String maintenanceMode = 'DEFAULT', String? maintenanceImageUrl, bool withSubcategories = false, List<Map<String, dynamic>>? additions, List<Map<String, dynamic>>? orders, List<String>? cartEdits, bool failCartEdit = false}) {
+  var cartQuantity = 2;
+  var removed = false;
   return ShopCatalogService(readToken: () async => 'invite-jwt', client: MockClient((request) async {
     requests.add(request.url.path);
+    if (request.url.path == '/api/public/cart/items/41') {
+      expect(request.headers['Authorization'], 'Bearer invite-jwt');
+      if (failCartEdit) return http.Response('{"error":"Unavailable"}', 503);
+      if (request.method == 'PUT') {
+        expect(request.headers['Content-Type'], 'application/json');
+        cartQuantity = (jsonDecode(request.body) as Map<String, dynamic>)['quantity'] as int;
+        cartEdits?.add('PUT:41:$cartQuantity');
+        return http.Response('{}', 200);
+      }
+      expect(request.method, 'DELETE');
+      removed = true;
+      cartEdits?.add('DELETE:41');
+      return http.Response('', 204);
+    }
     if (request.url.path == '/api/public/orders/checkout') {
       expect(request.headers['Authorization'], 'Bearer invite-jwt');
       orders?.add(jsonDecode(request.body) as Map<String, dynamic>);
@@ -284,8 +356,8 @@ ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC
         return http.Response('{}', 200);
       }
       expect(request.url.queryParameters['storeId'], '130');
-      return http.Response(jsonEncode(additions?.isNotEmpty == true && orders?.isNotEmpty != true
-          ? {'items': [{'productTitle': 'Olivenöl', 'quantity': 2}], 'itemCount': 2, 'subtotal': 25}
+      return http.Response(jsonEncode(additions?.isNotEmpty == true && orders?.isNotEmpty != true && !removed
+          ? {'items': [{'id': 41, 'productTitle': 'Olivenöl', 'quantity': cartQuantity}], 'itemCount': cartQuantity, 'subtotal': 12.5 * cartQuantity}
           : {'items': [], 'itemCount': 0, 'subtotal': 0}), 200);
     }
     switch (request.url.path) {
