@@ -8,6 +8,107 @@ import 'package:markt_ma_documents_poc/entrypoints/main_shop.dart';
 import 'package:markt_ma_documents_poc/features/storefront/shop_catalog_service.dart';
 
 void main() {
+  test('tier price chooses highest reached quantity and falls back to variant price', () {
+    final product = ShopProduct.fromJson({
+      'basePrice': 12.5,
+      'tierPrices': [
+        {'minimumQuantity': 5, 'unitPrice': '8.00', 'active': true},
+        {'minimumQuantity': 2, 'unitPrice': 10, 'active': true},
+        {'minimumQuantity': 3, 'unitPrice': 1, 'active': false},
+        {'minimumQuantity': 9, 'unitPrice': 'bad', 'active': true},
+      ],
+    });
+    expect(product.unitPriceFor(1, variantPrice: 15), 15);
+    expect(product.unitPriceFor(2, variantPrice: 15), 10);
+    expect(product.unitPriceFor(4), 10);
+    expect(product.unitPriceFor(5), 8);
+    expect(product.unitPriceFor(10), 8);
+    expect(product.tierPrices.length, 2);
+  });
+
+  testWidgets('invite quantity updates unit price without expanding product details', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MarktShopPreviewApp(
+      catalogService: _service([], accountMode: 'INVITE_ONLY', withTiers: true),
+      storeSlug: 'spm', customerLogin: (_, __, ___) async {},
+    ));
+    await tester.pumpAndSettle();
+    await _openTestProduct(tester);
+    expect(find.text('12,50 MAD'), findsOneWidget);
+    await tester.tap(find.byTooltip('Menge erhöhen'));
+    await tester.pumpAndSettle();
+    expect(find.text('10,00 MAD'), findsOneWidget);
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(find.byTooltip('Menge erhöhen'));
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('8,00 MAD'), findsOneWidget);
+    expect(find.byKey(const ValueKey('shop-tier-prices')), findsNothing);
+    expect(find.text('Beschreibung'), findsNothing);
+  });
+
+  testWidgets('public product shows quantity price schedule on request', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MarktShopPreviewApp(
+      catalogService: _service([], withTiers: true), storeSlug: 'spm',
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('nav-Kategorien')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('category-card-Oliven')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('shop-product-2')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('shop-tier-prices')));
+    await tester.tap(find.text('Mengenpreise'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ab 2 Stück'), findsOneWidget);
+    expect(find.text('10,00 MAD / Stück'), findsOneWidget);
+  });
+
+  test('product gallery orders media, skips videos and removes duplicate URLs', () {
+    final product = ShopProduct.fromJson({
+      'id': 2, 'title': 'Produkt', 'basePrice': 10,
+      'description': '  Details  ',
+      'media': [
+        {'url': '/third.png', 'sortOrder': 3, 'contentType': 'image/png'},
+        {'url': '/primary.png', 'sortOrder': 2, 'isPrimary': true, 'contentType': 'image/png'},
+        {'url': '/second.png', 'sortOrder': 1, 'contentType': 'image/png'},
+        {'url': '/primary.png', 'sortOrder': 4, 'contentType': 'image/png'},
+        {'url': '/video.mp4', 'sortOrder': 0, 'contentType': 'video/mp4'},
+      ],
+    });
+    expect(product.imageUrls, ['/primary.png', '/second.png', '/third.png']);
+    expect(product.description, 'Details');
+    expect(ShopProduct.fromJson({'description': '   '}).description, isNull);
+  });
+
+  testWidgets('public product has gallery selection and backend description', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MarktShopPreviewApp(
+      catalogService: _service([], withGallery: true), storeSlug: 'spm',
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('nav-Kategorien')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('category-card-Oliven')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('shop-product-2')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('shop-image-gallery')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('shop-thumbnail-1')));
+    await tester.pumpAndSettle();
+    final mainImage = tester.widget<Image>(find.descendant(
+      of: find.byKey(const ValueKey('shop-main-image')), matching: find.byType(Image)));
+    expect((mainImage.image as NetworkImage).url, endsWith('/second.png'));
+    await tester.ensureVisible(find.byKey(const ValueKey('shop-product-description')));
+    expect(find.text('Frisches Olivenöl aus Marokko.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('selects available variant, limits stock and sends chosen variant ID', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -382,7 +483,7 @@ void main() {
   });
 }
 
-ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool whatsappEnabled = true, bool maintenanceEnabled = false, String maintenanceMode = 'DEFAULT', String? maintenanceImageUrl, bool withSubcategories = false, List<Map<String, dynamic>>? additions, List<Map<String, dynamic>>? orders, List<String>? cartEdits, bool failCartEdit = false, List<Map<String, dynamic>> variants = const [], int? productStock = 20, bool failVariants = false}) {
+ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool whatsappEnabled = true, bool maintenanceEnabled = false, String maintenanceMode = 'DEFAULT', String? maintenanceImageUrl, bool withSubcategories = false, List<Map<String, dynamic>>? additions, List<Map<String, dynamic>>? orders, List<String>? cartEdits, bool failCartEdit = false, List<Map<String, dynamic>> variants = const [], int? productStock = 20, bool failVariants = false, bool withGallery = false, bool withTiers = false}) {
   var cartQuantity = 2;
   var removed = false;
   return ShopCatalogService(readToken: () async => 'invite-jwt', client: MockClient((request) async {
@@ -448,6 +549,15 @@ ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC
             'title': 'Olivenöl',
             'basePrice': 12.5,
             'stock': productStock,
+            if (withTiers) 'tierPrices': [
+              {'minimumQuantity': 2, 'unitPrice': 10, 'active': true},
+              {'minimumQuantity': 5, 'unitPrice': 8, 'active': true},
+            ],
+            'description': 'Frisches Olivenöl aus Marokko.',
+            if (withGallery) 'media': [
+              {'url': '/primary.png', 'isPrimary': true, 'sortOrder': 0},
+              {'url': '/second.png', 'sortOrder': 1},
+            ],
             'categoryId': withSubcategories ? 12 : 5,
             'categoryName': 'Oliven',
             'taxRate': 7,
