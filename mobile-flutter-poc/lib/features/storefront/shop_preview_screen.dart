@@ -87,6 +87,15 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     });
     try {
       final store = await _catalogService.loadStoreMetadata(widget.storeSlug);
+      if (store.maintenanceEnabled) {
+        if (!mounted) return;
+        setState(() {
+          _store = store;
+          _catalog = null;
+          _isLoading = false;
+        });
+        return;
+      }
       if (store.customerAccountMode == 'INVITE_ONLY') {
         if (!mounted) return;
         setState(() {
@@ -170,6 +179,8 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             ? const Center(child: CircularProgressIndicator())
             : _loadError != null
                 ? _buildLoadError(colors)
+                : _store?.maintenanceEnabled == true
+                    ? _buildMaintenancePage()
                 : _loginRequired && !_customerAuthenticated
                     ? ShopCustomerLoginScreen(storeName: _store?.name ?? 'Shop', onLogin: _loginCustomer)
                 : _buildCurrentPage(colors),
@@ -184,9 +195,45 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
               label: const Text('WhatsApp'),
             )
           : null,
-      bottomNavigationBar: _loadError == null && (!_loginRequired || _customerAuthenticated) ? _buildBottomNavigation(colors) : null,
+      bottomNavigationBar: !_isLoading && _store?.maintenanceEnabled != true && _loadError == null && (!_loginRequired || _customerAuthenticated) ? _buildBottomNavigation(colors) : null,
     ));
   }
+
+  Widget _buildMaintenancePage() {
+    final store = _store!;
+    final imageUrl = store.maintenanceImageUrl;
+    if (store.maintenanceMode == 'CUSTOM_IMAGE' && imageUrl != null) {
+      final url = _absoluteImageUrl(imageUrl);
+      if (url != null) {
+        return Center(
+          key: const ValueKey('shop-maintenance'),
+          child: Image.network(
+            url,
+            fit: BoxFit.contain,
+            semanticLabel: store.name,
+            errorBuilder: (_, __, ___) => _buildMaintenanceMessage(),
+          ),
+        );
+      }
+    }
+    return _buildMaintenanceMessage();
+  }
+
+  Widget _buildMaintenanceMessage() => Center(
+    key: const ValueKey('shop-maintenance-message'),
+    child: Padding(
+      padding: const EdgeInsets.all(28),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(Icons.construction, size: 56),
+        const SizedBox(height: 16),
+        const Text('Dieser Shop wird gerade vorbereitet.', textAlign: TextAlign.center),
+        const SizedBox(height: 8),
+        const Text('Bitte schaue später wieder vorbei.', textAlign: TextAlign.center),
+        const SizedBox(height: 16),
+        Text(_store?.name ?? 'Shop', textAlign: TextAlign.center),
+      ]),
+    ),
+  );
 
   Future<void> _openWhatsapp() async {
     final uri = _store?.whatsappUri;
