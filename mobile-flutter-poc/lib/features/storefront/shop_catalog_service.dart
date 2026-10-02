@@ -45,6 +45,13 @@ class ShopCatalogService {
     );
   }
 
+  Future<List<ShopVariant>> loadVariants(int storeId, int productId) async {
+    final json = await _get('/public/stores/$storeId/products/$productId/variants');
+    return (json as List<dynamic>)
+        .map((item) => ShopVariant.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<AuthResponse> loginCustomer({
     required int storeId,
     required String identifier,
@@ -91,12 +98,12 @@ class ShopCatalogService {
     }
   }
 
-  Future<ShopCart> addToCart({required int storeId, required int productId, required int quantity}) async {
+  Future<ShopCart> addToCart({required int storeId, required int productId, required int quantity, int? variantId}) async {
     final token = await _cartToken();
     final response = await _client.post(
       Uri.parse('${ApiConfig.baseUrl}/public/cart/items'),
       headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
-      body: jsonEncode({'storeId': storeId, 'productId': productId, 'quantity': quantity}),
+      body: jsonEncode({'storeId': storeId, if (variantId == null) 'productId': productId else 'variantId': variantId, 'quantity': quantity}),
     );
     _checkCartResponse(response);
     return loadCart(storeId);
@@ -328,6 +335,7 @@ class ShopProduct {
     this.categoryName,
     this.imageUrl,
     this.taxRate,
+    this.stock,
     this.isFeatured = false,
   });
 
@@ -339,6 +347,7 @@ class ShopProduct {
   final String? categoryName;
   final String? imageUrl;
   final double? taxRate;
+  final int? stock;
   final bool isFeatured;
 
   factory ShopProduct.fromJson(
@@ -360,12 +369,47 @@ class ShopProduct {
       categoryId: json['categoryId'] == null ? null : _readInt(json['categoryId']),
       categoryName: _readString(json['categoryName']),
       imageUrl: _readString(rawImage),
+      stock: json['stock'] == null ? null : _readInt(json['stock']),
       taxRate: switch (json['taxRate']) {
         num value => value.toDouble(),
         String value => double.tryParse(value),
         _ => null,
       },
       isFeatured: json['isFeatured'] == true,
+    );
+  }
+}
+
+class ShopVariant {
+  const ShopVariant({required this.id, required this.label, this.price,
+    this.stock, this.imageUrl, this.isActive = true});
+
+  final int id;
+  final String label;
+  final double? price;
+  final int? stock;
+  final String? imageUrl;
+  final bool isActive;
+
+  factory ShopVariant.fromJson(Map<String, dynamic> json) {
+    final attributes = json['attributes'];
+    final options = [
+      for (final key in ['option1', 'option2', 'option3'])
+        if (_readString(json[key]) != null) _readString(json[key])!,
+    ];
+    final labels = options.isNotEmpty ? options : [
+      if (attributes is Map)
+        for (final value in attributes.values)
+          if (_readString(value) != null) _readString(value)!,
+    ];
+    final stock = json['stockQuantity'] ?? json['quantity'];
+    return ShopVariant(
+      id: _readInt(json['id']),
+      label: labels.isNotEmpty ? labels.join(' / ') : _readString(json['sku']) ?? 'Variante',
+      price: json['price'] == null ? null : _readDouble(json['price']),
+      stock: stock == null ? null : _readInt(stock),
+      imageUrl: _readString(json['imageUrl']),
+      isActive: json['isActive'] != false,
     );
   }
 }

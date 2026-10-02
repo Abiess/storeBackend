@@ -8,6 +8,63 @@ import 'package:markt_ma_documents_poc/entrypoints/main_shop.dart';
 import 'package:markt_ma_documents_poc/features/storefront/shop_catalog_service.dart';
 
 void main() {
+  testWidgets('selects available variant, limits stock and sends chosen variant ID', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final additions = <Map<String, dynamic>>[];
+    await tester.pumpWidget(MarktShopPreviewApp(
+      catalogService: _service([], accountMode: 'INVITE_ONLY', additions: additions, variants: [
+        {'id': 51, 'option1': 'Rot', 'price': 10, 'stockQuantity': 0, 'isActive': true},
+        {'id': 52, 'option1': 'Blau', 'price': 15, 'stockQuantity': 1, 'isActive': true},
+        {'id': 53, 'option1': 'Grün', 'price': 18, 'stockQuantity': 4, 'isActive': true},
+        {'id': 54, 'option1': 'Inaktiv', 'price': 1, 'stockQuantity': 10, 'isActive': false},
+      ]),
+      storeSlug: 'spm', customerLogin: (_, __, ___) async {},
+    ));
+    await tester.pumpAndSettle();
+    await _openTestProduct(tester);
+    expect(find.text('15,00 MAD'), findsOneWidget);
+    expect(find.text('1 verfügbar'), findsOneWidget);
+    expect(tester.widget<IconButton>(find.byWidgetPredicate((widget) => widget is IconButton && widget.tooltip == 'Menge erhöhen')).onPressed, isNull);
+    await tester.tap(find.byKey(const ValueKey('shop-variant-picker')));
+    await tester.pumpAndSettle();
+    expect(find.text('Inaktiv'), findsNothing);
+    await tester.tap(find.text('Grün').last);
+    await tester.pumpAndSettle();
+    expect(find.text('18,00 MAD'), findsOneWidget);
+    await tester.tap(find.byTooltip('Menge erhöhen'));
+    await tester.tap(find.byKey(const ValueKey('shop-add-to-cart')));
+    await tester.pumpAndSettle();
+    expect(additions, [{'storeId': 130, 'variantId': 53, 'quantity': 2}]);
+  });
+
+  for (final variants in [
+    <Map<String, dynamic>>[],
+    [{'id': 51, 'stockQuantity': 0, 'isActive': true}],
+    [{'id': 51, 'stockQuantity': 5, 'isActive': false}],
+  ]) {
+    testWidgets('blocks unavailable product or variants $variants', (tester) async {
+      await tester.pumpWidget(MarktShopPreviewApp(
+        catalogService: _service([], accountMode: 'INVITE_ONLY', variants: variants, productStock: 0),
+        storeSlug: 'spm', customerLogin: (_, __, ___) async {},
+      ));
+      await tester.pumpAndSettle();
+      await _openTestProduct(tester);
+      expect(tester.widget<FilledButton>(find.byKey(const ValueKey('shop-add-to-cart'))).onPressed, isNull);
+    });
+  }
+
+  testWidgets('failed variant loading blocks ordering and offers retry', (tester) async {
+    await tester.pumpWidget(MarktShopPreviewApp(
+      catalogService: _service([], accountMode: 'INVITE_ONLY', failVariants: true),
+      storeSlug: 'spm', customerLogin: (_, __, ___) async {},
+    ));
+    await tester.pumpAndSettle();
+    await _openTestProduct(tester);
+    expect(find.byKey(const ValueKey('shop-retry-variants')), findsOneWidget);
+    expect(tester.widget<FilledButton>(find.byKey(const ValueKey('shop-add-to-cart'))).onPressed, isNull);
+  });
+
   for (final mode in ['PUBLIC_REGISTRATION', 'INVITE_ONLY']) {
     testWidgets('maintenance takes priority over catalog and login in $mode', (tester) async {
       final requests = <String>[];
@@ -325,11 +382,14 @@ void main() {
   });
 }
 
-ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool whatsappEnabled = true, bool maintenanceEnabled = false, String maintenanceMode = 'DEFAULT', String? maintenanceImageUrl, bool withSubcategories = false, List<Map<String, dynamic>>? additions, List<Map<String, dynamic>>? orders, List<String>? cartEdits, bool failCartEdit = false}) {
+ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool whatsappEnabled = true, bool maintenanceEnabled = false, String maintenanceMode = 'DEFAULT', String? maintenanceImageUrl, bool withSubcategories = false, List<Map<String, dynamic>>? additions, List<Map<String, dynamic>>? orders, List<String>? cartEdits, bool failCartEdit = false, List<Map<String, dynamic>> variants = const [], int? productStock = 20, bool failVariants = false}) {
   var cartQuantity = 2;
   var removed = false;
   return ShopCatalogService(readToken: () async => 'invite-jwt', client: MockClient((request) async {
     requests.add(request.url.path);
+    if (request.url.path == '/api/public/stores/130/products/2/variants') {
+      return failVariants ? http.Response('', 503) : http.Response(jsonEncode(variants), 200);
+    }
     if (request.url.path == '/api/public/cart/items/41') {
       expect(request.headers['Authorization'], 'Bearer invite-jwt');
       if (failCartEdit) return http.Response('{"error":"Unavailable"}', 503);
@@ -387,6 +447,7 @@ ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC
             'id': 2,
             'title': 'Olivenöl',
             'basePrice': 12.5,
+            'stock': productStock,
             'categoryId': withSubcategories ? 12 : 5,
             'categoryName': 'Oliven',
             'taxRate': 7,
@@ -405,4 +466,17 @@ ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC
         return http.Response('unexpected endpoint ${request.url.path}', 404);
     }
   }));
+}
+
+Future<void> _openTestProduct(WidgetTester tester) async {
+  await tester.enterText(find.byKey(const ValueKey('shop-login-identifier')), 'C-AB12CD34');
+  await tester.enterText(find.byKey(const ValueKey('shop-login-password')), 'secret123');
+  await tester.tap(find.byKey(const ValueKey('shop-login-submit')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('nav-Kategorien')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('category-card-Oliven')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('shop-product-2')));
+  await tester.pumpAndSettle();
 }
