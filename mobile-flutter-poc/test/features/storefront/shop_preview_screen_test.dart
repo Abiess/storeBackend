@@ -8,6 +8,34 @@ import 'package:markt_ma_documents_poc/entrypoints/main_shop.dart';
 import 'package:markt_ma_documents_poc/features/storefront/shop_catalog_service.dart';
 
 void main() {
+  for (final enabled in [true, false]) {
+    testWidgets('public store WhatsApp visibility follows backend flag $enabled', (tester) async {
+      await tester.pumpWidget(MarktShopPreviewApp(
+        catalogService: _service([], whatsappEnabled: enabled),
+        storeSlug: 'spm',
+      ));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('shop-whatsapp')), enabled ? findsOneWidget : findsNothing);
+    });
+  }
+
+  test('WhatsApp link uses backend number and safely encodes greeting', () {
+    final store = ShopStore.fromJson({
+      'storeId': 130,
+      'whatsappNumber': '+212 600-123456',
+      'greetingMessage': 'Hallo & guten Tag!',
+    });
+    expect(store.whatsappUri?.host, 'wa.me');
+    expect(store.whatsappUri?.path, '/212600123456');
+    expect(store.whatsappUri?.queryParameters['text'], 'Hallo & guten Tag!');
+    expect(ShopStore.fromJson({'whatsappNumber': '   '}).whatsappUri, isNull);
+    expect(ShopStore.fromJson({
+      'customerAccountMode': 'INVITE_ONLY',
+      'whatsappNumber': '+212600123456',
+      'whatsappButtonEnabled': true,
+    }).whatsappUri, isNull);
+  });
+
   testWidgets('loads the configured public store and browses live catalog data', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -213,7 +241,7 @@ void main() {
   });
 }
 
-ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool withSubcategories = false, List<Map<String, dynamic>>? additions, List<Map<String, dynamic>>? orders}) {
+ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool whatsappEnabled = true, bool withSubcategories = false, List<Map<String, dynamic>>? additions, List<Map<String, dynamic>>? orders}) {
   return ShopCatalogService(readToken: () async => 'invite-jwt', client: MockClient((request) async {
     requests.add(request.url.path);
     if (request.url.path == '/api/public/orders/checkout') {
@@ -240,6 +268,8 @@ ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC
           'slug': 'spm',
           'currencyCode': 'MAD',
           'customerAccountMode': accountMode,
+          'whatsappButtonEnabled': whatsappEnabled,
+          'whatsappNumber': '+212600123456',
         }), 200);
       case '/api/stores/130/categories':
         return http.Response(jsonEncode([
