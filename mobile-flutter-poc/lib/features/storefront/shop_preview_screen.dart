@@ -33,6 +33,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   ShopProduct? _selectedProduct;
   List<ShopVariant> _variants = const [];
   ShopVariant? _selectedVariant;
+  String? _selectedGalleryImage;
   bool _hasVariants = false;
   bool _variantsLoading = false;
   Object? _variantError;
@@ -608,6 +609,12 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   Widget _buildProductDetailPage(ShopProduct product, ColorScheme colors) {
     final tax = product.taxRate;
     final stock = _availableStock;
+    final images = <String>{
+      if (_selectedVariant?.imageUrl != null) _selectedVariant!.imageUrl!,
+      ...product.imageUrls,
+      if (product.imageUrl != null) product.imageUrl!,
+    }.toList();
+    final image = images.contains(_selectedGalleryImage) ? _selectedGalleryImage : images.firstOrNull;
     return CustomScrollView(key: const ValueKey('shop-product-detail'), slivers: [
       SliverAppBar(
         pinned: true,
@@ -623,14 +630,43 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
         sliver: SliverToBoxAdapter(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           SizedBox(
+            key: const ValueKey('shop-main-image'),
             height: 260,
             width: double.infinity,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: ColoredBox(color: colors.surface, child: _selectedVariant?.imageUrl != null
-                  ? _networkImage(_selectedVariant!.imageUrl!, colors, Icons.inventory_2_outlined, fit: BoxFit.contain)
+              child: ColoredBox(color: colors.surface, child: image != null
+                  ? _networkImage(image, colors, Icons.inventory_2_outlined, fit: BoxFit.contain)
                   : _productArtwork(product, colors)),
             ),
+          ),
+          if (!_loginRequired && images.length > 1) Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: SizedBox(height: 72, child: ListView.separated(
+              key: const ValueKey('shop-image-gallery'),
+              scrollDirection: Axis.horizontal,
+              itemCount: images.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (_, index) => Semantics(
+                label: 'Produktbild ${index + 1}',
+                button: true,
+                selected: images[index] == image,
+                child: InkWell(
+                  key: ValueKey('shop-thumbnail-$index'),
+                  onTap: () => setState(() => _selectedGalleryImage = images[index]),
+                  child: Container(
+                    width: 72,
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: images[index] == image ? colors.primary : colors.outlineVariant,
+                        width: images[index] == image ? 2 : 1),
+                    ),
+                    child: _networkImage(images[index], colors, Icons.image_outlined, fit: BoxFit.contain),
+                  ),
+                ),
+              ),
+            )),
           ),
           const SizedBox(height: 24),
           Text(product.name, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
@@ -640,6 +676,13 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             const SizedBox(height: 6),
             Text('MwSt. ${tax.toStringAsFixed(tax == tax.roundToDouble() ? 0 : 2).replaceAll('.', ',')} %',
                 style: TextStyle(color: colors.onSurfaceVariant)),
+          ],
+          if (!_loginRequired && product.description != null) ...[
+            const SizedBox(height: 20),
+            Text('Beschreibung', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(product.description!, key: const ValueKey('shop-product-description')),
+            const SizedBox(height: 12),
           ],
           if (_variantsLoading)
             const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: LinearProgressIndicator())
@@ -656,6 +699,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
               onChanged: _addingProduct ? null : (id) => setState(() {
                 _selectedVariant = _variants.firstWhere((variant) => variant.id == id);
                 _quantity = 1;
+                _selectedGalleryImage = null;
               }),
               items: [for (final variant in _variants) DropdownMenuItem(
                 value: variant.id,
@@ -791,6 +835,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     setState(() {
       _selectedProduct = product;
       _selectedVariant = null;
+      _selectedGalleryImage = null;
       _variants = const [];
       _hasVariants = false;
       _quantity = 1;
