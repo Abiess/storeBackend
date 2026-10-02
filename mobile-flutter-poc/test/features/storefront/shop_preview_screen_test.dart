@@ -9,6 +9,8 @@ import 'package:markt_ma_documents_poc/features/storefront/shop_catalog_service.
 
 void main() {
   testWidgets('selects available variant, limits stock and sends chosen variant ID', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final additions = <Map<String, dynamic>>[];
     await tester.pumpWidget(MarktShopPreviewApp(
       catalogService: _service([], accountMode: 'INVITE_ONLY', additions: additions, variants: [
@@ -23,7 +25,7 @@ void main() {
     await _openTestProduct(tester);
     expect(find.text('15,00 MAD'), findsOneWidget);
     expect(find.text('1 verfügbar'), findsOneWidget);
-    expect(tester.widget<IconButton>(find.byTooltip('Menge erhöhen')).onPressed, isNull);
+    expect(tester.widget<IconButton>(find.byWidgetPredicate((widget) => widget is IconButton && widget.tooltip == 'Menge erhöhen')).onPressed, isNull);
     await tester.tap(find.byKey(const ValueKey('shop-variant-picker')));
     await tester.pumpAndSettle();
     expect(find.text('Inaktiv'), findsNothing);
