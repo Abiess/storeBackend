@@ -29,6 +29,8 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   bool _isLoading = true;
   bool _loginRequired = false;
   bool _customerAuthenticated = false;
+  bool _loggingOut = false;
+  int _customerSession = 0;
   int _selectedTab = 0;
   ShopCategory? _selectedCategory;
   ShopProduct? _selectedProduct;
@@ -156,20 +158,61 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   }
 
   Future<void> _logoutCustomer() async {
-    await _catalogService.logoutCustomer();
-    if (!mounted) return;
-    setState(() {
-      _catalog = null;
-      _customerAuthenticated = false;
-      _selectedTab = 0;
-      _selectedCategory = null;
-      _selectedProduct = null;
-      _cart = null;
-      _cartError = null;
-      _submittedOrderNumber = null;
-      _orderError = null;
-      _showCategoryProducts = false;
-    });
+    if (_loggingOut || !_customerAuthenticated) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Abmelden?'),
+        content: const Text('Du kannst dich anschließend wieder mit deinen Zugangsdaten anmelden.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Abbrechen')),
+          FilledButton(
+            key: const ValueKey('shop-confirm-logout'),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Abmelden'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted || !_customerAuthenticated || _loggingOut) return;
+    setState(() => _loggingOut = true);
+    try {
+      await _catalogService.logoutCustomer();
+      if (!mounted) return;
+      setState(() {
+        _customerSession++;
+        _variantRequest++;
+        _catalog = null;
+        _customerAuthenticated = false;
+        _selectedTab = 0;
+        _selectedCategory = null;
+        _selectedProduct = null;
+        _variants = const [];
+        _selectedVariant = null;
+        _selectedGalleryImage = null;
+        _hasVariants = false;
+        _variantsLoading = false;
+        _variantError = null;
+        _cart = null;
+        _cartError = null;
+        _cartLoading = false;
+        _cartMutating = false;
+        _addingProduct = false;
+        _submittingOrder = false;
+        _submittedOrderNumber = null;
+        _orderError = null;
+        _showCategoryProducts = false;
+        _quantity = 1;
+        _query = '';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Abmelden fehlgeschlagen. Bitte erneut versuchen.'),
+      ));
+    } finally {
+      if (mounted) setState(() => _loggingOut = false);
+    }
   }
 
   List<ShopProduct> get _visibleProducts {
@@ -190,7 +233,9 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     return Theme(data: baseTheme.copyWith(colorScheme: colors), child: Scaffold(
       backgroundColor: const Color(0xFFF5F5F7),
       body: SafeArea(
-        child: _isLoading
+        child: _loggingOut
+            ? const Center(child: CircularProgressIndicator(key: ValueKey('shop-logging-out')))
+            : _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _loadError != null
                 ? _buildLoadError(colors)
@@ -210,7 +255,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
               label: const Text('WhatsApp'),
             )
           : null,
-      bottomNavigationBar: !_isLoading && _store?.maintenanceEnabled != true && _loadError == null && (!_loginRequired || _customerAuthenticated) ? _buildBottomNavigation(colors) : null,
+      bottomNavigationBar: !_loggingOut && !_isLoading && _store?.maintenanceEnabled != true && _loadError == null && (!_loginRequired || _customerAuthenticated) ? _buildBottomNavigation(colors) : null,
     ));
   }
 
@@ -822,7 +867,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
                 storeId: _store!.id, currencyCode: _store!.currencyCode),
             )),
           ),
-          ListTile(key: const ValueKey('shop-logout'), leading: const Icon(Icons.logout), title: const Text('Abmelden'), onTap: _logoutCustomer),
+          ListTile(key: const ValueKey('shop-logout'), leading: const Icon(Icons.logout), title: const Text('Abmelden'), onTap: _cartMutating || _addingProduct || _submittingOrder ? null : _logoutCustomer),
         ] else
           const Expanded(child: Center(child: Text('Weitere Shop-Funktionen folgen.'))),
       ]);
@@ -899,57 +944,61 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         _cartMutating || _cartLoading || _submittingOrder) {
       return;
     }
+    final session = _customerSession;
     setState(() => _cartMutating = true);
     try {
       final cart = quantity == null
           ? await _catalogService.removeCartItem(storeId: store.id, itemId: itemId)
           : await _catalogService.updateCartItem(storeId: store.id, itemId: itemId, quantity: quantity);
-      if (!mounted || !_customerAuthenticated || _store?.id != store.id) return;
+      if (!mounted || session != _customerSession || !_customerAuthenticated || _store?.id != store.id) return;
       setState(() { _cart = cart; _submittedOrderNumber = null; _orderError = null; });
     } catch (_) {
-      if (!mounted || !_customerAuthenticated) return;
+      if (!mounted || session != _customerSession || !_customerAuthenticated) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Warenkorb konnte nicht aktualisiert werden. Bitte erneut versuchen.')),
       );
     } finally {
-      if (mounted) setState(() => _cartMutating = false);
+      if (mounted && session == _customerSession) setState(() => _cartMutating = false);
     }
   }
 
   Future<void> _loadCart() async {
     final store = _store;
     if (store == null || !_customerAuthenticated) return;
+    final session = _customerSession;
     setState(() { _cartLoading = true; _cartError = null; });
     try {
       final cart = await _catalogService.loadCart(store.id);
-      if (!mounted || !_customerAuthenticated) return;
+      if (!mounted || session != _customerSession || !_customerAuthenticated) return;
       setState(() => _cart = cart);
     } catch (error) {
-      if (!mounted || !_customerAuthenticated) return;
+      if (!mounted || session != _customerSession || !_customerAuthenticated) return;
       setState(() => _cartError = error);
     } finally {
-      if (mounted) setState(() => _cartLoading = false);
+      if (mounted && session == _customerSession) setState(() => _cartLoading = false);
     }
   }
 
   Future<void> _addProduct(ShopProduct product) async {
     final store = _store;
     if (store == null || !_canAddProduct) return;
+    final session = _customerSession;
     setState(() { _addingProduct = true; _cartError = null; });
     try {
       final cart = await _catalogService.addToCart(storeId: store.id, productId: product.id, variantId: _selectedVariant?.id, quantity: _quantity);
-      if (!mounted || !_customerAuthenticated) return;
+      if (!mounted || session != _customerSession || !_customerAuthenticated) return;
       setState(() { _cart = cart; _selectedProduct = null; _selectedTab = 3; _submittedOrderNumber = null; });
     } catch (error) {
-      if (!mounted || !_customerAuthenticated) return;
+      if (!mounted || session != _customerSession || !_customerAuthenticated) return;
       setState(() => _cartError = error);
     } finally {
-      if (mounted) setState(() => _addingProduct = false);
+      if (mounted && session == _customerSession) setState(() => _addingProduct = false);
     }
   }
 
   Future<void> _confirmOrderRequest() async {
     if (_cart == null || _cart!.items.isEmpty || _submittingOrder || _cartMutating || _cartLoading) return;
+    final session = _customerSession;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -961,20 +1010,20 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         ],
       ),
     );
-    if (confirmed != true || !mounted || !_customerAuthenticated) return;
+    if (confirmed != true || !mounted || session != _customerSession || !_customerAuthenticated) return;
     final store = _store;
     if (store == null) return;
     setState(() { _submittingOrder = true; _orderError = null; });
     try {
       final orderNumber = await _catalogService.submitOrderRequest(store.id);
-      if (!mounted || !_customerAuthenticated) return;
+      if (!mounted || session != _customerSession || !_customerAuthenticated) return;
       setState(() { _submittedOrderNumber = orderNumber; _cart = null; });
       await _loadCart();
     } catch (error) {
-      if (!mounted || !_customerAuthenticated) return;
+      if (!mounted || session != _customerSession || !_customerAuthenticated) return;
       setState(() => _orderError = error);
     } finally {
-      if (mounted) setState(() => _submittingOrder = false);
+      if (mounted && session == _customerSession) setState(() => _submittingOrder = false);
     }
   }
 

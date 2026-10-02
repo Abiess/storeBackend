@@ -8,12 +8,14 @@ import '../../services/token_storage.dart';
 
 /// Store metadata/catalog access plus login to the existing invited-customer endpoint.
 class ShopCatalogService {
-  ShopCatalogService({http.Client? client, Future<String?> Function()? readToken})
+  ShopCatalogService({http.Client? client, Future<String?> Function()? readToken, Future<void> Function()? clearToken})
       : _client = client ?? http.Client(),
-        _readToken = readToken ?? TokenStorage.instance.readToken;
+        _readToken = readToken ?? TokenStorage.instance.readToken,
+        _clearToken = clearToken ?? TokenStorage.instance.clearToken;
 
   final http.Client _client;
   final Future<String?> Function() _readToken;
+  final Future<void> Function() _clearToken;
 
   Future<ShopCatalog> loadStore(String slug) async {
     final store = await loadStoreMetadata(slug);
@@ -82,7 +84,7 @@ class ShopCatalogService {
     }
   }
 
-  Future<void> logoutCustomer() => TokenStorage.instance.clearToken();
+  Future<void> logoutCustomer() => _clearToken();
 
   Future<ShopCart> loadCart(int storeId) async {
     final token = await _cartToken();
