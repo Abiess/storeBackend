@@ -8,6 +8,34 @@ import 'package:markt_ma_documents_poc/entrypoints/main_shop.dart';
 import 'package:markt_ma_documents_poc/features/storefront/shop_catalog_service.dart';
 
 void main() {
+  for (final mode in ['PUBLIC_REGISTRATION', 'INVITE_ONLY']) {
+    testWidgets('maintenance takes priority over catalog and login in $mode', (tester) async {
+      final requests = <String>[];
+      await tester.pumpWidget(MarktShopPreviewApp(
+        catalogService: _service(requests, accountMode: mode, maintenanceEnabled: true),
+        storeSlug: 'spm',
+      ));
+      await tester.pumpAndSettle();
+      expect(requests, ['/api/public/store/by-slug/spm']);
+      expect(find.byKey(const ValueKey('shop-maintenance-message')), findsOneWidget);
+      expect(find.byKey(const ValueKey('shop-login-submit')), findsNothing);
+      expect(find.byKey(const ValueKey('nav-Kategorien')), findsNothing);
+      expect(find.byKey(const ValueKey('shop-whatsapp')), findsNothing);
+      expect(find.text('Olivenöl'), findsNothing);
+    });
+  }
+
+  testWidgets('custom maintenance image falls back when image cannot load', (tester) async {
+    await tester.pumpWidget(MarktShopPreviewApp(
+      catalogService: _service([], maintenanceEnabled: true,
+        maintenanceMode: 'CUSTOM_IMAGE', maintenanceImageUrl: 'https://example.invalid/card.png'),
+      storeSlug: 'spm',
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('shop-maintenance-message')), findsOneWidget);
+    expect(find.byKey(const ValueKey('nav-Kategorien')), findsNothing);
+  });
+
   for (final enabled in [true, false]) {
     testWidgets('public store WhatsApp visibility follows backend flag $enabled', (tester) async {
       await tester.pumpWidget(MarktShopPreviewApp(
@@ -241,7 +269,7 @@ void main() {
   });
 }
 
-ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool whatsappEnabled = true, bool withSubcategories = false, List<Map<String, dynamic>>? additions, List<Map<String, dynamic>>? orders}) {
+ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool whatsappEnabled = true, bool maintenanceEnabled = false, String maintenanceMode = 'DEFAULT', String? maintenanceImageUrl, bool withSubcategories = false, List<Map<String, dynamic>>? additions, List<Map<String, dynamic>>? orders}) {
   return ShopCatalogService(readToken: () async => 'invite-jwt', client: MockClient((request) async {
     requests.add(request.url.path);
     if (request.url.path == '/api/public/orders/checkout') {
@@ -268,6 +296,9 @@ ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC
           'slug': 'spm',
           'currencyCode': 'MAD',
           'customerAccountMode': accountMode,
+          'maintenanceEnabled': maintenanceEnabled,
+          'maintenanceMode': maintenanceMode,
+          'maintenanceImageUrl': maintenanceImageUrl,
           'whatsappButtonEnabled': whatsappEnabled,
           'whatsappNumber': '+212600123456',
         }), 200);
