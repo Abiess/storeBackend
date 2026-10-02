@@ -19,5 +19,5 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Compile and test store-scoped carts
-        run: mvn -B -ntp -Dtest=CartServiceStoreScopeTest,PublicOrderCartStoreScopeTest test
+      - name: Compile and test store-scoped carts and order history
+        run: mvn -B -ntp -Dtest=CartServiceStoreScopeTest,PublicOrderCartStoreScopeTest,OrderTrackingStoreFilterTest test

@@ -43,7 +43,8 @@ public class OrderTrackingController {
      */
     @GetMapping("/customer/orders")
     public ResponseEntity<?> getCustomerOrders(
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestParam(value = "storeId", required = false) Long storeId) {
 
         try {
             // Extrahiere User-ID aus JWT
@@ -58,7 +59,9 @@ public class OrderTrackingController {
             log.info("📦 Loading orders for user: {}", userId);
 
             // Lade alle Bestellungen des Users
-            List<Order> orders = orderRepository.findByCustomerId(userId);
+            List<Order> orders = storeId == null
+                ? orderRepository.findByCustomerId(userId)
+                : orderRepository.findByCustomerIdAndStoreIdOrderByCreatedAtDesc(userId, storeId);
 
             log.info("✅ Found {} orders for user {}", orders.size(), userId);
 
