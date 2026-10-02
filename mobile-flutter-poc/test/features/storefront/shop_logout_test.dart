@@ -118,11 +118,11 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('shop-confirm-logout')));
     await tester.pumpAndSettle();
     await _login(tester);
+    await tester.tap(find.byKey(const ValueKey('nav-Warenkorb')));
+    await tester.pumpAndSettle();
     service.oldCart!.complete(const ShopCart(items: [
       ShopCartItem(id: 9, name: 'Alter Kunde', quantity: 9),
     ], itemCount: 9, subtotal: 90));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('nav-Warenkorb')));
     await tester.pumpAndSettle();
     expect(find.text('Alter Kunde'), findsNothing);
     expect(find.text('Aktueller Warenkorb'), findsOneWidget);
