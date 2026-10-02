@@ -704,7 +704,9 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     final store = _store;
     final itemId = item.id;
     if (store == null || itemId == null || !_customerAuthenticated ||
-        _cartMutating || _cartLoading || _submittingOrder) return;
+        _cartMutating || _cartLoading || _submittingOrder) {
+      return;
+    }
     setState(() => _cartMutating = true);
     try {
       final cart = quantity == null
