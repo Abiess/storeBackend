@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../config/api_config.dart';
 import 'shop_customer_login_screen.dart';
 import 'shop_catalog_service.dart';
+import 'shop_orders_screen.dart';
 
 typedef ShopCustomerLogin = Future<void> Function(int storeId, String identifier, String password);
 
@@ -753,6 +754,16 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         AppBar(title: const Text('Mehr'), centerTitle: true),
         if (_loginRequired) ...[
           ListTile(leading: const Icon(Icons.person_outline), title: Text(_store?.name ?? 'Kundenkonto')),
+          ListTile(
+            key: const ValueKey('shop-orders'),
+            leading: const Icon(Icons.receipt_long_outlined),
+            title: const Text('Meine Bestellungen'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => ShopOrdersScreen(
+                storeId: _store!.id, currencyCode: _store!.currencyCode),
+            )),
+          ),
           ListTile(key: const ValueKey('shop-logout'), leading: const Icon(Icons.logout), title: const Text('Abmelden'), onTap: _logoutCustomer),
         ] else
           const Expanded(child: Center(child: Text('Weitere Shop-Funktionen folgen.'))),
