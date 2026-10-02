@@ -334,6 +334,8 @@ class ShopProduct {
     this.categoryId,
     this.categoryName,
     this.imageUrl,
+    this.imageUrls = const [],
+    this.description,
     this.taxRate,
     this.stock,
     this.isFeatured = false,
@@ -346,6 +348,8 @@ class ShopProduct {
   final int? categoryId;
   final String? categoryName;
   final String? imageUrl;
+  final List<String> imageUrls;
+  final String? description;
   final double? taxRate;
   final int? stock;
   final bool isFeatured;
@@ -356,10 +360,17 @@ class ShopProduct {
   }) {
     final media = (json['media'] as List<dynamic>? ?? const [])
         .whereType<Map<String, dynamic>>()
-        .toList();
+        .where((item) => item['contentType'] == null || (item['contentType'] as String).startsWith('image/'))
+        .toList()
+      ..sort((a, b) => _readInt(a['sortOrder']).compareTo(_readInt(b['sortOrder'])));
     final primaryMedia = media.where((item) => item['isPrimary'] == true);
     final firstMedia = primaryMedia.isNotEmpty ? primaryMedia.first : (media.isEmpty ? null : media.first);
-    final rawImage = json['primaryImageUrl'] ?? json['imageUrl'] ?? firstMedia?['url'];
+    final rawImage = _readString(json['primaryImageUrl']) ?? _readString(json['imageUrl']) ?? _readString(firstMedia?['url']);
+    final imageUrls = <String>{
+      if (rawImage != null) rawImage,
+      for (final item in media)
+        if (_readString(item['url']) != null) _readString(item['url'])!,
+    }.toList();
     final rawPrice = json['basePrice'];
     return ShopProduct(
       id: _readInt(json['id']),
@@ -368,7 +379,9 @@ class ShopProduct {
       currencyCode: json['currencyCode'] as String? ?? defaultCurrencyCode,
       categoryId: json['categoryId'] == null ? null : _readInt(json['categoryId']),
       categoryName: _readString(json['categoryName']),
-      imageUrl: _readString(rawImage),
+      imageUrl: rawImage,
+      imageUrls: imageUrls,
+      description: _readString(json['description']),
       stock: json['stock'] == null ? null : _readInt(json['stock']),
       taxRate: switch (json['taxRate']) {
         num value => value.toDouble(),

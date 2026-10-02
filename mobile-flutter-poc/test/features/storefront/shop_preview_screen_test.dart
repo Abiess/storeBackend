@@ -8,6 +8,47 @@ import 'package:markt_ma_documents_poc/entrypoints/main_shop.dart';
 import 'package:markt_ma_documents_poc/features/storefront/shop_catalog_service.dart';
 
 void main() {
+  test('product gallery orders media, skips videos and removes duplicate URLs', () {
+    final product = ShopProduct.fromJson({
+      'id': 2, 'title': 'Produkt', 'basePrice': 10,
+      'description': '  Details  ',
+      'media': [
+        {'url': '/third.png', 'sortOrder': 3, 'contentType': 'image/png'},
+        {'url': '/primary.png', 'sortOrder': 2, 'isPrimary': true, 'contentType': 'image/png'},
+        {'url': '/second.png', 'sortOrder': 1, 'contentType': 'image/png'},
+        {'url': '/primary.png', 'sortOrder': 4, 'contentType': 'image/png'},
+        {'url': '/video.mp4', 'sortOrder': 0, 'contentType': 'video/mp4'},
+      ],
+    });
+    expect(product.imageUrls, ['/primary.png', '/second.png', '/third.png']);
+    expect(product.description, 'Details');
+    expect(ShopProduct.fromJson({'description': '   '}).description, isNull);
+  });
+
+  testWidgets('public product has gallery selection and backend description', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MarktShopPreviewApp(
+      catalogService: _service([], withGallery: true), storeSlug: 'spm',
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('nav-Kategorien')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('category-card-Oliven')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('shop-product-2')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('shop-image-gallery')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('shop-thumbnail-1')));
+    await tester.pumpAndSettle();
+    final mainImage = tester.widget<Image>(find.descendant(
+      of: find.byKey(const ValueKey('shop-main-image')), matching: find.byType(Image)));
+    expect((mainImage.image as NetworkImage).url, endsWith('/second.png'));
+    await tester.ensureVisible(find.byKey(const ValueKey('shop-product-description')));
+    expect(find.text('Frisches Olivenöl aus Marokko.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('selects available variant, limits stock and sends chosen variant ID', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -382,7 +423,7 @@ void main() {
   });
 }
 
-ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool whatsappEnabled = true, bool maintenanceEnabled = false, String maintenanceMode = 'DEFAULT', String? maintenanceImageUrl, bool withSubcategories = false, List<Map<String, dynamic>>? additions, List<Map<String, dynamic>>? orders, List<String>? cartEdits, bool failCartEdit = false, List<Map<String, dynamic>> variants = const [], int? productStock = 20, bool failVariants = false}) {
+ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC_REGISTRATION', bool whatsappEnabled = true, bool maintenanceEnabled = false, String maintenanceMode = 'DEFAULT', String? maintenanceImageUrl, bool withSubcategories = false, List<Map<String, dynamic>>? additions, List<Map<String, dynamic>>? orders, List<String>? cartEdits, bool failCartEdit = false, List<Map<String, dynamic>> variants = const [], int? productStock = 20, bool failVariants = false, bool withGallery = false}) {
   var cartQuantity = 2;
   var removed = false;
   return ShopCatalogService(readToken: () async => 'invite-jwt', client: MockClient((request) async {
@@ -448,6 +489,11 @@ ShopCatalogService _service(List<String> requests, {String accountMode = 'PUBLIC
             'title': 'Olivenöl',
             'basePrice': 12.5,
             'stock': productStock,
+            'description': 'Frisches Olivenöl aus Marokko.',
+            if (withGallery) 'media': [
+              {'url': '/primary.png', 'isPrimary': true, 'sortOrder': 0},
+              {'url': '/second.png', 'sortOrder': 1},
+            ],
             'categoryId': withSubcategories ? 12 : 5,
             'categoryName': 'Oliven',
             'taxRate': 7,
