@@ -102,6 +102,32 @@ class ShopCatalogService {
     return loadCart(storeId);
   }
 
+  Future<ShopCart> updateCartItem({
+    required int storeId,
+    required int itemId,
+    required int quantity,
+  }) async {
+    if (quantity < 1) throw ArgumentError.value(quantity, 'quantity', 'Must be positive');
+    final token = await _cartToken();
+    final response = await _client.put(
+      Uri.parse('${ApiConfig.baseUrl}/public/cart/items/$itemId'),
+      headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+      body: jsonEncode({'quantity': quantity}),
+    );
+    _checkCartResponse(response);
+    return loadCart(storeId);
+  }
+
+  Future<ShopCart> removeCartItem({required int storeId, required int itemId}) async {
+    final token = await _cartToken();
+    final response = await _client.delete(
+      Uri.parse('${ApiConfig.baseUrl}/public/cart/items/$itemId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    _checkCartResponse(response);
+    return loadCart(storeId);
+  }
+
   Future<String> submitOrderRequest(int storeId) async {
     final token = await _cartToken();
     final response = await _client.post(
@@ -197,12 +223,14 @@ class ShopCart {
 }
 
 class ShopCartItem {
-  const ShopCartItem({required this.name, required this.quantity});
+  const ShopCartItem({this.id, required this.name, required this.quantity});
 
+  final int? id;
   final String name;
   final int quantity;
 
   factory ShopCartItem.fromJson(Map<String, dynamic> json) => ShopCartItem(
+        id: json['id'] == null ? null : _readInt(json['id']),
         name: json['productTitle'] as String? ?? 'Produkt',
         quantity: _readInt(json['quantity']),
       );
