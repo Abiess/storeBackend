@@ -3470,9 +3470,9 @@
     "loadError": "Impossible de charger les commandes.",
     "retry": "Réessayer",
     "empty": "Vous n’avez pas encore envoyé de commande.",
-    "itemCount": "{count} articles",
+    "itemCount": "{{count}} articles",
     "items": "Articles",
-    "quantity": "{count} pièces",
+    "quantity": "{{count}} pièces",
     "perUnit": "par pièce",
     "total": "Total",
     "status": {
