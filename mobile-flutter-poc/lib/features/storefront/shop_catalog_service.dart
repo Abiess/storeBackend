@@ -101,8 +101,8 @@ class ShopCatalogService {
   }
 
   Future<void> logoutCustomer() async {
-    await _sessions?.logout();
     await _clearToken();
+    await _sessions?.logout();
   }
 
   Future<ShopCart> loadCart(int storeId) async {
