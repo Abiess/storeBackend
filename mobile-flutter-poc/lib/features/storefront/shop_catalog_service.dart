@@ -5,17 +5,33 @@ import 'package:http/http.dart' as http;
 import '../../config/api_config.dart';
 import '../../models/auth_response.dart';
 import '../../services/token_storage.dart';
+import 'shop_session_manager.dart';
 
 /// Store metadata/catalog access plus login to the existing invited-customer endpoint.
 class ShopCatalogService {
-  ShopCatalogService({http.Client? client, Future<String?> Function()? readToken, Future<void> Function()? clearToken})
+  ShopCatalogService({http.Client? client, Future<String?> Function()? readToken,
+    Future<void> Function()? clearToken, ShopSessionManager? sessionManager})
       : _client = client ?? http.Client(),
-        _readToken = readToken ?? TokenStorage.instance.readToken,
+        _sessions = sessionManager ?? (client == null && readToken == null && clearToken == null
+            ? ShopSessionManager.instance : null),
+        _readToken = readToken ?? (sessionManager ?? ShopSessionManager.instance).readToken,
         _clearToken = clearToken ?? TokenStorage.instance.clearToken;
 
   final http.Client _client;
+  final ShopSessionManager? _sessions;
   final Future<String?> Function() _readToken;
   final Future<void> Function() _clearToken;
+
+  Future<bool> restoreCustomerSession(int storeId) async =>
+      await _sessions?.restore(storeId) ?? false;
+
+  Future<void> loginPersistentCustomer(int storeId, String identifier, String password) async {
+    if (_sessions != null) {
+      await _sessions.login(storeId, identifier, password);
+    } else {
+      await loginCustomer(storeId: storeId, identifier: identifier, password: password);
+    }
+  }
 
   Future<ShopCatalog> loadStore(String slug) async {
     final store = await loadStoreMetadata(slug);
@@ -84,7 +100,10 @@ class ShopCatalogService {
     }
   }
 
-  Future<void> logoutCustomer() => _clearToken();
+  Future<void> logoutCustomer() async {
+    await _sessions?.logout();
+    await _clearToken();
+  }
 
   Future<ShopCart> loadCart(int storeId) async {
     final token = await _cartToken();
