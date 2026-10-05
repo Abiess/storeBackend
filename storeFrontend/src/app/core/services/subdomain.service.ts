@@ -24,6 +24,10 @@ export class SubdomainService {
   private baseDomain = 'markt.ma';
   private subdomainInfo: SubdomainInfo | null = null;
 
+  get isInviteOnly(): boolean {
+    return this.subdomainInfo?.customerAccountMode === 'INVITE_ONLY';
+  }
+
   get isMaintenanceEnabled(): boolean {
     return this.subdomainInfo?.maintenanceEnabled === true;
   }
