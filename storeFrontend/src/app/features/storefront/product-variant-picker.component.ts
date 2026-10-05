@@ -13,7 +13,7 @@ interface ProductOption {
     selector: 'app-product-variant-picker',
     imports: [CommonModule, FormsModule, TranslatePipe],
     template: `
-    <div class="vp-wrapper" *ngIf="variants && variants.length > 0">
+    <div class="vp-wrapper" [class.vp-compact]="compact" [class.vp-invite]="inviteOnlyMode" *ngIf="variants && variants.length > 0">
 
       <!-- ── Option-Gruppen ── -->
       <div *ngFor="let option of availableOptions" class="vp-group">
@@ -58,7 +58,7 @@ interface ProductOption {
       </div>
 
       <!-- ── Ausgewählte Varianten-Info-Karte ── -->
-      <div class="vp-info" *ngIf="selectedVariant" [@fadeIn]>
+      <div class="vp-info" *ngIf="selectedVariant && !compact" [@fadeIn]>
 
         <!-- Bild + Preis-Bereich -->
         <div class="vp-info__top">
@@ -458,9 +458,24 @@ interface ProductOption {
     }
 
     .vp-hint__icon { font-size: 1.1rem; }
+
+    .vp-compact { gap: .75rem; padding: .5rem 0; }
+    .vp-compact:has(.vp-group) { border-top: 1px solid #e5e7eb; }
+    .vp-compact:not(:has(.vp-group)) { display: none; }
+    .vp-compact .vp-group__header { margin-bottom: .5rem; }
+    .vp-compact .vp-btn { border-radius: 24px; font-size: .875rem; min-height: 44px; }
+    .vp-invite .vp-btn--selected:not(:disabled) {
+      background: #187a73 !important; border-color: #187a73 !important; box-shadow: 0 3px 10px #187a7333;
+    }
+    .vp-invite .vp-btn:hover:not(:disabled) { border-color: #187a73; box-shadow: 0 3px 10px #187a7322; }
+    .vp-invite .vp-btn:focus-visible { border-color: #187a73; box-shadow: 0 0 0 3px #187a7344; }
+    .vp-invite .vp-btn--selected .vp-swatch { box-shadow: 0 0 0 3px #187a73; }
+    .vp-invite .vp-btn--color.vp-btn--selected .vp-swatch__name { color: #fff; }
   `]
 })
 export class ProductVariantPickerComponent implements OnInit, OnChanges {
+  @Input() compact = false;
+  @Input() inviteOnlyMode = false;
   @Input() variants: ProductVariant[] = [];
   @Input() defaultVariantId?: number;
   @Output() variantSelected = new EventEmitter<ProductVariant | null>();

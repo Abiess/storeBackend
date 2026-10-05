@@ -13,7 +13,8 @@ import { AuthService } from '@app/core/services/auth.service';
 import { SubdomainService } from '@app/core/services/subdomain.service';
 import { PublicApiService } from '@app/core/services/public-api.service';
 import { QuantityStepperComponent } from '@app/shared/ui/quantity-stepper/quantity-stepper.component';
-import { Subscription } from 'rxjs';
+import { Subscription, take } from 'rxjs';
+import { StorefrontBottomNavComponent } from './storefront-bottom-nav.component';
 
 interface Product {
   id: number;
@@ -40,11 +41,11 @@ interface ProductTierPrice {
 
 @Component({
     selector: 'app-storefront-product-detail',
-    imports: [CommonModule, FormsModule, TranslatePipe, ProductVariantPickerComponent, QuantityStepperComponent],
+    imports: [CommonModule, FormsModule, TranslatePipe, ProductVariantPickerComponent, QuantityStepperComponent, StorefrontBottomNavComponent],
     template: `
     <div class="product-detail-page" [class.invite-detail]="inviteOnly" *ngIf="product">
       <div class="breadcrumb">
-        <button class="btn-back" (click)="goBack()">
+        <button class="btn-back" (click)="goBack()" [attr.aria-label]="'common.back' | translate">
           <span class="back-icon">←</span>
           <span *ngIf="!inviteOnly">{{ 'common.back' | translate }}</span>
         </button>
@@ -116,17 +117,6 @@ interface ProductTierPrice {
         <div class="product-info">
           <h1 class="product-title">{{ product.title }}</h1>
           
-          <!-- Reviews -->
-          <div class="reviews-section" *ngIf="!inviteOnly && product.reviewCount && product.reviewCount > 0">
-            <div class="stars">
-              <span *ngFor="let star of [1,2,3,4,5]" 
-                    [class.filled]="star <= (product.averageRating || 0)">
-                ★
-              </span>
-            </div>
-            <span class="review-count">({{ product.reviewCount }} {{ 'product.reviews' | translate }})</span>
-          </div>
-
           <!-- Price -->
           <div class="price-section">
             <!-- Ohne Staffelpreise -->
@@ -195,15 +185,17 @@ interface ProductTierPrice {
           </div>
 
           <!-- Description – direkt nach dem Preis für bessere Lesbarkeit (vor Varianten/CTA) -->
-          <div class="description-section" *ngIf="!inviteOnly && product.description">
-            <h2>{{ 'product.description' | translate }}</h2>
+          <details class="description-section" *ngIf="!inviteOnly && product.description">
+            <summary>{{ 'product.description' | translate }}</summary>
             <p>{{ product.description }}</p>
-          </div>
+          </details>
 
           <!-- Variant Picker -->
           <app-product-variant-picker
             *ngIf="product.variants && product.variants.length > 0"
             [variants]="product.variants"
+            [compact]="true"
+            [inviteOnlyMode]="inviteOnly"
             [defaultVariantId]="selectedVariant?.id"
             (variantSelected)="onVariantSelected($event)"
           ></app-product-variant-picker>
@@ -215,10 +207,10 @@ interface ProductTierPrice {
               [value]="quantity"
               [min]="1"
               [max]="getMaxQuantity()"
-              [disabled]="!product || adding"
-              [size]="'lg'"
+              [disabled]="!product || adding || getStockQuantity() <= 0"
+              [size]="'md'"
               [allowDirectInput]="true"
-              ariaLabel="Produktmenge"
+              [ariaLabel]="'cart.quantity' | translate"
               (valueChange)="onQuantityChange($event)">
             </app-quantity-stepper>
           </div>
@@ -293,7 +285,7 @@ interface ProductTierPrice {
       </div>
 
       <!-- ═══ Mobile Sticky WhatsApp CTA (nur < 768px) ═══ -->
-      <div class="wa-sticky-cta" *ngIf="whatsappNumber" role="complementary">
+      <div class="wa-sticky-cta" *ngIf="whatsappNumber && !inviteOnly" role="complementary">
         <a [href]="whatsappOrderUrl"
            target="_blank"
            rel="noopener noreferrer"
@@ -318,6 +310,11 @@ interface ProductTierPrice {
         </a>
       </div>
     </div>
+
+    <app-storefront-bottom-nav *ngIf="inviteOnly && product"
+      [inviteOnlyMode]="true" [cartCount]="cartCount"
+      (categoryClick)="goToShop()" (searchClick)="goToShop()">
+    </app-storefront-bottom-nav>
 
     <div class="loading" *ngIf="loading">
       <div class="spinner"></div>
@@ -1182,12 +1179,54 @@ interface ProductTierPrice {
         flex-shrink: 0;
       }
     }
+
+    /* Same compact hierarchy as the shop quick view. */
+    .product-detail-page { max-width: 1040px; padding: 1.25rem; }
+    .product-detail-grid { gap: 1.5rem; }
+    .product-info { gap: .75rem; min-width: 0; }
+    .product-title { font-size: 1.5rem; line-height: 1.3; overflow-wrap: anywhere; }
+    .price-section { padding: .5rem 0; border-top: 0; border-bottom: 1px solid #e5e5e5; }
+    .price, .tier-price-summary .main-price .price { font-size: 2rem; }
+    .main-image { max-height: 360px; box-shadow: none; background: #f8f9fa; }
+    .main-img { object-fit: contain; }
+    .quantity-section { display: flex; align-items: center; gap: 1rem; padding: .75rem 0; }
+    .quantity-section label { margin: 0; }
+    .actions { gap: .75rem; }
+    .btn-add-to-cart { min-height: 48px; padding: .85rem 1.25rem; font-size: 1rem; border-radius: 8px; }
+    .description-section { order: 1; border-top: 1px solid #e5e5e5; padding-top: .75rem; }
+    .description-section summary { cursor: pointer; font-size: .95rem; font-weight: 600; }
+    .description-section p { margin-bottom: 0; font-size: .95rem; }
+    .invite-detail { color: #202020; background: #fff; }
+    .invite-detail .breadcrumb { margin-bottom: 1rem; }
+    .invite-detail .btn-back { background: #fff; border-radius: 50%; width: 44px; height: 44px; padding: 0; }
+    .invite-detail .invite-tax { margin: 0; font-size: .85rem; color: #686868; }
+    .invite-detail .price, .invite-detail .effective-price,
+    .invite-detail .tier-price-summary .main-price .price {
+      background: none; color: #187a73; -webkit-text-fill-color: #187a73;
+    }
+    .invite-detail .btn-add-to-cart, .invite-detail .tier-badge { background: #187a73; }
+    .invite-detail .btn-add-to-cart:hover:not(:disabled) { box-shadow: 0 4px 12px #187a7333; }
+    .invite-detail .tier-hint-prominent, .invite-detail .tier-qty,
+    .invite-detail .btn-show-tiers { color: #187a73; }
+    .invite-detail .btn-show-tiers, .invite-detail .thumbnail.active { border-color: #187a73; }
+    .invite-detail .btn-show-tiers:hover { background: #187a73; color: #fff; }
+    .invite-detail .tier-condition-chip { background: #187a7310; color: #187a73; border-color: #187a7333; }
+    .invite-detail .tier-row-active { background: #187a7310; border-left-color: #187a73; }
+    .invite-detail .image-variant-info, .invite-detail .thumb-variant-badge { display: none; }
+    @media (max-width: 767px) {
+      .product-detail-page { padding: 1rem; padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
+      .product-detail-grid { gap: 1rem; }
+      .main-image { max-height: 280px; }
+      .invite-detail.product-detail-page { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+      .invite-detail .success-toast { bottom: calc(90px + env(safe-area-inset-bottom, 0px)); right: 1rem; left: 1rem; }
+    }
   `]
 })
 export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
   product: Product | null = null;
   selectedVariant: any = null;
   quantity = 1;
+  cartCount = 0;
   currentImage: string | null = null;
   currentImageIndex = 0;
   lightboxOpen = false;
@@ -1256,6 +1295,7 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
         next: (info) => {
           if (info.storeId) {
             this.storeId = info.storeId;
+            this.inviteOnly = info.customerAccountMode === 'INVITE_ONLY';
             // WhatsApp-Config aus PublicStoreDTO laden (Direktaufruf ohne Landing)
             this._loadStoreWhatsappConfig();
           }
@@ -1284,6 +1324,7 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
       return;
     }
     this.loadProduct();
+    this.refreshCartCount();
   }
 
   /**
@@ -1691,7 +1732,8 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
 
   getMaxQuantity(): number {
     const stock = this.getStockQuantity();
-    return Math.min(stock, 99);
+    // Keep the input valid even for sold-out variants; purchasing stays disabled.
+    return Math.max(1, Math.min(stock, 99));
   }
 
   onQuantityChange(newQuantity: number): void {
@@ -1738,6 +1780,7 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
   }
 
   canAddToCart(): boolean {
+    if (!Number.isInteger(this.quantity) || this.quantity < 1) return false;
     // ✅ STEP 5: Erweiterte Validierung mit Quantity-Check
 
     // Fall 1: Produkt mit Varianten
@@ -1782,6 +1825,7 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
       next: () => {
         this.adding = false;
         this.showSuccess = true;
+        this.refreshCartCount();
         setTimeout(() => this.showSuccess = false, 3000);
       },
       error: (err: any) => {
@@ -1789,6 +1833,14 @@ export class StorefrontProductDetailComponent implements OnInit, OnDestroy {
         this.error = 'Fehler beim Hinzufügen zum Warenkorb.';
         this.adding = false;
       }
+    });
+  }
+
+  goToShop(): void { this.router.navigate(['/']); }
+
+  private refreshCartCount(): void {
+    this.cartService.getCartItemCount().pipe(take(1)).subscribe(count => {
+      this.cartCount = count;
     });
   }
 
