@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 import storebackend.dto.OrderDetailsDTO;
 import storebackend.dto.OrderListDTO;
 import storebackend.dto.UpdateOrderStatusRequest;
@@ -86,6 +87,7 @@ public class OrderTrackingController {
      * GET /api/public/customer/orders/{orderNumber}
      */
     @GetMapping("/customer/orders/{orderNumber}")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> getOrderDetails(
             @PathVariable String orderNumber,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
@@ -95,8 +97,13 @@ public class OrderTrackingController {
 
             log.info("📦 Loading order details: {}, userId: {}", orderNumber, userId);
 
-            Order order = orderRepository.findByOrderNumber(orderNumber)
-                .orElseThrow(() -> new RuntimeException("Order not found: " + orderNumber));
+            var found = orderRepository.findByOrderNumber(orderNumber);
+            if (found.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of(
+                    "error", "Not found", "message", "Order not found"
+                ));
+            }
+            Order order = found.get();
 
             // In invite-only stores, order numbers alone must never reveal order details.
             if (order.getStore().getCustomerAccountMode() == CustomerAccountMode.INVITE_ONLY &&
@@ -121,17 +128,11 @@ public class OrderTrackingController {
 
             return ResponseEntity.ok(dto);
 
-        } catch (RuntimeException e) {
-            log.error("❌ Order not found: {}", orderNumber);
-            return ResponseEntity.status(404).body(Map.of(
-                "error", "Not found",
-                "message", e.getMessage()
-            ));
         } catch (Exception e) {
             log.error("❌ Error loading order details: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of(
                 "error", "Internal server error",
-                "message", e.getMessage()
+                "message", "Order details could not be loaded"
             ));
         }
     }
@@ -265,7 +266,9 @@ public class OrderTrackingController {
 
         // Status-Historie (Timeline) - FIXED: Explizite Liste statt Stream mit null-Werten
         List<Map<String, Object>> statusHistory = new java.util.ArrayList<>();
-        statusHistory.add(Map.of("status", "PENDING", "timestamp", order.getCreatedAt()));
+        if (order.getCreatedAt() != null) {
+            statusHistory.add(Map.of("status", "PENDING", "timestamp", order.getCreatedAt()));
+        }
         if (order.getShippedAt() != null) {
             statusHistory.add(Map.of("status", "SHIPPED", "timestamp", order.getShippedAt()));
         }
