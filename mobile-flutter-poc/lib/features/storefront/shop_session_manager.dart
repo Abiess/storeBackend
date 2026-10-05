@@ -94,7 +94,8 @@ class ShopSessionManager {
     } catch (_) {
       // Opaque or old token: ask the server rather than trusting local decoding.
     }
-    return needsRefresh ? _refresh(session) : token;
+    if (needsRefresh) return await _refresh(session);
+    return token;
   }
 
   Future<String?> _refresh(Map<String, dynamic> session) {
