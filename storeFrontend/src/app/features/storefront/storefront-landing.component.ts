@@ -745,7 +745,14 @@ export class StorefrontLandingComponent implements OnInit {
   scrollToProducts(): void {
     const element = document.getElementById('products');
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      if (this.customerAccountMode === 'INVITE_ONLY') {
+        // Leave the category title and back button below the sticky shop header.
+        const headerHeight = document.querySelector('.sticky-header')?.getBoundingClientRect().height ?? 0;
+        const top = element.getBoundingClientRect().top + window.scrollY - headerHeight - 12;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      } else {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   }
 
@@ -765,7 +772,7 @@ export class StorefrontLandingComponent implements OnInit {
     this.categorySheetOpen = false;
     this.categoryTilesOpen = false;
     this.categoryDetail = null;
-    this.bottomNavCategoryActive = false;
+    this.bottomNavCategoryActive = this.customerAccountMode === 'INVITE_ONLY';
     this.filterByCategory(category);
   }
 
@@ -791,11 +798,29 @@ export class StorefrontLandingComponent implements OnInit {
   }
 
   openCategory(category: Category): void {
-    if (this.categories.some(child => child.parentId === category.id)) {
-      this.categoryDetail = category;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.categorySheetOpen = false;
+    this.categoryTilesOpen = true;
+    this.bottomNavCategoryActive = true;
+    this.bottomNavSearchActive = false;
+    this.categoryDetail = category;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  backFromCategory(): void {
+    if (!this.categoryDetail) {
+      this.onBottomNavHome();
+      return;
+    }
+    const parent = this.categories.find(category => category.id === this.categoryDetail?.parentId);
+    this.categoryDetail = parent ?? null;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  backToCategoryOverview(): void {
+    if (this.selectedCategory) {
+      this.openCategory(this.selectedCategory);
     } else {
-      this.selectCategoryFromSheet(category);
+      this.onBottomNavCategory();
     }
   }
 

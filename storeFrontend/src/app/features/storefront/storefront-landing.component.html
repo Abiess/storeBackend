@@ -167,9 +167,12 @@
        ═══════════════════════════════════════════════════════════════ -->
   <main class="invite-category-page" *ngIf="!loading && customerAccountMode === 'INVITE_ONLY' && categoryTilesOpen">
     <ng-container *ngIf="categoryDetail as detail; else inviteCategoryRoots">
-      <button type="button" class="invite-category-back" (click)="categoryDetail = null" aria-label="Zurück zu den Kategorien">←</button>
+      <button type="button" class="invite-category-back" (click)="backFromCategory()" [attr.aria-label]="'common.back' | translate">←</button>
       <h1>{{ detail.name }} ({{ categoryProductCount(detail) }} {{ 'storefront.filter.products' | translate }})</h1>
-      <div class="invite-category-hero" *ngIf="categoryImage(detail) as image"><img [src]="image" [alt]="detail.name"></div>
+      <div class="invite-category-hero">
+        <img *ngIf="categoryImage(detail) as image; else categoryHeroPlaceholder" [src]="image" [alt]="detail.name">
+        <ng-template #categoryHeroPlaceholder><span class="invite-category-placeholder" aria-hidden="true">▦</span></ng-template>
+      </div>
       <div class="invite-subcategory-list">
         <button type="button" class="invite-subcategory-row" (click)="selectCategoryFromSheet(detail)">
           <span>{{ 'storefront.allProducts' | translate }}</span><span>{{ categoryProductCount(detail) }} ›</span>
@@ -181,7 +184,9 @@
         </button>
       </div>
     </ng-container>
-    <ng-template #inviteCategoryRoots><h1>{{ 'navigation.categories' | translate }}</h1>
+    <ng-template #inviteCategoryRoots>
+    <button type="button" class="invite-category-back" (click)="backFromCategory()" [attr.aria-label]="'common.back' | translate">←</button>
+    <h1>{{ 'navigation.categories' | translate }}</h1>
     <div class="invite-category-grid">
       <button type="button" class="invite-category-tile" (click)="selectCategoryFromSheet(null)">
         <span class="invite-category-picture invite-category-all">
@@ -209,6 +214,12 @@
 
   <!-- ── PRODUCT GRID + FILTER – Template-Switch ── -->
   <div id="products">
+    <header class="invite-product-list-header" *ngIf="customerAccountMode === 'INVITE_ONLY'">
+      <button type="button" class="invite-category-back" (click)="backToCategoryOverview()" [attr.aria-label]="'common.back' | translate">←</button>
+      <h1>{{ selectedCategory ? selectedCategory.name : ('storefront.allProducts' | translate) }}
+        <span>({{ filteredProducts.length }} {{ 'storefront.filter.products' | translate }})</span>
+      </h1>
+    </header>
   <ng-container [ngSwitch]="customerAccountMode === 'INVITE_ONLY' ? 'MARKETPLACE' : activeGridTemplate">
 
       <!-- Template 1: Classic Sidebar Grid (CLASSIC_BOOTSTRAP, RESTAURANT_WARM) -->
