@@ -160,15 +160,15 @@ interface ProductTierPrice {
             </div>
             
             <!-- Alle Staffelpreise anzeigen (nur bei mehreren Stufen) -->
-            <div class="tier-prices-list-toggle" *ngIf="product && product.tierPrices && product.tierPrices.length > 1">
+            <div class="tier-prices-list-toggle" *ngIf="product && product.tierPrices && (inviteOnly ? product.tierPrices.length > 0 : product.tierPrices.length > 1)">
               <button 
-                class="btn-show-tiers" 
+                class="btn-show-tiers" *ngIf="!inviteOnly" 
                 (click)="showAllTierPrices = !showAllTierPrices"
                 type="button">
                 {{ showAllTierPrices ? ('product.tierPricing.hideAll' | translate) : ('product.tierPricing.showAll' | translate) }}
               </button>
               
-              <div class="all-tier-prices" *ngIf="showAllTierPrices">
+              <div class="all-tier-prices" *ngIf="inviteOnly || showAllTierPrices">
                 <div 
                   *ngFor="let tier of product.tierPrices" 
                   class="tier-row"

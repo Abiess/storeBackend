@@ -57,6 +57,24 @@ interface ProductOption {
         </div>
       </div>
 
+      <!-- Explicit selection also for variants without attribute groups. -->
+      <div class="vp-group" *ngIf="availableOptions.length === 0">
+        <div class="vp-group__header">
+          <span class="vp-group__label">{{ 'quickView.selectVariantGroup' | translate }}</span>
+        </div>
+        <div class="vp-values">
+          <button *ngFor="let variant of variants" type="button" class="vp-btn"
+            [class.vp-btn--selected]="selectedVariant?.id === variant.id"
+            [class.vp-btn--disabled]="variant.stockQuantity <= 0"
+            [disabled]="variant.stockQuantity <= 0"
+            [attr.aria-pressed]="selectedVariant?.id === variant.id"
+            (click)="selectVariant(variant)">
+            <span>{{ variant.sku || ('quickView.selectVariantGroup' | translate) }}</span>
+            <span>{{ variant.price | number:'1.2-2' }} €</span>
+          </button>
+        </div>
+      </div>
+
       <!-- ── Ausgewählte Varianten-Info-Karte ── -->
       <div class="vp-info" *ngIf="selectedVariant && !compact" [@fadeIn]>
 
@@ -505,6 +523,9 @@ export class ProductVariantPickerComponent implements OnInit, OnChanges {
   }
 
   extractOptions() {
+    this.availableOptions = [];
+    this.selectedOptions = {};
+    this.selectedVariant = null;
     if (!this.variants || this.variants.length === 0) return;
 
     const optionsMap = new Map<string, Set<string>>();
@@ -527,11 +548,18 @@ export class ProductVariantPickerComponent implements OnInit, OnChanges {
   preselectDefaultVariant() {
     if (!this.defaultVariantId || !this.variants?.length) return;
     const variant = this.variants.find(v => v.id === this.defaultVariantId);
-    if (variant?.attributes) {
-      this.selectedOptions = { ...variant.attributes };
+    if (variant) {
+      this.selectedOptions = { ...(variant.attributes ?? {}) };
       this.selectedVariant = variant;
       this.variantSelected.emit(variant);
     }
+  }
+
+  selectVariant(variant: ProductVariant): void {
+    if (variant.stockQuantity <= 0) return;
+    this.selectedVariant = variant;
+    this.selectedOptions = { ...(variant.attributes ?? {}) };
+    this.variantSelected.emit(variant);
   }
 
   selectOption(optionName: string, value: string) {

@@ -21,7 +21,6 @@ import { StorefrontHeaderComponent } from './storefront-header.component';
 import { StorefrontBottomNavComponent } from './storefront-bottom-nav.component';
 import { ProductCardComponent } from './product-card.component';
 import { StoreNotFoundComponent } from './store-not-found.component';
-import { ProductQuickViewComponent } from '@app/shared/components/product-quick-view.component';
 import { ImageSliderComponent } from '@app/shared/components/image-slider.component';
 import { ClassicShopLayoutComponent } from './components/classic-shop-layout.component';
 import { ElectronicsProLayoutComponent } from './components/electronics-pro-layout.component';
@@ -49,7 +48,6 @@ import { ServiceProfessionalLayoutComponent } from './components/service-profess
         StorefrontBottomNavComponent,
         ProductCardComponent,
         StoreNotFoundComponent,
-        ProductQuickViewComponent,
         ImageSliderComponent,
         ClassicShopLayoutComponent,
         ElectronicsProLayoutComponent,
@@ -95,8 +93,6 @@ export class StorefrontLandingComponent implements OnInit {
   newArrivals: Product[] = [];
 
   // NEUE: Quick View State
-  quickViewProduct: Product | null = null;
-  isQuickViewOpen = false;
 
   // œ NEUE: Filter State
   selectedCategory: Category | null = null;
@@ -894,52 +890,6 @@ export class StorefrontLandingComponent implements OnInit {
 
   // NEUE: Quick View Handlers
   openQuickView(product: Product): void {
-    console.log('📱 Quick View öffnen für:', product.title);
-    this.quickViewProduct = product;
-    this.isQuickViewOpen = true;
-
-    // Track product view
-    this.trackProductView(product);
-
-    // Disable body scroll when modal is open
-    document.body.style.overflow = 'hidden';
-  }
-
-  closeQuickView(): void {
-    console.log('📱 Quick View schließen');
-    this.isQuickViewOpen = false;
-    this.quickViewProduct = null;
-
-    // Re-enable body scroll
-    document.body.style.overflow = '';
-  }
-
-  onQuickViewAddToCart(event: { product: Product; quantity: number; variant?: any }): void {
-    console.log('🛒 Add to cart from Quick View:', event);
-
-    if (!this.storeId) {
-      console.error('❌ Keine Store-ID vorhanden');
-      return;
-    }
-
-    this.cartService.addItem({
-      storeId: this.storeId,
-      productId: event.product.id,
-      variantId: event.variant?.id,
-      quantity: event.quantity
-    }).subscribe({
-      next: (response) => {
-        console.log('✅ Produkt erfolgreich hinzugefügt:', response);
-        this.loadCartCount();
-      },
-      error: (error) => {
-        console.error('❌ Fehler beim Hinzufügen zum Warenkorb:', error);
-      }
-    });
-  }
-
-  onQuickViewDetails(product: Product): void {
-    console.log('👁️ Navigate to product details:', product.id);
     this.router.navigate(['/products', product.id]);
   }
 

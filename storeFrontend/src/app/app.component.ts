@@ -40,7 +40,7 @@ import { PwaUpdateBannerComponent } from './shared/components/pwa-update-banner/
     </ng-template>
 
     <app-chatbot-widget *ngIf="showChatbotWidget"></app-chatbot-widget>
-    <app-whatsapp-widget *ngIf="showWhatsappWidget && !subdomainService.isMaintenanceEnabled"></app-whatsapp-widget>
+    <app-whatsapp-widget *ngIf="showWhatsappWidget && !subdomainService.isMaintenanceEnabled && !subdomainService.isInviteOnly"></app-whatsapp-widget>
     <app-fab-host></app-fab-host>
     <app-preview-panel></app-preview-panel>
   `,
@@ -327,7 +327,8 @@ export class AppComponent implements OnInit {
 
     // Storefront-Seiten: /storefront/*, /s/* → Store-Nummer wird von der
     // Storefront-Komponente selbst per WhatsappConfigService.setNumber() gesetzt.
-    const isStorefront = path.includes('/storefront/') || path.startsWith('/s/');
+    const isStorefront = this.subdomainService.isStorefrontSubdomain() ||
+      path.includes('/storefront/') || path.startsWith('/s/');
 
     // ── WhatsApp: auf öffentlichen Seiten sichtbar (außer explizit ausgeschlossenen) ─────
     this.showWhatsappWidget = !this.showAdminShell &&
@@ -366,7 +367,8 @@ export class AppComponent implements OnInit {
    */
   private updateWhatsAppMessage(): void {
     const path = this.router.url.split('?')[0].split('#')[0];
-    const isStorefront = path.includes('/storefront/') || path.startsWith('/s/');
+    const isStorefront = this.subdomainService.isStorefrontSubdomain() ||
+      path.includes('/storefront/') || path.startsWith('/s/');
 
     // Nur auf Platform-Seiten (nicht Admin, nicht Storefront)
     if (!this.showAdminShell && !isStorefront) {
