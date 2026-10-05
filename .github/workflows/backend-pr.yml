@@ -6,6 +6,7 @@ on:
       - 'src/main/java/**'
       - 'src/test/java/**'
       - 'src/main/resources/db/migration/**'
+      - 'scripts/db/migrations/**'
       - 'pom.xml'
       - '.github/workflows/backend-pr.yml'
 
@@ -20,4 +21,4 @@ jobs:
           java-version: '21'
           cache: maven
       - name: Compile and test store-scoped carts and order history
-        run: mvn -B -ntp -Dtest=CartServiceStoreScopeTest,PublicOrderCartStoreScopeTest,OrderTrackingStoreFilterTest test
+        run: mvn -B -ntp -Dtest=CartServiceStoreScopeTest,PublicOrderCartStoreScopeTest,OrderTrackingStoreFilterTest,CustomerAppSessionServiceTest test

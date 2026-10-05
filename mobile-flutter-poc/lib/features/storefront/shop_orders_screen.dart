@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'shop_orders_service.dart';
+import 'shop_session_manager.dart';
 
 class ShopOrdersScreen extends StatefulWidget {
   const ShopOrdersScreen({super.key, required this.storeId,
-    required this.currencyCode, this.service});
+    required this.currencyCode, this.service, this.onSessionExpired});
   final int storeId;
   final String currencyCode;
   final ShopOrdersService? service;
+  final VoidCallback? onSessionExpired;
   @override
   State<ShopOrdersScreen> createState() => _ShopOrdersScreenState();
 }
@@ -35,6 +37,11 @@ class _ShopOrdersScreenState extends State<ShopOrdersScreen> {
       setState(() => _orders = orders);
     } catch (error) {
       if (!mounted) return;
+      if (error is ShopSessionExpired) {
+        setState(() { _orders = const []; _error = error.toString(); });
+        widget.onSessionExpired?.call();
+        return;
+      }
       setState(() => _error = error is ShopOrdersException
           ? error.message : 'Bestellungen konnten nicht geladen werden.');
     } finally {

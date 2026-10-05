@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../config/api_config.dart';
-import '../../services/token_storage.dart';
+import 'shop_session_manager.dart';
 
 class ShopOrdersService {
   ShopOrdersService({http.Client? client, Future<String?> Function()? readToken})
       : _client = client ?? http.Client(),
-        _readToken = readToken ?? TokenStorage.instance.readToken;
+        _readToken = readToken ?? ShopSessionManager.instance.readToken;
   final http.Client _client;
   final Future<String?> Function() _readToken;
 

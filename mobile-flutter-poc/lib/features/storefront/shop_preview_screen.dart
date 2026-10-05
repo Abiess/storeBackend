@@ -5,6 +5,7 @@ import '../../config/api_config.dart';
 import 'shop_customer_login_screen.dart';
 import 'shop_catalog_service.dart';
 import 'shop_orders_screen.dart';
+import 'shop_session_manager.dart';
 
 typedef ShopCustomerLogin = Future<void> Function(int storeId, String identifier, String password);
 
@@ -114,12 +115,17 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         return;
       }
       if (store.customerAccountMode == 'INVITE_ONLY') {
+        final restored = await _catalogService.restoreCustomerSession(store.id);
+        final catalog = restored ? await _catalogService.loadCatalog(store) : null;
         if (!mounted) return;
         setState(() {
           _store = store;
           _loginRequired = true;
+          _customerAuthenticated = restored;
+          _catalog = catalog;
           _isLoading = false;
         });
+        if (restored) await _loadCart();
         return;
       }
       final catalog = await _catalogService.loadCatalog(store);
@@ -145,7 +151,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     if (login != null) {
       await login(store.id, identifier, password);
     } else {
-      await _catalogService.loginCustomer(storeId: store.id, identifier: identifier, password: password);
+      await _catalogService.loginPersistentCustomer(store.id, identifier, password);
     }
     final catalog = await _catalogService.loadCatalog(store);
     if (!mounted) return;
@@ -179,7 +185,19 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     try {
       await _catalogService.logoutCustomer();
       if (!mounted) return;
-      setState(() {
+      _resetCustomerSession();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Abmelden fehlgeschlagen. Bitte erneut versuchen.'),
+      ));
+    } finally {
+      if (mounted) setState(() => _loggingOut = false);
+    }
+  }
+
+  void _resetCustomerSession() {
+    setState(() {
         _customerSession++;
         _variantRequest++;
         _catalog = null;
@@ -205,14 +223,15 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         _quantity = 1;
         _query = '';
       });
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Abmelden fehlgeschlagen. Bitte erneut versuchen.'),
-      ));
-    } finally {
-      if (mounted) setState(() => _loggingOut = false);
-    }
+  }
+
+  bool _handleSessionError(Object error) {
+    if (error is! ShopSessionExpired) return false;
+    _resetCustomerSession();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error.toString())),
+    );
+    return true;
   }
 
   List<ShopProduct> get _visibleProducts {
@@ -864,7 +883,11 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
               builder: (_) => ShopOrdersScreen(
-                storeId: _store!.id, currencyCode: _store!.currencyCode),
+                storeId: _store!.id, currencyCode: _store!.currencyCode,
+                onSessionExpired: () {
+                  Navigator.of(context).pop();
+                  _handleSessionError(const ShopSessionExpired());
+                }),
             )),
           ),
           ListTile(key: const ValueKey('shop-logout'), leading: const Icon(Icons.logout), title: const Text('Abmelden'), onTap: _cartMutating || _addingProduct || _submittingOrder ? null : _logoutCustomer),
@@ -952,8 +975,9 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
           : await _catalogService.updateCartItem(storeId: store.id, itemId: itemId, quantity: quantity);
       if (!mounted || session != _customerSession || !_customerAuthenticated || _store?.id != store.id) return;
       setState(() { _cart = cart; _submittedOrderNumber = null; _orderError = null; });
-    } catch (_) {
+    } catch (error) {
       if (!mounted || session != _customerSession || !_customerAuthenticated) return;
+      if (_handleSessionError(error)) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Warenkorb konnte nicht aktualisiert werden. Bitte erneut versuchen.')),
       );
@@ -973,6 +997,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       setState(() => _cart = cart);
     } catch (error) {
       if (!mounted || session != _customerSession || !_customerAuthenticated) return;
+      if (_handleSessionError(error)) return;
       setState(() => _cartError = error);
     } finally {
       if (mounted && session == _customerSession) setState(() => _cartLoading = false);
@@ -990,6 +1015,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       setState(() { _cart = cart; _selectedProduct = null; _selectedTab = 3; _submittedOrderNumber = null; });
     } catch (error) {
       if (!mounted || session != _customerSession || !_customerAuthenticated) return;
+      if (_handleSessionError(error)) return;
       setState(() => _cartError = error);
     } finally {
       if (mounted && session == _customerSession) setState(() => _addingProduct = false);
@@ -1021,6 +1047,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       await _loadCart();
     } catch (error) {
       if (!mounted || session != _customerSession || !_customerAuthenticated) return;
+      if (_handleSessionError(error)) return;
       setState(() => _orderError = error);
     } finally {
       if (mounted && session == _customerSession) setState(() => _submittingOrder = false);

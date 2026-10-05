@@ -41,9 +41,20 @@ public class JwtUtil {
         return createToken(claims, email);
     }
 
+    public String generateCustomerAccessToken(String email, Long userId, Set<Role> roles) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId);
+        claims.put("roles", roles.stream().map(Enum::name).collect(Collectors.toList()));
+        return createToken(claims, email, 15 * 60 * 1000L);
+    }
+
     private String createToken(Map<String, Object> claims, String subject) {
+        return createToken(claims, subject, expiration);
+    }
+
+    private String createToken(Map<String, Object> claims, String subject, long lifetime) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + expiration);
+        Date expiryDate = new Date(now.getTime() + lifetime);
 
         return Jwts.builder()
                 .claims(claims)
