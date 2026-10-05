@@ -4302,9 +4302,9 @@
     "loadError": "Aufträge konnten nicht geladen werden.",
     "retry": "Erneut versuchen",
     "empty": "Du hast noch keine Aufträge gesendet.",
-    "itemCount": "{count} Artikel",
+    "itemCount": "{{count}} Artikel",
     "items": "Artikel",
-    "quantity": "{count} Stück",
+    "quantity": "{{count}} Stück",
     "perUnit": "pro Stück",
     "total": "Gesamtbetrag",
     "status": {

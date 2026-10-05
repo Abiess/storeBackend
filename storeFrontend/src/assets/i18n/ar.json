@@ -4179,9 +4179,9 @@
     "loadError": "تعذر تحميل الطلبات.",
     "retry": "إعادة المحاولة",
     "empty": "لم ترسل أي طلب بعد.",
-    "itemCount": "{count} منتجات",
+    "itemCount": "{{count}} منتجات",
     "items": "المنتجات",
-    "quantity": "{count} قطع",
+    "quantity": "{{count}} قطع",
     "perUnit": "للقطعة",
     "total": "المجموع",
     "status": {

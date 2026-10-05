@@ -4265,9 +4265,9 @@
     "loadError": "Could not load orders.",
     "retry": "Try again",
     "empty": "You have not sent any orders yet.",
-    "itemCount": "{count} items",
+    "itemCount": "{{count}} items",
     "items": "Items",
-    "quantity": "{count} pieces",
+    "quantity": "{{count}} pieces",
     "perUnit": "per piece",
     "total": "Total",
     "status": {

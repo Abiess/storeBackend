@@ -224,7 +224,7 @@ export class AppComponent implements OnInit {
   showAdminShell = false;
   /** WhatsApp-Widget auf allen öffentlichen Seiten (Landing, Storefront, Produkte …) */
   showWhatsappWidget = false;
-  /** Chatbot nur auf Storefront-Seiten (benötigt Store-ID) */
+  /** Chatbot auf Storefront-Seiten, außer Aufträgen und Bestellbestätigung. */
   showChatbotWidget = false;
 
   private readonly adminPathPrefixes = [
@@ -334,7 +334,9 @@ export class AppComponent implements OnInit {
       !this.whatsappHiddenPaths.some(p => path.startsWith(p));
 
     // ── Chatbot: nur auf Storefront-Seiten (braucht Store-ID) ────────────────
-    this.showChatbotWidget = isStorefront;
+    const isOrderPage = /(?:^|\/)orders(?:\/|$)/.test(path) ||
+      /(?:^|\/)order-confirmation(?:\/|$)/.test(path);
+    this.showChatbotWidget = isStorefront && !isOrderPage;
 
     if (this.showAdminShell) {
       // Admin-Bereich → Nummer löschen, Widget ausblenden
