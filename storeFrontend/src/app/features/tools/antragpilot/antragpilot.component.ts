@@ -31,6 +31,7 @@ interface BayernApplication {
         <span>{{ filteredApplications.length }} von {{ applications.length }} Antragsarten angezeigt</span>
         <button *ngIf="searchTerm" type="button" (click)="searchTerm = ''">Suche zurücksetzen</button>
       </div>
+      <button class="print-button" type="button" (click)="printOverview()">Übersicht drucken / als PDF speichern</button>
       <section class="application-grid" aria-label="Verwaltungsleistungen in Bayern">
         <article class="application-card" *ngFor="let application of filteredApplications">
           <h2>{{ application.title }}</h2>
@@ -67,6 +68,16 @@ interface BayernApplication {
     .search-feedback { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-top: .75rem; font-size: .9rem; color: #526072; }
     .search-feedback button { color: #365db7; background: transparent; border: 0; padding: .25rem; font: inherit; font-weight: 600; cursor: pointer; }
     .search-feedback button:focus-visible { outline: 2px solid #365db7; outline-offset: 2px; }
+    .print-button { margin-top: 1rem; padding: .65rem 1rem; border: 1px solid #365db7; border-radius: 8px; background: transparent; color: #365db7; font: inherit; font-weight: 600; cursor: pointer; }
+    .print-button:focus-visible { outline: 2px solid #365db7; outline-offset: 2px; }
+    @media print {
+      .antragpilot-page { max-width: none; margin: 0; padding: 0; color: #000; }
+      .search-field, .search-feedback, .print-button { display: none !important; }
+      .application-grid { display: block; }
+      .application-card { break-inside: avoid; margin-bottom: 1rem; border-color: #aaa; }
+      .guidance { display: block; }
+      a { overflow-wrap: anywhere; }
+    }
     .application-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 1rem; margin: 1.5rem 0; }
     .application-card { border: 1px solid #d8dce4; border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; }
     .application-card h2 { margin: 0; font-size: 1.2rem; }
@@ -81,6 +92,10 @@ interface BayernApplication {
   `]
 })
 export class AntragPilotComponent {
+  printOverview(): void {
+    window.print();
+  }
+
   searchTerm = '';
 
   get filteredApplications(): readonly BayernApplication[] {
