@@ -526,6 +526,7 @@
         "title": "Shop",
         "description": "Produkte, Bestellungen und Store-Verwaltung"
       },
+      "antragPilot": "AntragPilot",
       "maritime": {
         "title": "Maritime",
         "description": "Maritime-Werkzeuge"
