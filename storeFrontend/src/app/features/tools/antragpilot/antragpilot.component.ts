@@ -7,6 +7,7 @@ interface BayernApplication {
   description: string;
   url: string;
   guidance: readonly string[];
+  exampleDocuments: readonly string[];
 }
 
 @Component({
@@ -43,6 +44,11 @@ interface BayernApplication {
               </li>
             </ol>
           </details>
+          <details class="documents">
+            <summary>Häufig benötigte Unterlagen (Beispiele)</summary>
+            <p>Die konkrete Liste legt die zuständige Behörde fest. Je nach Fall kann sie abweichen.</p>
+            <ul><li *ngFor="let document of application.exampleDocuments">{{ document }}</li></ul>
+          </details>
           <a [href]="application.url" target="_blank" rel="noopener noreferrer">
             Offizielle Informationen öffnen ↗
             <span class="sr-only">(öffnet ein neues Fenster)</span>
@@ -70,6 +76,10 @@ interface BayernApplication {
     .application-card { border: 1px solid #d8dce4; border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; }
     .application-card h2 { margin: 0; font-size: 1.2rem; }
     .application-card p { flex: 1; }
+    .documents { margin-top: .7rem; padding: .7rem 0; border-top: 1px solid #d8dce4; }
+    .documents summary { cursor: pointer; font-weight: 600; }
+    .documents ul { padding-left: 1.4rem; }
+    .documents li { margin: .4rem 0; line-height: 1.5; }
     .guidance { margin-top: .8rem; padding: .7rem 0; border-top: 1px solid #d8dce4; }
     .guidance summary { cursor: pointer; font-weight: 600; }
     .guidance ol { padding-left: 1.4rem; margin-bottom: 0; }
@@ -116,7 +126,8 @@ export class AntragPilotComponent {
         'Öffne die Informationen zur Aufenthaltserlaubnis im BayernPortal.',
         'Prüfe dort, welches Verfahren für deinen Aufenthaltstitel gilt.',
         'Informiere dich über die für deinen Wohnort zuständige Ausländerbehörde und deren Hinweise.'
-      ]
+      ],
+      exampleDocuments: ['Gültiger Reisepass', 'Aktuelles biometrisches Lichtbild', 'Nachweis über Lebensunterhalt und Krankenversicherung', 'Nachweis zum Aufenthaltszweck (z. B. Arbeitsvertrag)']
     },
     {
       title: 'Einbürgerung',
@@ -126,7 +137,8 @@ export class AntragPilotComponent {
         'Öffne die offiziellen Informationen zur Einbürgerung.',
         'Prüfe dort die aktuellen Voraussetzungen und gegebenenfalls verfügbare Onlineverfahren.',
         'Informiere dich bei der zuständigen Behörde über die erforderlichen Nachweise.'
-      ]
+      ],
+      exampleDocuments: ['Reisepass oder anderes anerkanntes Identitätsdokument', 'Nachweise über Deutschkenntnisse', 'Nachweis über Einbürgerungstest oder anerkannten Schulabschluss', 'Nachweise über Einkommen und Versicherungsschutz']
     },
     {
       title: 'Gewerbe anmelden',
@@ -136,7 +148,8 @@ export class AntragPilotComponent {
         'Öffne die offiziellen Informationen zur Gewerbeanzeige.',
         'Prüfe, ob deine Tätigkeit eine Gewerbeanmeldung erfordert.',
         'Informiere dich über die zuständige Stelle, Unterlagen und mögliche Onlineverfahren.'
-      ]
+      ],
+      exampleDocuments: ['Personalausweis oder Reisepass', 'Bei juristischen Personen: Handelsregisterauszug oder entsprechende Unterlagen', 'Bei erlaubnis- oder überwachungsbedürftigen Tätigkeiten: gegebenenfalls zusätzliche Nachweise']
     }
   ];
 }
