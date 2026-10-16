@@ -561,6 +561,13 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
 
+  // ==================== AntragPilot (Bayern – Admin-Prototyp) ====================
+  {
+    path: 'tools/antragpilot',
+    loadComponent: () => import('./features/tools/antragpilot/antragpilot.component').then(m => m.AntragPilotComponent),
+    canActivate: [authGuard]
+  },
+
   // ==================== TEMP: Issue Image Analysis (OpenRouter Vision Test) ====================
   {
     path: 'tools/issue-analysis',
