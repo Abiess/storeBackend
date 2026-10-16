@@ -190,6 +190,12 @@ export class AdminSidebarComponent implements OnInit {
                         labelKey: 'sidebarAdmin.items.maritime',
                         icon: 'anchor',
                         route: '/tools/maritime'
+                    },
+                    {
+                        // AntragPilot: isolierter Bayern-Prototyp ohne Store-Kontext.
+                        labelKey: 'sidebarAdmin.items.antragPilot',
+                        icon: 'clipboard-list',
+                        route: '/tools/antragpilot'
                     }
                 ]
             },
