@@ -405,6 +405,7 @@
         "title": "Shop",
         "description": "Products, orders and store management"
       },
+      "antragPilot": "Application Pilot",
       "maritime": {
         "title": "Maritime",
         "description": "Maritime tools"
