@@ -12,6 +12,12 @@ function isStorefrontHost(hostname: string): boolean {
 }
 
 export const routes: Routes = [
+  // ==================== AntragPilot (public, read-only) ====================
+  {
+    path: 'antragpilot',
+    loadComponent: () => import('./features/tools/antragpilot/antragpilot.component').then(m => m.AntragPilotComponent)
+  },
+
   // ==================== Legal Pages (Public) ====================
   // Platform legal pages (markt.ma main domain)
   {
