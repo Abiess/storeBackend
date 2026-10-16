@@ -42,6 +42,23 @@ jobs:
             sleep 1
           done
           grep -qi '<html' /tmp/antragpilot-index.html
+      - name: Check AntragPilot source integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          routes = Path("storeFrontend/src/app/app.routes.ts").read_text()
+          landing = Path("storeFrontend/src/app/features/landing/landing.component.html").read_text()
+          component = Path("storeFrontend/src/app/features/tools/antragpilot/antragpilot.component.ts").read_text()
+          assert "path: 'antragpilot'" in routes, "Public AntragPilot route missing"
+          assert "path: 'tools/antragpilot'" in routes, "Admin AntragPilot route missing"
+          assert 'routerLink="/antragpilot"' in landing, "Landing navigation link missing"
+          assert "filteredApplications" in component, "Client-side search missing"
+          for label in ["Aufenthaltstitel verlängern", "Einbürgerung", "Gewerbe anmelden"]:
+              assert label in component, f"Application category missing: {label}"
+          print("AntragPilot source integration checks passed")
+          PY
       - name: Upload preview bundle (no public hosting)
         uses: actions/upload-artifact@v4
         with:
