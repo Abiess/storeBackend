@@ -6,6 +6,7 @@ interface BayernApplication {
   title: string;
   description: string;
   url: string;
+  guidance: readonly string[];
 }
 
 @Component({
@@ -30,6 +31,12 @@ interface BayernApplication {
         <article class="application-card" *ngFor="let application of filteredApplications">
           <h2>{{ application.title }}</h2>
           <p>{{ application.description }}</p>
+          <details class="guidance">
+            <summary>So gehst du vor</summary>
+            <ol>
+              <li *ngFor="let step of application.guidance">{{ step }}</li>
+            </ol>
+          </details>
           <a [href]="application.url" target="_blank" rel="noopener noreferrer">
             Offizielle Informationen öffnen ↗
             <span class="sr-only">(öffnet ein neues Fenster)</span>
@@ -57,6 +64,10 @@ interface BayernApplication {
     .application-card { border: 1px solid #d8dce4; border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; }
     .application-card h2 { margin: 0; font-size: 1.2rem; }
     .application-card p { flex: 1; }
+    .guidance { margin-top: .8rem; padding: .7rem 0; border-top: 1px solid #d8dce4; }
+    .guidance summary { cursor: pointer; font-weight: 600; }
+    .guidance ol { padding-left: 1.4rem; margin-bottom: 0; }
+    .guidance li { margin: .5rem 0; line-height: 1.5; }
     .application-card a { margin-top: 1rem; color: #365db7; font-weight: 600; }
     .notice { color: #526072; font-size: .9rem; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
@@ -77,17 +88,32 @@ export class AntragPilotComponent {
     {
       title: 'Aufenthaltstitel verlängern',
       description: 'Informationen zur Aufenthaltserlaubnis und zur zuständigen Ausländerbehörde.',
-      url: 'https://www.bayernportal.de/dokumente/leistung/736199102498'
+      url: 'https://www.bayernportal.de/dokumente/leistung/736199102498',
+      guidance: [
+        'Öffne die Informationen zur Aufenthaltserlaubnis im BayernPortal.',
+        'Prüfe dort, welches Verfahren für deinen Aufenthaltstitel gilt.',
+        'Informiere dich über die für deinen Wohnort zuständige Ausländerbehörde und deren Hinweise.'
+      ]
     },
     {
       title: 'Einbürgerung',
       description: 'Informationen zum Onlineverfahren und zur zuständigen Einbürgerungsbehörde.',
-      url: 'https://www.bayernportal.de/dokumente/onlineservice/77443319242'
+      url: 'https://www.bayernportal.de/dokumente/onlineservice/77443319242',
+      guidance: [
+        'Öffne die offiziellen Informationen zur Einbürgerung.',
+        'Prüfe dort die aktuellen Voraussetzungen und gegebenenfalls verfügbare Onlineverfahren.',
+        'Informiere dich bei der zuständigen Behörde über die erforderlichen Nachweise.'
+      ]
     },
     {
       title: 'Gewerbe anmelden',
       description: 'Hinweise zur Gewerbeanzeige und zur zuständigen Stelle.',
-      url: 'https://www.bayernportal.de/dokumente/leistung/5777574439'
+      url: 'https://www.bayernportal.de/dokumente/leistung/5777574439',
+      guidance: [
+        'Öffne die offiziellen Informationen zur Gewerbeanzeige.',
+        'Prüfe, ob deine Tätigkeit eine Gewerbeanmeldung erfordert.',
+        'Informiere dich über die zuständige Stelle, Unterlagen und mögliche Onlineverfahren.'
+      ]
     }
   ];
 }
