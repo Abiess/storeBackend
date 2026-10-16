@@ -1,0 +1,51 @@
+name: AntragPilot isolated preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'storeFrontend/**'
+      - '.github/workflows/antragpilot-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    # No deployment secrets, no VPS access, no environment or production publish.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: storeFrontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: storeFrontend
+        run: npm ci --legacy-peer-deps
+      - name: Build isolated Angular preview
+        working-directory: storeFrontend
+        run: npm run build:prod
+      - name: Verify standalone preview bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f storeFrontend/dist/markt-ma-frontend/index.html
+          python3 -m http.server 8765 --directory storeFrontend/dist/markt-ma-frontend > /tmp/antragpilot-preview.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --fail --silent http://127.0.0.1:8765/ -o /tmp/antragpilot-index.html; then break; fi
+            sleep 1
+          done
+          grep -qi '<html' /tmp/antragpilot-index.html
+      - name: Upload preview bundle (no public hosting)
+        uses: actions/upload-artifact@v4
+        with:
+          name: antragpilot-preview-${{ github.run_number }}
+          path: storeFrontend/dist/markt-ma-frontend/
+          retention-days: 7
+          if-no-files-found: error
