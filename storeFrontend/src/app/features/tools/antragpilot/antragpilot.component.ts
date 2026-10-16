@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 interface BayernApplication {
   title: string;
@@ -10,7 +11,7 @@ interface BayernApplication {
 @Component({
   selector: 'app-antragpilot',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="antragpilot-page">
@@ -20,8 +21,13 @@ interface BayernApplication {
       <p>Wähle ein Thema und öffne die offiziellen Informationen im BayernPortal.
         Dort kannst du deinen Wohnort auswählen und die zuständige Behörde finden.</p>
 
+      <div class="search-field">
+        <label for="antragpilot-search">Antrag suchen</label>
+        <input id="antragpilot-search" type="search" name="applicationSearch"
+          [(ngModel)]="searchTerm" placeholder="z. B. Einbürgerung" autocomplete="off" />
+      </div>
       <section class="application-grid" aria-label="Verwaltungsleistungen in Bayern">
-        <article class="application-card" *ngFor="let application of applications">
+        <article class="application-card" *ngFor="let application of filteredApplications">
           <h2>{{ application.title }}</h2>
           <p>{{ application.description }}</p>
           <a [href]="application.url" target="_blank" rel="noopener noreferrer">
@@ -30,6 +36,7 @@ interface BayernApplication {
           </a>
         </article>
       </section>
+      <p *ngIf="filteredApplications.length === 0" role="status">Keine passenden Anträge gefunden.</p>
 
       <p class="notice">Die Informationen und Antragswege können je nach Wohnort und persönlicher Situation variieren.
         AntragPilot ist keine Behörde und bietet keine Rechtsberatung. Hier werden keine persönlichen Daten
@@ -42,6 +49,10 @@ interface BayernApplication {
     h1 { font-size: 2rem; margin: 0 0 .5rem; }
     .lead { font-size: 1.2rem; font-weight: 500; }
     p { line-height: 1.65; }
+    .search-field { margin-top: 1.5rem; max-width: 420px; display: grid; gap: .5rem; }
+    .search-field label { font-weight: 600; }
+    .search-field input { padding: .75rem; border: 1px solid #aab2c0; border-radius: 8px; font: inherit; }
+    .search-field input:focus-visible { outline: 2px solid #365db7; outline-offset: 2px; }
     .application-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 1rem; margin: 1.5rem 0; }
     .application-card { border: 1px solid #d8dce4; border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; }
     .application-card h2 { margin: 0; font-size: 1.2rem; }
@@ -52,6 +63,16 @@ interface BayernApplication {
   `]
 })
 export class AntragPilotComponent {
+  searchTerm = '';
+
+  get filteredApplications(): readonly BayernApplication[] {
+    const term = this.searchTerm.trim().toLocaleLowerCase('de-DE');
+    if (!term) return this.applications;
+    return this.applications.filter(application =>
+      `${application.title} ${application.description}`.toLocaleLowerCase('de-DE').includes(term)
+    );
+  }
+
   readonly applications: readonly BayernApplication[] = [
     {
       title: 'Aufenthaltstitel verlängern',
