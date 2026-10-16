@@ -34,7 +34,13 @@ interface BayernApplication {
           <details class="guidance">
             <summary>So gehst du vor</summary>
             <ol>
-              <li *ngFor="let step of application.guidance">{{ step }}</li>
+              <li *ngFor="let step of application.guidance; let i = index">
+                <label class="step-checkbox">
+                  <input type="checkbox" [checked]="isDone(application.title, i)"
+                    (change)="toggleDone(application.title, i)" />
+                  <span [class.done]="isDone(application.title, i)">{{ step }}</span>
+                </label>
+              </li>
             </ol>
           </details>
           <a [href]="application.url" target="_blank" rel="noopener noreferrer">
@@ -67,6 +73,9 @@ interface BayernApplication {
     .guidance { margin-top: .8rem; padding: .7rem 0; border-top: 1px solid #d8dce4; }
     .guidance summary { cursor: pointer; font-weight: 600; }
     .guidance ol { padding-left: 1.4rem; margin-bottom: 0; }
+    .step-checkbox { display: flex; align-items: flex-start; gap: .6rem; cursor: pointer; }
+    .step-checkbox input { margin-top: .25rem; accent-color: #365db7; }
+    .step-checkbox .done { text-decoration: line-through; color: #526072; }
     .guidance li { margin: .5rem 0; line-height: 1.5; }
     .application-card a { margin-top: 1rem; color: #365db7; font-weight: 600; }
     .notice { color: #526072; font-size: .9rem; }
@@ -75,6 +84,20 @@ interface BayernApplication {
 })
 export class AntragPilotComponent {
   searchTerm = '';
+  // UI-only state: nothing is persisted or sent to a server.
+  private readonly checkedSteps = new Set<string>();
+
+  private stepKey(title: string, index: number): string { return `${title}:${index}`; }
+
+  isDone(title: string, index: number): boolean {
+    return this.checkedSteps.has(this.stepKey(title, index));
+  }
+
+  toggleDone(title: string, index: number): void {
+    const key = this.stepKey(title, index);
+    if (this.checkedSteps.has(key)) this.checkedSteps.delete(key);
+    else this.checkedSteps.add(key);
+  }
 
   get filteredApplications(): readonly BayernApplication[] {
     const term = this.searchTerm.trim().toLocaleLowerCase('de-DE');
