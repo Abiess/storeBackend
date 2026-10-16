@@ -27,6 +27,10 @@ interface BayernApplication {
         <input id="antragpilot-search" type="search" name="applicationSearch"
           [(ngModel)]="searchTerm" placeholder="z. B. Einbürgerung" autocomplete="off" />
       </div>
+      <div class="search-feedback" role="status" aria-live="polite">
+        <span>{{ filteredApplications.length }} von {{ applications.length }} Antragsarten angezeigt</span>
+        <button *ngIf="searchTerm" type="button" (click)="searchTerm = ''">Suche zurücksetzen</button>
+      </div>
       <section class="application-grid" aria-label="Verwaltungsleistungen in Bayern">
         <article class="application-card" *ngFor="let application of filteredApplications">
           <h2>{{ application.title }}</h2>
@@ -60,6 +64,9 @@ interface BayernApplication {
     .search-field label { font-weight: 600; }
     .search-field input { padding: .75rem; border: 1px solid #aab2c0; border-radius: 8px; font: inherit; }
     .search-field input:focus-visible { outline: 2px solid #365db7; outline-offset: 2px; }
+    .search-feedback { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-top: .75rem; font-size: .9rem; color: #526072; }
+    .search-feedback button { color: #365db7; background: transparent; border: 0; padding: .25rem; font: inherit; font-weight: 600; cursor: pointer; }
+    .search-feedback button:focus-visible { outline: 2px solid #365db7; outline-offset: 2px; }
     .application-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 1rem; margin: 1.5rem 0; }
     .application-card { border: 1px solid #d8dce4; border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; }
     .application-card h2 { margin: 0; font-size: 1.2rem; }
