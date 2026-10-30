@@ -32,6 +32,7 @@ interface BayernApplication {
         <span>{{ filteredApplications.length }} von {{ applications.length }} Antragsarten angezeigt</span>
         <button *ngIf="searchTerm" type="button" (click)="searchTerm = ''">Suche zurücksetzen</button>
       </div>
+      <button type="button" class="print-documents" (click)="printDocuments()">Unterlagenübersicht drucken / als PDF speichern</button>
       <section class="application-grid" aria-label="Verwaltungsleistungen in Bayern">
         <article class="application-card" *ngFor="let application of filteredApplications">
           <h2>{{ application.title }}</h2>
@@ -62,6 +63,16 @@ interface BayernApplication {
         </article>
       </section>
       <p *ngIf="filteredApplications.length === 0" role="status">Keine passenden Anträge gefunden.</p>
+      <section class="print-only-documents" aria-label="Unterlagenübersicht zum Ausdrucken">
+        <article *ngFor="let application of filteredApplications">
+          <h2>{{ application.title }}</h2>
+          <p>Unverbindliche Beispiele – bitte bei der zuständigen Behörde prüfen.</p>
+          <ul>
+            <li *ngFor="let document of application.documents">☐ {{ document }}</li>
+          </ul>
+          <p>Offizielle Informationen: {{ application.url }}</p>
+        </article>
+      </section>
 
       <section class="faq" aria-labelledby="antragpilot-faq-title">
         <h2 id="antragpilot-faq-title">Häufige Fragen</h2>
@@ -97,6 +108,18 @@ interface BayernApplication {
     .search-feedback { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-top: .75rem; font-size: .9rem; color: #526072; }
     .search-feedback button { color: #365db7; background: transparent; border: 0; padding: .25rem; font: inherit; font-weight: 600; cursor: pointer; }
     .search-feedback button:focus-visible { outline: 2px solid #365db7; outline-offset: 2px; }
+    .print-documents { margin-top: 1rem; border: 1px solid #365db7; border-radius: 8px; padding: .7rem 1rem; background: transparent; color: #365db7; font: inherit; font-weight: 600; cursor: pointer; }
+    .print-documents:focus-visible { outline: 2px solid #365db7; outline-offset: 2px; }
+    .print-only-documents { display: none; }
+    @media print {
+      .search-field, .search-feedback, .application-grid, .faq, .print-documents, .intro-label { display: none !important; }
+      .print-only-documents { display: block; }
+      .print-only-documents article { break-inside: avoid; margin-bottom: 1.5rem; }
+      .print-only-documents ul { padding-left: 1.5rem; }
+      .print-only-documents li { margin: .4rem 0; }
+      .print-only-documents p { overflow-wrap: anywhere; }
+      .antragpilot-page { margin: 0; max-width: none; padding: 0; color: #000; }
+    }
     .application-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 1rem; margin: 1.5rem 0; }
     .application-card { border: 1px solid #d8dce4; border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; }
     .application-card h2 { margin: 0; font-size: 1.2rem; }
@@ -131,6 +154,10 @@ interface BayernApplication {
   `]
 })
 export class AntragPilotComponent {
+  printDocuments(): void {
+    window.print();
+  }
+
   searchTerm = '';
 
   get filteredApplications(): readonly BayernApplication[] {
