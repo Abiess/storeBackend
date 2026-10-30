@@ -169,3 +169,39 @@ jobs:
 
       - name: Build customer shop preview for web
         run: flutter build web --release -t lib/entrypoints/main_shop.dart
+
+  publish-apks:
+    name: Publish latest Flutter APK downloads
+    needs: build-flutter-poc
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: markt-ma-flutter-poc
+          path: publish/documents
+      - uses: actions/download-artifact@v4
+        with:
+          name: markt-ma-flutter-shop-preview-apk
+          path: publish/shop
+      - uses: actions/download-artifact@v4
+        with:
+          name: markt-ma-flutter-marrakesch-preview-apk
+          path: publish/marrakesch
+      - name: Publish stable GitHub Release URLs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p publish/final
+          cp publish/documents/app-documents-debug.apk publish/final/documents-debug.apk
+          cp publish/shop/app-shop-debug.apk publish/final/shop-preview-debug.apk
+          cp publish/marrakesch/app-shop-debug.apk publish/final/shop-marrakesch-debug.apk
+          TAG=apk-flutter-latest
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "Flutter Android-Testversionen" --notes "Automatisch aktualisierte Debug-APKs aus erfolgreichen master-Builds. Nicht für produktiven Einsatz." --prerelease --latest=false
+          fi
+          gh release upload "$TAG" publish/final/*.apk --clobber
