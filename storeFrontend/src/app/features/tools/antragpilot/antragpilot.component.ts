@@ -49,6 +49,22 @@ interface BayernApplication {
       </section>
       <p *ngIf="filteredApplications.length === 0" role="status">Keine passenden Anträge gefunden.</p>
 
+      <section class="faq" aria-labelledby="antragpilot-faq-title">
+        <h2 id="antragpilot-faq-title">Häufige Fragen</h2>
+        <details>
+          <summary>Kann ich hier einen Antrag stellen?</summary>
+          <p>Nein. AntragPilot bietet Orientierung. Anträge werden ausschließlich über die zuständigen offiziellen Stellen eingereicht.</p>
+        </details>
+        <details>
+          <summary>Wie finde ich meine zuständige Behörde?</summary>
+          <p>Öffne die offizielle Leistungsseite und wähle dort den passenden Ort beziehungsweise die zuständige Stelle aus.</p>
+        </details>
+        <details>
+          <summary>Werden meine Angaben gespeichert?</summary>
+          <p>Die Suche und die Anzeige der Informationen funktionieren ohne Übermittlung von Antragsdaten an AntragPilot. Externe Behördenseiten haben eigene Datenschutzhinweise.</p>
+        </details>
+      </section>
+
       <p class="notice">Die Informationen und Antragswege können je nach Wohnort und persönlicher Situation variieren.
         AntragPilot ist keine Behörde und bietet keine Rechtsberatung. Hier werden keine persönlichen Daten
         erhoben oder gespeichert; es findet keine Antragstellung statt.</p>
@@ -76,6 +92,12 @@ interface BayernApplication {
     .guidance ol { padding-left: 1.4rem; margin-bottom: 0; }
     .guidance li { margin: .5rem 0; line-height: 1.5; }
     .application-card a { margin-top: 1rem; color: #365db7; font-weight: 600; }
+    .faq { margin: 2rem 0; border-top: 1px solid #d8dce4; padding-top: 1rem; }
+    .faq h2 { font-size: 1.3rem; }
+    .faq details { border-bottom: 1px solid #d8dce4; padding: .8rem 0; }
+    .faq summary { cursor: pointer; font-weight: 600; }
+    .faq summary:focus-visible { outline: 2px solid #365db7; outline-offset: 2px; }
+    .faq details p { margin-bottom: 0; }
     .notice { color: #526072; font-size: .9rem; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   `]
