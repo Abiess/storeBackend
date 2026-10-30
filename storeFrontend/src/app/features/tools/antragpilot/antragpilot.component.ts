@@ -7,6 +7,7 @@ interface BayernApplication {
   description: string;
   url: string;
   guidance: readonly string[];
+  documents: readonly string[];
 }
 
 @Component({
@@ -40,6 +41,13 @@ interface BayernApplication {
             <ol>
               <li *ngFor="let step of application.guidance">{{ step }}</li>
             </ol>
+          </details>
+          <details class="documents">
+            <summary>Mögliche Unterlagen</summary>
+            <p>Diese Beispiele sind keine verbindliche Checkliste. Welche Nachweise du benötigst, hängt von deinem Fall und der zuständigen Behörde ab.</p>
+            <ul>
+              <li *ngFor="let document of application.documents">{{ document }}</li>
+            </ul>
           </details>
           <a [href]="application.url" target="_blank" rel="noopener noreferrer">
             Offizielle Informationen öffnen ↗
@@ -91,6 +99,12 @@ interface BayernApplication {
     .guidance summary { cursor: pointer; font-weight: 600; }
     .guidance ol { padding-left: 1.4rem; margin-bottom: 0; }
     .guidance li { margin: .5rem 0; line-height: 1.5; }
+    .documents { margin-top: .8rem; padding: .7rem 0; border-top: 1px solid #d8dce4; }
+    .documents summary { cursor: pointer; font-weight: 600; }
+    .documents summary:focus-visible { outline: 2px solid #365db7; outline-offset: 2px; }
+    .documents p { font-size: .9rem; }
+    .documents ul { padding-left: 1.4rem; margin-bottom: 0; }
+    .documents li { margin: .5rem 0; line-height: 1.5; }
     .application-card a { margin-top: 1rem; color: #365db7; font-weight: 600; }
     .faq { margin: 2rem 0; border-top: 1px solid #d8dce4; padding-top: 1rem; }
     .faq h2 { font-size: 1.3rem; }
@@ -122,6 +136,12 @@ export class AntragPilotComponent {
         'Öffne die Informationen zur Aufenthaltserlaubnis im BayernPortal.',
         'Prüfe dort, welches Verfahren für deinen Aufenthaltstitel gilt.',
         'Informiere dich über die für deinen Wohnort zuständige Ausländerbehörde und deren Hinweise.'
+      ],
+      documents: [
+        'Gültiger Reisepass oder Passersatz (je nach Fall)',
+        'Aktueller Aufenthaltstitel',
+        'Biometrisches Passfoto, falls von der Behörde verlangt',
+        'Nachweise zu Lebensunterhalt, Beschäftigung oder Ausbildung, soweit erforderlich'
       ]
     },
     {
@@ -132,6 +152,12 @@ export class AntragPilotComponent {
         'Öffne die offiziellen Informationen zur Einbürgerung.',
         'Prüfe dort die aktuellen Voraussetzungen und gegebenenfalls verfügbare Onlineverfahren.',
         'Informiere dich bei der zuständigen Behörde über die erforderlichen Nachweise.'
+      ],
+      documents: [
+        'Identitäts- und Staatsangehörigkeitsnachweise',
+        'Nachweise zum Aufenthaltsstatus und zur Aufenthaltsdauer',
+        'Sprach- und gegebenenfalls Einbürgerungstest-Nachweise',
+        'Nachweise zur wirtschaftlichen Situation, soweit verlangt'
       ]
     },
     {
@@ -142,6 +168,12 @@ export class AntragPilotComponent {
         'Öffne die offiziellen Informationen zur Gewerbeanzeige.',
         'Prüfe, ob deine Tätigkeit eine Gewerbeanmeldung erfordert.',
         'Informiere dich über die zuständige Stelle, Unterlagen und mögliche Onlineverfahren.'
+      ],
+      documents: [
+        'Ausweisdokument oder Reisepass',
+        'Angaben zu Tätigkeit und Betriebsstätte',
+        'Bei bestimmten Tätigkeiten erforderliche Erlaubnisse oder Nachweise',
+        'Bei Vertretung gegebenenfalls Vollmacht oder Registerauszug'
       ]
     }
   ];
