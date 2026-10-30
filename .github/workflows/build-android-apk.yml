@@ -25,6 +25,8 @@ on:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
@@ -111,3 +113,17 @@ jobs:
           path: storeFrontend/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish stable Capacitor APK download
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          cp storeFrontend/android/app/build/outputs/apk/debug/app-debug.apk /tmp/markt-ma-debug.apk
+          TAG=apk-capacitor-latest
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "markt.ma Android-Testversion" --notes "Automatisch aktualisierte Capacitor-Debug-APK aus erfolgreichen master-Builds. Nicht für produktiven Einsatz." --prerelease --latest=false
+          fi
+          gh release upload "$TAG" /tmp/markt-ma-debug.apk --clobber
