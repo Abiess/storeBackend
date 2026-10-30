@@ -46,11 +46,14 @@ interface BayernApplication {
             <summary>Mögliche Unterlagen</summary>
             <p>Diese Beispiele sind keine verbindliche Checkliste. Welche Nachweise du benötigst, hängt von deinem Fall und der zuständigen Behörde ab.</p>
             <p class="checklist-note">Du kannst die Beispiele für dich abhaken. Die Häkchen werden nicht gespeichert.</p>
-            <ul class="document-checklist">
-              <li *ngFor="let document of application.documents">
-                <label><input type="checkbox" /> <span>{{ document }}</span></label>
-              </li>
-            </ul>
+            <form class="document-checklist-form">
+              <ul class="document-checklist">
+                <li *ngFor="let document of application.documents">
+                  <label><input type="checkbox" /> <span>{{ document }}</span></label>
+                </li>
+              </ul>
+              <button type="reset" class="checklist-reset">Häkchen zurücksetzen</button>
+            </form>
           </details>
           <a [href]="application.url" target="_blank" rel="noopener noreferrer">
             Offizielle Informationen öffnen ↗
@@ -114,6 +117,8 @@ interface BayernApplication {
     .document-checklist input:focus-visible { outline: 2px solid #365db7; outline-offset: 2px; }
     .document-checklist input:checked + span { text-decoration: line-through; color: #526072; }
     .checklist-note { color: #526072; }
+    .checklist-reset { margin-top: .8rem; padding: .5rem .7rem; background: transparent; color: #365db7; border: 1px solid #365db7; border-radius: 6px; font: inherit; cursor: pointer; }
+    .checklist-reset:focus-visible { outline: 2px solid #365db7; outline-offset: 2px; }
     .application-card a { margin-top: 1rem; color: #365db7; font-weight: 600; }
     .faq { margin: 2rem 0; border-top: 1px solid #d8dce4; padding-top: 1rem; }
     .faq h2 { font-size: 1.3rem; }
