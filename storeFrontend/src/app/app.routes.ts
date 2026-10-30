@@ -12,6 +12,12 @@ function isStorefrontHost(hostname: string): boolean {
 }
 
 export const routes: Routes = [
+  // ==================== Public Android test builds ====================
+  {
+    path: 'apps/downloads',
+    loadComponent: () => import('./features/tools/apk-downloads/apk-downloads.component').then(m => m.ApkDownloadsComponent)
+  },
+
   // ==================== AntragPilot (public, read-only) ====================
   {
     path: 'antragpilot',
