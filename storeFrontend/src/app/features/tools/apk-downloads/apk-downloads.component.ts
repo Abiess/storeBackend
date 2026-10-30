@@ -15,9 +15,15 @@ interface ApkDownload {
   template: `
     <main class="downloads">
       <a href="/">← Zurück zu markt.ma</a>
-      <h1>Android-Apps herunterladen</h1>
-      <p>Hier findest du die zuletzt erfolgreich veröffentlichten Android-Testversionen von markt.ma. Bei einem erfolgreichen Build auf <strong>master</strong> werden die Downloads automatisch aktualisiert.</p>
+      <h1>Apps &amp; Website</h1>
+      <p>Öffne unsere Website oder lade die zuletzt erfolgreich veröffentlichten Android-Testversionen von markt.ma herunter. Bei einem erfolgreichen Build auf <strong>master</strong> werden die Downloads automatisch aktualisiert.</p>
       <p class="warning"><strong>Hinweis:</strong> Dies sind Debug-/Test-APKs, keine Play-Store-Releases. Installiere sie nur auf einem Testgerät. Nicht jede markt.ma-Anwendung besitzt bereits eine eigene APK.</p>
+      <section class="website-card" aria-label="Website">
+        <h2>markt.ma Website</h2>
+        <p>Die Online-Plattform für Shops, Händler und Kunden. Keine Installation erforderlich, auch auf dem Smartphone nutzbar.</p>
+        <a href="https://markt.ma/" target="_blank" rel="noopener noreferrer">Website öffnen</a>
+      </section>
+      <h2>Android-Testversionen</h2>
       <div class="cards">
         <article *ngFor="let app of apps">
           <h2>{{ app.name }}</h2>
@@ -35,6 +41,9 @@ interface ApkDownload {
     h1 { font-size: 2rem; }
     p { line-height: 1.65; }
     .warning { padding: 1rem; border: 1px solid #b6a576; border-radius: 8px; }
+    .website-card { border: 1px solid #d8dce4; border-radius: 12px; padding: 1.25rem; margin: 1.5rem 0; }
+    .website-card h2 { margin-top: 0; }
+    .website-card a { font-weight: 700; }
     .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 1rem; margin: 1.5rem 0; }
     article { display: flex; flex-direction: column; gap: .75rem; border: 1px solid #d8dce4; border-radius: 12px; padding: 1.25rem; }
     article h2 { margin: 0; font-size: 1.25rem; }

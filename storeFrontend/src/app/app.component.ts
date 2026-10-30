@@ -1,6 +1,6 @@
 import { Component, OnInit, Renderer2, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
+import { Router, RouterOutlet, RouterLink, NavigationEnd } from '@angular/router';
 import { filter, take } from 'rxjs/operators';
 import { AuthService } from './core/services/auth.service';
 import { CartService } from './core/services/cart.service';
@@ -21,7 +21,7 @@ import { PwaUpdateBannerComponent } from './shared/components/pwa-update-banner/
 
 @Component({
     selector: 'app-root',
-    imports: [CommonModule, RouterOutlet, ChatbotWidgetComponent, WhatsappWidgetComponent, AdminSidebarComponent, FabHostComponent, PreviewPanelComponent, PwaUpdateBannerComponent],
+    imports: [CommonModule, RouterOutlet, RouterLink, ChatbotWidgetComponent, WhatsappWidgetComponent, AdminSidebarComponent, FabHostComponent, PreviewPanelComponent, PwaUpdateBannerComponent],
     template: `
     <!-- PWA Update Banner (global, erscheint wenn Update verfügbar) -->
     <app-pwa-update-banner></app-pwa-update-banner>
@@ -36,6 +36,11 @@ import { PwaUpdateBannerComponent } from './shared/components/pwa-update-banner/
     </ng-container>
 
     <ng-template #publicShell>
+      <aside *ngIf="showPublicAppsLink" class="public-apps-sidebar" aria-label="Öffentliche Navigation">
+        <a routerLink="/apps/downloads" class="public-apps-sidebar__link">
+          <span aria-hidden="true">⬇</span> Apps &amp; Website
+        </a>
+      </aside>
       <router-outlet></router-outlet>
     </ng-template>
 
@@ -45,6 +50,34 @@ import { PwaUpdateBannerComponent } from './shared/components/pwa-update-banner/
     <app-preview-panel></app-preview-panel>
   `,
     styles: [`
+    .public-apps-sidebar {
+      position: fixed;
+      left: 0;
+      top: 38%;
+      z-index: 100;
+      background: #fff;
+      border: 1px solid #d8dce4;
+      border-left: none;
+      border-radius: 0 12px 12px 0;
+      box-shadow: 0 4px 18px rgba(32,41,56,.12);
+    }
+    .public-apps-sidebar__link {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .85rem .9rem;
+      color: #365db7;
+      font: inherit;
+      font-size: .85rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .public-apps-sidebar__link:hover { background: #f5f7ff; }
+    .public-apps-sidebar__link:focus-visible { outline: 2px solid #365db7; outline-offset: 3px; }
+    @media (max-width: 600px) {
+      .public-apps-sidebar { top: auto; bottom: 5.5rem; }
+      .public-apps-sidebar__link { padding: .7rem .8rem; font-size: .8rem; }
+    }
     .app-admin-shell {
       display: flex;
       min-height: 100vh;
@@ -222,6 +255,7 @@ import { PwaUpdateBannerComponent } from './shared/components/pwa-update-banner/
 export class AppComponent implements OnInit {
   title = 'markt.ma - Multi-Tenant E-Commerce Platform';
   showAdminShell = false;
+  showPublicAppsLink = false;
   /** WhatsApp-Widget auf allen öffentlichen Seiten (Landing, Storefront, Produkte …) */
   showWhatsappWidget = false;
   /** Chatbot auf Storefront-Seiten, außer Aufträgen und Bestellbestätigung. */
@@ -324,6 +358,7 @@ export class AppComponent implements OnInit {
     this.showAdminShell = this.adminPathPrefixes.some(
       p => path === p || path.startsWith(p)
     );
+    this.showPublicAppsLink = !this.showAdminShell && path === '/';
 
     // Storefront-Seiten: /storefront/*, /s/* → Store-Nummer wird von der
     // Storefront-Komponente selbst per WhatsappConfigService.setNumber() gesetzt.

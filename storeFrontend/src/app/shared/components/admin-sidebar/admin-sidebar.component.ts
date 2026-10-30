@@ -196,6 +196,12 @@ export class AdminSidebarComponent implements OnInit {
                         labelKey: 'sidebarAdmin.items.antragPilot',
                         icon: 'clipboard-list',
                         route: '/tools/antragpilot'
+                    },
+                    {
+                        // Öffentliche App- und Website-Downloads: bewusst ohne Store-Kontext.
+                        labelKey: 'Apps & Website',
+                        icon: 'download',
+                        route: '/apps/downloads'
                     }
                 ]
             },
