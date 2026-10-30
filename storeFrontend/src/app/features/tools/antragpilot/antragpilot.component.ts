@@ -60,6 +60,9 @@ interface BayernApplication {
             Offizielle Informationen öffnen ↗
             <span class="sr-only">(öffnet ein neues Fenster)</span>
           </a>
+          <button type="button" class="copy-official-link" (click)="copyOfficialLink(application.url)">
+            Offiziellen Link kopieren
+          </button>
         </article>
       </section>
       <p *ngIf="filteredApplications.length === 0" role="status">Keine passenden Anträge gefunden.</p>
@@ -143,6 +146,8 @@ interface BayernApplication {
     .checklist-reset { margin-top: .8rem; padding: .5rem .7rem; background: transparent; color: #365db7; border: 1px solid #365db7; border-radius: 6px; font: inherit; cursor: pointer; }
     .checklist-reset:focus-visible { outline: 2px solid #365db7; outline-offset: 2px; }
     .application-card a { margin-top: 1rem; color: #365db7; font-weight: 600; }
+    .copy-official-link { margin-top: .7rem; padding: .45rem .65rem; color: #365db7; background: transparent; border: 1px solid #aab2c0; border-radius: 6px; font: inherit; cursor: pointer; }
+    .copy-official-link:focus-visible { outline: 2px solid #365db7; outline-offset: 2px; }
     .faq { margin: 2rem 0; border-top: 1px solid #d8dce4; padding-top: 1rem; }
     .faq h2 { font-size: 1.3rem; }
     .faq details { border-bottom: 1px solid #d8dce4; padding: .8rem 0; }
@@ -154,6 +159,14 @@ interface BayernApplication {
   `]
 })
 export class AntragPilotComponent {
+  async copyOfficialLink(url: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      window.prompt('Bitte Link manuell kopieren:', url);
+    }
+  }
+
   printDocuments(): void {
     window.print();
   }
