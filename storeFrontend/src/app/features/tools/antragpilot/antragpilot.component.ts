@@ -45,8 +45,11 @@ interface BayernApplication {
           <details class="documents">
             <summary>Mögliche Unterlagen</summary>
             <p>Diese Beispiele sind keine verbindliche Checkliste. Welche Nachweise du benötigst, hängt von deinem Fall und der zuständigen Behörde ab.</p>
-            <ul>
-              <li *ngFor="let document of application.documents">{{ document }}</li>
+            <p class="checklist-note">Du kannst die Beispiele für dich abhaken. Die Häkchen werden nicht gespeichert.</p>
+            <ul class="document-checklist">
+              <li *ngFor="let document of application.documents">
+                <label><input type="checkbox" /> <span>{{ document }}</span></label>
+              </li>
             </ul>
           </details>
           <a [href]="application.url" target="_blank" rel="noopener noreferrer">
@@ -105,6 +108,12 @@ interface BayernApplication {
     .documents p { font-size: .9rem; }
     .documents ul { padding-left: 1.4rem; margin-bottom: 0; }
     .documents li { margin: .5rem 0; line-height: 1.5; }
+    .document-checklist { list-style: none; padding-left: 0 !important; }
+    .document-checklist label { display: flex; align-items: flex-start; gap: .5rem; cursor: pointer; }
+    .document-checklist input { margin-top: .3rem; flex-shrink: 0; }
+    .document-checklist input:focus-visible { outline: 2px solid #365db7; outline-offset: 2px; }
+    .document-checklist input:checked + span { text-decoration: line-through; color: #526072; }
+    .checklist-note { color: #526072; }
     .application-card a { margin-top: 1rem; color: #365db7; font-weight: 600; }
     .faq { margin: 2rem 0; border-top: 1px solid #d8dce4; padding-top: 1rem; }
     .faq h2 { font-size: 1.3rem; }
