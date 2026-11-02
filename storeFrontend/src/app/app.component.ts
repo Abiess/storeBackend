@@ -369,10 +369,8 @@ export class AppComponent implements OnInit {
     this.showWhatsappWidget = !this.showAdminShell &&
       !this.whatsappHiddenPaths.some(p => path.startsWith(p));
 
-    // ── Chatbot: nur auf Storefront-Seiten (braucht Store-ID) ────────────────
-    const isOrderPage = /(?:^|\/)orders(?:\/|$)/.test(path) ||
-      /(?:^|\/)order-confirmation(?:\/|$)/.test(path);
-    // Der globale Test-Chat gehört nicht auf öffentliche Händler-Storefronts.\n    // Die Chatbot-Verwaltung im Admin unter /stores/:id/chatbot bleibt erreichbar.\n    this.showChatbotWidget = false;
+    // Kein globaler Test-Chat auf Händlerseiten; Admin-Chatbot bleibt erreichbar.
+    this.showChatbotWidget = false;
 
     if (this.showAdminShell) {
       // Admin-Bereich → Nummer löschen, Widget ausblenden
