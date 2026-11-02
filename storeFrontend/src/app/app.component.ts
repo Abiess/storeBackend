@@ -358,7 +358,7 @@ export class AppComponent implements OnInit {
     this.showAdminShell = this.adminPathPrefixes.some(
       p => path === p || path.startsWith(p)
     );
-    this.showPublicAppsLink = !this.showAdminShell && path === '/';
+    this.showPublicAppsLink = !this.showAdminShell && path === '/' && ['markt.ma', 'www.markt.ma', 'localhost'].includes(window.location.hostname);
 
     // Storefront-Seiten: /storefront/*, /s/* → Store-Nummer wird von der
     // Storefront-Komponente selbst per WhatsappConfigService.setNumber() gesetzt.
@@ -369,10 +369,8 @@ export class AppComponent implements OnInit {
     this.showWhatsappWidget = !this.showAdminShell &&
       !this.whatsappHiddenPaths.some(p => path.startsWith(p));
 
-    // ── Chatbot: nur auf Storefront-Seiten (braucht Store-ID) ────────────────
-    const isOrderPage = /(?:^|\/)orders(?:\/|$)/.test(path) ||
-      /(?:^|\/)order-confirmation(?:\/|$)/.test(path);
-    this.showChatbotWidget = isStorefront && !isOrderPage;
+    // Kein globaler Test-Chat auf Händlerseiten; Admin-Chatbot bleibt erreichbar.
+    this.showChatbotWidget = false;
 
     if (this.showAdminShell) {
       // Admin-Bereich → Nummer löschen, Widget ausblenden
