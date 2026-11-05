@@ -20,6 +20,11 @@ on:
   push:
     paths:
       - 'storeFrontend/**'
+      - 'src/main/java/storebackend/service/StoreCustomerAccountService.java'
+      - 'src/main/java/storebackend/service/CustomerAppSessionService.java'
+      - 'src/main/java/storebackend/controller/CustomerAppSessionController.java'
+      - 'src/main/java/storebackend/dto/StoreCustomerLoginRequest.java'
+      - 'src/main/java/storebackend/repository/CustomerProfileRepository.java'
       - '.github/workflows/build-android-apk.yml'
 
 jobs:
