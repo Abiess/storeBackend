@@ -39,6 +39,10 @@ public class StoreCustomerAccountService {
     @Transactional
     public InvitedCustomerAccountDTO create(Long storeId, CreateInvitedCustomerRequest request) {
         Store store = requireInviteOnlyStore(storeId);
+        String customerName = request.getName().trim();
+        if (!customerProfileRepository.findByStoreIdAndFirstNameIgnoreCase(storeId, customerName).isEmpty()) {
+            throw new IllegalArgumentException("Customer name already exists in this store");
+        }
         String loginId;
         do {
             loginId = "C-" + UUID.randomUUID().toString().replace("-", "")
@@ -47,7 +51,7 @@ public class StoreCustomerAccountService {
 
         User user = new User();
         user.setEmail("invite-" + UUID.randomUUID() + "@customer.invalid");
-        user.setName(request.getName().trim());
+        user.setName(customerName);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setEmailVerified(true);
         user.setRoles(new HashSet<>(Set.of(Role.USER)));
@@ -56,11 +60,11 @@ public class StoreCustomerAccountService {
         CustomerProfile profile = new CustomerProfile();
         profile.setUser(user);
         profile.setStore(store);
-        profile.setFirstName(request.getName().trim());
+        profile.setFirstName(customerName);
         profile.setPhone(normalizePhone(request.getPhone()));
         profile.setLoginId(loginId);
         customerProfileRepository.save(profile);
-        return new InvitedCustomerAccountDTO(loginId, request.getName().trim(), profile.getPhone());
+        return new InvitedCustomerAccountDTO(loginId, customerName, profile.getPhone());
     }
 
     @Transactional(readOnly = true)
@@ -69,7 +73,7 @@ public class StoreCustomerAccountService {
         String identifier = request.getIdentifier().trim();
         CustomerProfile profile = customerProfileRepository
             .findByStoreIdAndLoginIdIgnoreCase(storeId, identifier)
-            .orElseGet(() -> findUniquePhoneMatch(storeId, normalizePhone(identifier)));
+            .orElseGet(() -> findUniqueCustomerMatch(storeId, identifier));
 
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
@@ -94,6 +98,13 @@ public class StoreCustomerAccountService {
             throw new IllegalStateException("Store does not use invite-only customer accounts");
         }
         return store;
+    }
+
+    private CustomerProfile findUniqueCustomerMatch(Long storeId, String identifier) {
+        var nameMatches = customerProfileRepository.findByStoreIdAndFirstNameIgnoreCase(storeId, identifier);
+        if (nameMatches.size() == 1) return nameMatches.get(0);
+        if (nameMatches.size() > 1) throw new InvalidStoreCustomerCredentialsException();
+        return findUniquePhoneMatch(storeId, normalizePhone(identifier));
     }
 
     private CustomerProfile findUniquePhoneMatch(Long storeId, String phone) {

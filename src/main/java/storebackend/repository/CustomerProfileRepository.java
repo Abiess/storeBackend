@@ -18,6 +18,7 @@ public interface CustomerProfileRepository extends JpaRepository<CustomerProfile
     Optional<CustomerProfile> findByStoreIdAndExternalSourceAndExternalId(Long storeId, String externalSource, String externalId);
     Optional<CustomerProfile> findByStoreIdAndLoginIdIgnoreCase(Long storeId, String loginId);
     List<CustomerProfile> findByStoreIdAndPhone(Long storeId, String phone);
+    List<CustomerProfile> findByStoreIdAndFirstNameIgnoreCase(Long storeId, String firstName);
 
     /**
      * Store-Kunden für Kundenauswahl (z.B. Loyalty-Code-Registrierung).
