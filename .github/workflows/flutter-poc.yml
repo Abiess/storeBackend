@@ -39,11 +39,21 @@ on:
   pull_request:
     paths:
       - 'mobile-flutter-poc/**'
+      - 'src/main/java/storebackend/service/StoreCustomerAccountService.java'
+      - 'src/main/java/storebackend/service/CustomerAppSessionService.java'
+      - 'src/main/java/storebackend/controller/CustomerAppSessionController.java'
+      - 'src/main/java/storebackend/dto/StoreCustomerLoginRequest.java'
+      - 'src/main/java/storebackend/repository/CustomerProfileRepository.java'
       - '.github/workflows/flutter-poc.yml'
       - '.github/workflows/deploy-flutter-web.yml'
   push:
     paths:
       - 'mobile-flutter-poc/**'
+      - 'src/main/java/storebackend/service/StoreCustomerAccountService.java'
+      - 'src/main/java/storebackend/service/CustomerAppSessionService.java'
+      - 'src/main/java/storebackend/controller/CustomerAppSessionController.java'
+      - 'src/main/java/storebackend/dto/StoreCustomerLoginRequest.java'
+      - 'src/main/java/storebackend/repository/CustomerProfileRepository.java'
       - '.github/workflows/flutter-poc.yml'
       - '.github/workflows/deploy-flutter-web.yml'
 
