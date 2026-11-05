@@ -30,7 +30,17 @@ import { StoreService } from '@app/core/services/store.service';
           <input id="customerName" formControlName="name" autocomplete="name" maxlength="150" />
 
           <label for="customerPhone">{{ 'adminCustomerAccounts.phone' | translate }}</label>
-          <input id="customerPhone" formControlName="phone" type="tel" autocomplete="tel" maxlength="30" />
+          <div class="phone-input">
+            <select formControlName="countryCode" aria-label="Country calling code">
+              <option value="+49">🇩🇪 +49</option>
+              <option value="+212">🇲🇦 +212</option>
+              <option value="+33">🇫🇷 +33</option>
+              <option value="+32">🇧🇪 +32</option>
+              <option value="+31">🇳🇱 +31</option>
+              <option value="+34">🇪🇸 +34</option>
+            </select>
+            <input id="customerPhone" formControlName="phone" type="tel" autocomplete="tel-national" inputmode="tel" maxlength="25" placeholder="176 12345678" />
+          </div>
           <small>{{ 'adminCustomerAccounts.phoneHint' | translate }}</small>
 
           <label for="customerPassword">{{ 'adminCustomerAccounts.password' | translate }}</label>
@@ -67,6 +77,9 @@ import { StoreService } from '@app/core/services/store.service';
     .page-heading p, .account-card small, .created-card p { color: #64748b; }
     .account-card, .created-card, .setup-notice { padding: 1.5rem; border: 1px solid #e2e8f0; border-radius: .8rem; background: #fff; }
     form { display: grid; gap: .55rem; }
+    .phone-input { display: flex; gap: .5rem; }
+    .phone-input select { flex: 0 0 8rem; min-width: 0; border: 1px solid #cbd5e1; border-radius: .45rem; background: white; padding: .5rem; font: inherit; }
+    .phone-input input { flex: 1; min-width: 0; }
     label { margin-top: .45rem; font-weight: 600; }
     input { box-sizing: border-box; width: 100%; min-height: 2.8rem; padding: .65rem .75rem; border: 1px solid #cbd5e1; border-radius: .45rem; font: inherit; }
     button { min-height: 2.8rem; margin-top: .75rem; padding: .6rem 1rem; border: 0; border-radius: .45rem; background: #4f46e5; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
@@ -101,7 +114,8 @@ export class StoreCustomerAccountsComponent implements OnInit {
     this.storeId = Number(this.route.snapshot.paramMap.get('id'));
     this.form = this.formBuilder.group({
       name: ['', [Validators.required, Validators.maxLength(150)]],
-      phone: ['', Validators.maxLength(30)],
+      countryCode: ['+49'],
+      phone: ['', [Validators.maxLength(25), Validators.pattern(/^[0-9\\s()\\-]*$/)]],
       password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(72)]]
     });
   }
@@ -126,13 +140,13 @@ export class StoreCustomerAccountsComponent implements OnInit {
     this.copied = false;
     this.accountService.create(this.storeId, {
       name: (values.name ?? '').trim(),
-      phone: (values.phone ?? '').trim() || undefined,
+      phone: this.formatPhone(values.countryCode, values.phone),
       password
     }).subscribe({
       next: account => {
         this.createdAccount = account;
         this.createdPassword = password;
-        this.form.reset();
+        this.form.reset({ countryCode: '+49', name: '', phone: '', password: '' });
         this.creating = false;
       },
       error: error => {
@@ -140,6 +154,11 @@ export class StoreCustomerAccountsComponent implements OnInit {
         this.creating = false;
       }
     });
+  }
+
+  private formatPhone(countryCode: string, rawPhone: string): string | undefined {
+    const digits = (rawPhone ?? '').replace(/\\D/g, '').replace(/^0+/, '');
+    return digits ? `${countryCode}${digits}` : undefined;
   }
 
   async copyCredentials(): Promise<void> {
