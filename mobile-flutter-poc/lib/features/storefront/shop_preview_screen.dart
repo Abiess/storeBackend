@@ -250,7 +250,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         ? ColorScheme.fromSeed(seedColor: const Color(0xFF187A73), brightness: baseTheme.brightness)
         : baseTheme.colorScheme;
     return Theme(data: baseTheme.copyWith(colorScheme: colors), child: Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: _loggingOut
             ? const Center(child: CircularProgressIndicator(key: ValueKey('shop-logging-out')))
@@ -655,9 +655,9 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         if (product.isFeatured) const Positioned(left: 8, top: 8, child: _ProductBadge(label: 'Im Angebot')),
       ]))),
       Padding(padding: const EdgeInsets.fromLTRB(10, 9, 8, 8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+        Text(product.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF17202A))),
         const SizedBox(height: 5),
-        Text(_formatPrice(product), style: TextStyle(color: colors.primary, fontWeight: FontWeight.w800)),
+        Text(_formatPrice(product), style: const TextStyle(color: Color(0xFFD00020), fontWeight: FontWeight.w800, fontSize: 18)),
       ])),
     ]));
   }
@@ -734,9 +734,9 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             )),
           ),
           const SizedBox(height: 24),
-          Text(product.name, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+          Text(product.name, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: const Color(0xFF17202A))),
           const SizedBox(height: 12),
-          Text(_formatAmount(product.unitPriceFor(_quantity, variantPrice: _selectedVariant?.price), product.currencyCode), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: colors.primary, fontWeight: FontWeight.w700)),
+          Text(_formatAmount(product.unitPriceFor(_quantity, variantPrice: _selectedVariant?.price), product.currencyCode), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: const Color(0xFFD00020), fontWeight: FontWeight.w800)),
           if (tax != null) ...[
             const SizedBox(height: 6),
             Text('MwSt. ${tax.toStringAsFixed(tax == tax.roundToDouble() ? 0 : 2).replaceAll('.', ',')} %',
@@ -788,10 +788,14 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             ),
           if (!_variantsLoading && _variantError == null)
             Padding(padding: const EdgeInsets.only(top: 8),
-              child: Text(_hasVariants && _selectedVariant == null ? 'Keine verfügbare Variante'
-                : stock == null ? 'Verfügbarkeit beim Bestellen prüfen'
-                : stock <= 0 ? 'Ausverkauft' : '$stock verfügbar',
-                key: const ValueKey('shop-stock'))),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(stock != null && stock <= 0 ? Icons.cancel_outlined : Icons.check_circle, size: 18, color: stock != null && stock <= 0 ? const Color(0xFFB42318) : const Color(0xFF16743B)),
+                const SizedBox(width: 6),
+                Text(_hasVariants && _selectedVariant == null ? 'Keine verfügbare Variante'
+                  : stock == null ? 'Verfügbarkeit prüfen'
+                  : stock <= 0 ? 'Ausverkauft' : 'Auf Lager ($stock)',
+                  key: const ValueKey('shop-stock'), style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF17202A))),
+              ])),
           if (_loginRequired && _customerAuthenticated) ...[
             const SizedBox(height: 24),
             Row(children: [
@@ -805,6 +809,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
               key: const ValueKey('shop-add-to-cart'),
               onPressed: _canAddProduct ? () => _addProduct(product) : null,
               icon: const Icon(Icons.add_shopping_cart),
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFD00020), foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 52)),
               label: Text(_addingProduct ? 'Wird hinzugefügt …' : 'In den Warenkorb'),
             ),
             if (_cartError != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text('Warenkorb konnte nicht aktualisiert werden. Bitte erneut versuchen.', style: TextStyle(color: colors.error))),
