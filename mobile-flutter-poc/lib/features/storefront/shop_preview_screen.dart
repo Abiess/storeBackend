@@ -795,7 +795,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
                   : stock == null ? 'Verfügbarkeit prüfen'
                   : stock <= 0 ? 'Ausverkauft' : 'Auf Lager ($stock)',
                   key: const ValueKey('shop-stock'), style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF17202A))),
-              ]))),
+              ])),
           if (_loginRequired && _customerAuthenticated) ...[
             const SizedBox(height: 24),
             Row(children: [
