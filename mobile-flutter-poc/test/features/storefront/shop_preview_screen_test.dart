@@ -388,6 +388,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('shop-add-to-cart')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('nav-Warenkorb')));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('shop-submit-order')));
     await tester.pumpAndSettle();
