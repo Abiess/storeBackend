@@ -356,6 +356,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(additions, [{'storeId': 130, 'productId': 2, 'quantity': 2}]);
     expect(requests.where((path) => path == '/api/public/cart').length, 2);
+    expect(find.byKey(const ValueKey('shop-product-detail')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('nav-Warenkorb')));
+    await tester.pumpAndSettle();
     expect(find.text('2 Artikel'), findsOneWidget);
     expect(find.text('Olivenöl'), findsOneWidget);
     expect(find.text('25,00 MAD'), findsOneWidget);
@@ -384,6 +387,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('shop-product-2')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('shop-add-to-cart')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('nav-Warenkorb')));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('shop-submit-order')));

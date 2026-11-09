@@ -64,6 +64,16 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   static const _marrakeschRed = Color(0xFFC91F30);
   static const _marrakeschInk = Color(0xFF17202A);
 
+  int get _cartBadgeCount => _cart?.itemCount ?? 0;
+
+  Widget _cartIcon({required bool selected, required ColorScheme colors}) => Badge(
+    isLabelVisible: _cartBadgeCount > 0,
+    label: Text(_cartBadgeCount > 99 ? '99+' : '$_cartBadgeCount'),
+    backgroundColor: _marrakeschRed,
+    textColor: Colors.white,
+    child: Icon(Icons.shopping_cart_outlined, color: selected ? colors.primary : colors.onSurfaceVariant),
+  );
+
   List<ShopCategory> get _categories => _catalog?.categories ?? const [];
   List<ShopCategory> get _rootCategories =>
       _categories.where((category) => category.parentId == null && _productCount(category) > 0).toList();
@@ -416,9 +426,9 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         Text(_marrakeschDesign ? 'Dein Markt für besondere Produkte' : 'Store ${store.id} · Live-Daten', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant)),
       ])),
       IconButton(tooltip: 'Warenkorb', onPressed: () {
-        setState(() => _selectedTab = 3);
+        setState(() { _selectedProduct = null; _selectedTab = 3; });
         if (_customerAuthenticated) _loadCart();
-      }, icon: const Icon(Icons.shopping_cart_outlined)),
+      }, icon: _cartIcon(selected: false, colors: colors)),
     ]);
   }
 
@@ -442,11 +452,11 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
 
   Widget _buildMarrakeschHero(ColorScheme colors) {
     return Container(
-      height: 164,
-      padding: const EdgeInsets.all(20),
+      constraints: const BoxConstraints(minHeight: 190),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(color: const Color(0xFFF9E9EB), borderRadius: BorderRadius.circular(20)),
       child: Row(children: [
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+        Expanded(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('MARRAKESCH MARKT', style: TextStyle(color: _marrakeschRed, fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
           const Text('Entdecke unsere Produkte', style: TextStyle(color: _marrakeschInk, fontSize: 22, fontWeight: FontWeight.w800, height: 1.1)),
@@ -865,8 +875,14 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
               : cart == null || cart.items.isEmpty
                   ? const Center(child: Text('Dein Warenkorb ist noch leer'))
                   : ListView(children: [
-                      for (final item in cart.items) ListTile(
-                        title: Text(item.name),
+                      for (final item in cart.items) Card(
+                        margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                        color: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFE6E8EB))),
+                        child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        title: Text(item.name, style: const TextStyle(color: _marrakeschInk, fontWeight: FontWeight.w700, fontSize: 15)),
                         subtitle: Row(mainAxisSize: MainAxisSize.min, children: [
                           IconButton(
                             key: ValueKey('cart-decrease-${item.id}'),
@@ -889,16 +905,19 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
                           tooltip: 'Artikel entfernen',
                           onPressed: item.id == null || _cartMutating || _submittingOrder
                               ? null : () => _editCartItem(item),
-                          icon: const Icon(Icons.delete_outline),
+                          icon: const Icon(Icons.delete_outline, color: _marrakeschRed),
                         ),
-                      ),
+                      )),
                       const Divider(),
-                      ListTile(title: Text('${cart.itemCount} Artikel'), trailing: Text(_formatAmount(cart.subtotal, _store?.currencyCode ?? 'EUR'))),
-                      Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), child: FilledButton(
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), child: Row(children: [
+                        Expanded(child: Text('${cart.itemCount} Artikel', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
+                        Text(_formatAmount(cart.subtotal, _store?.currencyCode ?? 'EUR'), style: const TextStyle(color: _marrakeschRed, fontWeight: FontWeight.w800, fontSize: 20)),
+                      ])),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), child: SizedBox(width: double.infinity, height: 50, child: FilledButton(
                         key: const ValueKey('shop-submit-order'),
                         onPressed: _submittingOrder || _cartMutating ? null : _confirmOrderRequest,
                         child: Text(_submittingOrder ? 'Wird gesendet …' : 'Anfrage absenden'),
-                      )),
+                      ))),
                       if (_orderError != null) const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Anfrage konnte nicht gesendet werden. Bitte den Warenkorb prüfen und erneut versuchen.')),
                     ])),
     ]);
@@ -947,7 +966,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             });
             if (index == 3 && _customerAuthenticated) _loadCart();
           }, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(icons[index], color: selected ? colors.primary : colors.onSurfaceVariant, size: index == 2 ? 26 : 22),
+        index == 3 ? _cartIcon(selected: selected, colors: colors) : Icon(icons[index], color: selected ? colors.primary : colors.onSurfaceVariant, size: index == 2 ? 26 : 22),
         const SizedBox(height: 3),
         Text(labels[index], maxLines: 1, style: TextStyle(fontSize: 10, color: selected ? colors.primary : colors.onSurfaceVariant, fontWeight: selected ? FontWeight.w600 : FontWeight.normal)),
       ])));
@@ -1044,7 +1063,16 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     try {
       final cart = await _catalogService.addToCart(storeId: store.id, productId: product.id, variantId: _selectedVariant?.id, quantity: _quantity);
       if (!mounted || session != _customerSession || !_customerAuthenticated) return;
-      setState(() { _cart = cart; _selectedProduct = null; _selectedTab = 3; _submittedOrderNumber = null; });
+      setState(() { _cart = cart; _submittedOrderNumber = null; });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text('Zum Warenkorb hinzugefügt'),
+        duration: const Duration(seconds: 2),
+        action: SnackBarAction(label: 'Warenkorb', onPressed: () {
+          if (!mounted) return;
+          setState(() { _selectedProduct = null; _selectedTab = 3; });
+          _loadCart();
+        }),
+      ));
     } catch (error) {
       if (!mounted || session != _customerSession || !_customerAuthenticated) return;
       if (_handleSessionError(error)) return;
