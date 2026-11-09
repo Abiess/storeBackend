@@ -657,7 +657,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       Padding(padding: const EdgeInsets.fromLTRB(10, 9, 8, 8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(product.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF17202A))),
         const SizedBox(height: 5),
-        Text(_formatPrice(product), style: TextStyle(color: const Color(0xFFD00020), fontWeight: FontWeight.w800, fontSize: 18)),
+        Text(_formatPrice(product), style: const TextStyle(color: Color(0xFFD00020), fontWeight: FontWeight.w800, fontSize: 18)),
       ])),
     ]));
   }
