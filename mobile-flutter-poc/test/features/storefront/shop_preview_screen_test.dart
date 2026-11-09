@@ -125,7 +125,7 @@ void main() {
     await tester.pumpAndSettle();
     await _openTestProduct(tester);
     expect(find.text('15,00 MAD'), findsOneWidget);
-    expect(find.text('1 verfügbar'), findsOneWidget);
+    expect(find.text('Auf Lager (1)'), findsOneWidget);
     expect(tester.widget<IconButton>(find.byWidgetPredicate((widget) => widget is IconButton && widget.tooltip == 'Menge erhöhen')).onPressed, isNull);
     await tester.tap(find.byKey(const ValueKey('shop-variant-picker')));
     await tester.pumpAndSettle();
