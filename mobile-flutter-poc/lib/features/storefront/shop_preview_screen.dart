@@ -60,6 +60,10 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   bool _showCategoryProducts = false;
   String _query = '';
 
+  bool get _marrakeschDesign => widget.storeSlug.toLowerCase() == 'marrakesch';
+  static const _marrakeschRed = Color(0xFFC91F30);
+  static const _marrakeschInk = Color(0xFF17202A);
+
   List<ShopCategory> get _categories => _catalog?.categories ?? const [];
   List<ShopCategory> get _rootCategories =>
       _categories.where((category) => category.parentId == null && _productCount(category) > 0).toList();
@@ -249,7 +253,8 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     final colors = _loginRequired
         ? ColorScheme.fromSeed(seedColor: const Color(0xFF187A73), brightness: baseTheme.brightness)
         : baseTheme.colorScheme;
-    return Theme(data: baseTheme.copyWith(colorScheme: colors), child: Scaffold(
+    final shopColors = _marrakeschDesign ? ColorScheme.fromSeed(seedColor: _marrakeschRed, brightness: baseTheme.brightness, surface: Colors.white) : colors;
+    return Theme(data: baseTheme.copyWith(colorScheme: shopColors, scaffoldBackgroundColor: Colors.white), child: Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: _loggingOut
@@ -371,7 +376,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-          sliver: SliverToBoxAdapter(child: _buildHero(colors)),
+          sliver: SliverToBoxAdapter(child: _marrakeschDesign ? _buildMarrakeschHero(colors) : _buildHero(colors)),
         ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
@@ -386,7 +391,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
           sliver: SliverGrid(
             delegate: SliverChildBuilderDelegate((context, index) => _buildProductCard(_products[index], colors), childCount: _products.length),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.73),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: _marrakeschDesign ? 0.64 : 0.73),
           ),
         ),
       ],
@@ -408,7 +413,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       const SizedBox(width: 12),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(store.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-        Text('Store ${store.id} · Live-Daten', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant)),
+        Text(_marrakeschDesign ? 'Dein Markt für besondere Produkte' : 'Store ${store.id} · Live-Daten', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant)),
       ])),
       IconButton(tooltip: 'Warenkorb', onPressed: () {
         setState(() => _selectedTab = 3);
@@ -430,8 +435,27 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(vertical: 15),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: _marrakeschDesign ? const BorderSide(color: Color(0xFFE5E7EB)) : BorderSide.none),
       ),
+    );
+  }
+
+  Widget _buildMarrakeschHero(ColorScheme colors) {
+    return Container(
+      height: 164,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: const Color(0xFFF9E9EB), borderRadius: BorderRadius.circular(20)),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+          const Text('MARRAKESCH MARKT', style: TextStyle(color: _marrakeschRed, fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          const Text('Entdecke unsere Produkte', style: TextStyle(color: _marrakeschInk, fontSize: 22, fontWeight: FontWeight.w800, height: 1.1)),
+          const SizedBox(height: 10),
+          TextButton(onPressed: () => setState(() => _selectedTab = 1), style: TextButton.styleFrom(backgroundColor: _marrakeschRed, foregroundColor: Colors.white), child: const Text('Jetzt entdecken')),
+        ])),
+        const SizedBox(width: 12),
+        const Icon(Icons.local_grocery_store_outlined, color: _marrakeschRed, size: 72),
+      ]),
     );
   }
 
@@ -576,7 +600,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
                 style: TextStyle(color: product.stock == null ? colors.onSurfaceVariant : product.stock! > 0 ? Colors.green.shade700 : colors.error,
                   fontWeight: FontWeight.w700, fontSize: 12)),
             const SizedBox(height: 8),
-            Text(_formatPrice(product), style: TextStyle(color: colors.primary, fontWeight: FontWeight.w700, fontSize: 18)),
+            Text(_formatPrice(product), style: TextStyle(color: _marrakeschDesign ? _marrakeschRed : colors.primary, fontWeight: FontWeight.w800, fontSize: 18)), 
           ])),
         ])),
       ]),
@@ -657,7 +681,9 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       Padding(padding: const EdgeInsets.fromLTRB(10, 9, 8, 8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(product.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF17202A))),
         const SizedBox(height: 5),
+        if (_marrakeschDesign) Padding(padding: const EdgeInsets.only(bottom: 5), child: Text(product.stock == null ? 'Verfügbarkeit prüfen' : product.stock! > 0 ? 'Auf Lager' : 'Ausverkauft', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: product.stock == null ? const Color(0xFF626C78) : product.stock! > 0 ? const Color(0xFF16743B) : const Color(0xFFB42318)))),
         Text(_formatPrice(product), style: const TextStyle(color: Color(0xFFD00020), fontWeight: FontWeight.w800, fontSize: 18)),
+        if (_marrakeschDesign) Padding(padding: const EdgeInsets.only(top: 8), child: SizedBox(width: double.infinity, height: 34, child: OutlinedButton.icon(onPressed: () => _openProduct(product), icon: const Icon(Icons.shopping_bag_outlined, size: 16), label: const Text('Ansehen'), style: OutlinedButton.styleFrom(foregroundColor: _marrakeschRed, side: const BorderSide(color: _marrakeschRed), padding: EdgeInsets.zero)))), 
       ])),
     ]));
   }
@@ -734,6 +760,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             )),
           ),
           const SizedBox(height: 24),
+          if (_marrakeschDesign) const Padding(padding: EdgeInsets.only(bottom: 8), child: Text('PRODUKTDETAILS', style: TextStyle(color: _marrakeschRed, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.1))),
           Text(product.name, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: const Color(0xFF17202A))),
           const SizedBox(height: 12),
           Text(_formatAmount(product.unitPriceFor(_quantity, variantPrice: _selectedVariant?.price), product.currencyCode), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: const Color(0xFFD00020), fontWeight: FontWeight.w800)),
@@ -758,7 +785,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             ),
           if (!_loginRequired && product.description != null) ...[
             const SizedBox(height: 20),
-            Text('Beschreibung', style: Theme.of(context).textTheme.titleMedium),
+            Text('Beschreibung', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800, color: _marrakeschInk)),
             const SizedBox(height: 8),
             Text(product.description!, key: const ValueKey('shop-product-description')),
             const SizedBox(height: 12),
@@ -903,7 +930,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   Widget _buildBottomNavigation(ColorScheme colors) {
     const labels = ['Kategorien', 'Suche', 'Start', 'Warenkorb', 'Mehr'];
     const icons = [Icons.grid_view, Icons.search, Icons.storefront, Icons.shopping_cart_outlined, Icons.more_horiz];
-    return Material(color: colors.surface, elevation: 8, child: SafeArea(top: false, child: SizedBox(height: 66, child: Row(children: List.generate(labels.length, (index) {
+    return Material(color: Colors.white, elevation: 8, child: SafeArea(top: false, child: SizedBox(height: 66, child: Row(children: List.generate(labels.length, (index) {
           final selected = switch (index) {
             0 => _selectedTab == 1,
             1 => _selectedTab == 2,
