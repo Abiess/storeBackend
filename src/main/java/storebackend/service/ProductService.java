@@ -52,7 +52,6 @@ public class ProductService {
     public List<ProductDTO> getProductsByStore(Store store) {
         // FIXED: Use JOIN FETCH to avoid LazyInitializationException
         return productRepository.findByStoreWithCategory(store).stream()
-                .filter(p -> p.getStatus() != ProductStatus.ARCHIVED)
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -495,7 +494,8 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        if (!product.getStore().getId().equals(storeId)) {
+        if (product.getStore() == null || !product.getStore().getId().equals(storeId)
+                || product.getStatus() != ProductStatus.ACTIVE) {
             throw new RuntimeException("Product does not belong to this store");
         }
 
