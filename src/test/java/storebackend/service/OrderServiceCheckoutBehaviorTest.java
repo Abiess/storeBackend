@@ -83,6 +83,7 @@ public class OrderServiceCheckoutBehaviorTest {
         product = new Product();
         product.setId(100L);
         product.setTitle("Test Product");
+        product.setStatus(ProductStatus.ACTIVE);
         product.setBasePrice(new BigDecimal("10.00"));
         product.setTaxCategory(TaxCategory.STANDARD);
         product.setTaxRate(new BigDecimal("19.00"));
@@ -246,5 +247,29 @@ public class OrderServiceCheckoutBehaviorTest {
         System.out.println("   - Produkt-Basispreis = 10.00");
         System.out.println("   - Varianten-Preis = 12.00");
         System.out.println("   - calculateWithDetails basePrice = " + capturedBasePrice);
+    }
+
+    @Test
+    public void testCheckout_RejectsArchivedProduct() {
+        product.setStatus(ProductStatus.ARCHIVED);
+        when(cartRepository.findById(1L)).thenReturn(Optional.of(cart));
+        when(cartItemRepository.findByCartId(1L)).thenReturn(List.of(cartItem));
+        when(productRepository.findById(100L)).thenReturn(Optional.of(product));
+
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        orderService.createOrderFromCart(
+            1L, "test@test.com",
+            "Max", "Mustermann", "Street 1", null, "Berlin", "10115", "DE", "+491234567890",
+            null,  // shippingCompany
+            "Max", "Mustermann", "Street 1", null, "Berlin", "10115", "DE",
+            null,  // billingCompany
+            null,  // notes
+            null,  // customerReference
+            customer, PaymentMethod.CASH_ON_DELIVERY, null,
+            DeliveryType.PICKUP, null, null, List.of()
+        );
+        });
+        verify(orderRepository, never()).save(any(Order.class));
+        verify(orderItemRepository, never()).saveAll(any());
     }
 }

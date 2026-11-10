@@ -19,6 +19,7 @@ import storebackend.dto.ProductDTO;
 import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.enums.AppKey;
+import storebackend.enums.ProductStatus;
 import storebackend.repository.StoreRepository;
 import storebackend.security.RequiresApp;
 import storebackend.service.AiImageCaptioningService;
@@ -80,6 +81,11 @@ public class ProductController {
 
         // Verwende die neue Methode mit Kategorie-Filter
         List<ProductDTO> products = productService.getProductsByStoreAndCategory(store, categoryId);
+        if (user == null || !storeAccessChecker.hasPermission(storeId, "PRODUCT_UPDATE")) {
+            products = products.stream()
+                    .filter(product -> product.getStatus() == ProductStatus.ACTIVE)
+                    .toList();
+        }
 
         log.info("Returning {} products for store {} (categoryId={})",
             products.size(), storeId, categoryId);
@@ -104,6 +110,13 @@ public class ProductController {
             return ResponseEntity.notFound().build();
         }
 
+        if (user == null || !storeAccessChecker.hasPermission(storeId, "PRODUCT_UPDATE")) {
+            try {
+                return ResponseEntity.ok(productService.getPublicProductById(productId, storeId));
+            } catch (RuntimeException ex) {
+                return ResponseEntity.notFound().build();
+            }
+        }
         return ResponseEntity.ok(productService.getProductById(productId, store));
     }
 

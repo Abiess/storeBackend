@@ -1,5 +1,7 @@
 package storebackend.service;
 
+
+import storebackend.enums.ProductStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -277,6 +279,9 @@ public class OrderService {
             // Produkt frisch aus DB laden für aktuelle Preisstufen
             Product freshProduct = productRepository.findById(product.getId())
                 .orElseThrow(() -> new RuntimeException("Product not found during checkout: " + product.getId()));
+            if (freshProduct.getStatus() != ProductStatus.ACTIVE) {
+                throw new IllegalArgumentException("Product is no longer available: " + product.getId());
+            }
             
             // Basispreis bestimmen (Variante überschreibt Produkt)
             BigDecimal basePrice = variant != null && variant.getPrice() != null && variant.getPrice().compareTo(BigDecimal.ZERO) > 0

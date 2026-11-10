@@ -21,6 +21,8 @@ import storebackend.enums.TaxCategory;
 import storebackend.repository.CategoryRepository;
 import storebackend.repository.ProductMediaRepository;
 import storebackend.repository.ProductRepository;
+import storebackend.repository.OrderItemRepository;
+import storebackend.repository.ProductTierPriceRepository;
 import storebackend.repository.ProductVariantRepository;
 
 import java.math.BigDecimal;
@@ -34,6 +36,8 @@ import java.util.stream.Collectors;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final ProductTierPriceRepository productTierPriceRepository;
     private final CategoryRepository categoryRepository;
     private final ProductMediaRepository productMediaRepository;
     private final ProductVariantRepository productVariantRepository;
@@ -260,11 +264,25 @@ public class ProductService {
     }
 
     @Transactional
-    public void deleteProduct(Long productId, Store store) {        Product product = productRepository.findByIdAndStore(productId, store)
+    public void deleteProduct(Long productId, Store store) {
+        Product product = productRepository.findByIdAndStore(productId, store)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-        productRepository.delete(product);
 
-        // Decrement product count
+        // Never remove historical order items. Archive products that have been ordered.
+        if (orderItemRepository.existsByProductId(productId)) {
+            product.setStatus(ProductStatus.ARCHIVED);
+            product.setIsFeatured(false);
+            productRepository.save(product);
+            log.info("Archived product {} in store {} because order history exists", productId, store.getId());
+            return;
+        }
+
+        // Tier prices belong exclusively to this product and must be removed first.
+        productTierPriceRepository.deleteByProductId(productId);
+        productRepository.delete(product);
+        productRepository.flush();
+
+        // Only decrement after the product delete has been flushed successfully.
         storeUsageService.decrementProductCount(store);
     }
 
@@ -418,6 +436,7 @@ public class ProductService {
     public List<ProductDTO> getFeaturedProducts(Long storeId) {
         return productRepository.findByStoreIdAndIsFeaturedTrueOrderByFeaturedOrderAsc(storeId)
                 .stream()
+                .filter(p -> p.getStatus() != ProductStatus.ARCHIVED)
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -426,6 +445,7 @@ public class ProductService {
     public List<ProductDTO> getTopProducts(Long storeId, int limit) {
         return productRepository.findTop10ByStoreIdOrderBySalesCountDesc(storeId)
                 .stream()
+                .filter(p -> p.getStatus() != ProductStatus.ARCHIVED)
                 .limit(limit)
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -435,6 +455,7 @@ public class ProductService {
     public List<ProductDTO> getTrendingProducts(Long storeId, int limit) {
         return productRepository.findTop10ByStoreIdOrderByViewCountDesc(storeId)
                 .stream()
+                .filter(p -> p.getStatus() != ProductStatus.ARCHIVED)
                 .limit(limit)
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -444,6 +465,7 @@ public class ProductService {
     public List<ProductDTO> getNewArrivals(Long storeId, int limit) {
         return productRepository.findTop10ByStoreIdOrderByCreatedAtDesc(storeId)
                 .stream()
+                .filter(p -> p.getStatus() != ProductStatus.ARCHIVED)
                 .limit(limit)
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -471,7 +493,8 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        if (!product.getStore().getId().equals(storeId)) {
+        if (product.getStore() == null || !product.getStore().getId().equals(storeId)
+                || product.getStatus() != ProductStatus.ACTIVE) {
             throw new RuntimeException("Product does not belong to this store");
         }
 
