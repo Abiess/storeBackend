@@ -279,7 +279,8 @@ public class ProductService {
 
         // Tier prices belong exclusively to this product and must be removed first.
         productTierPriceRepository.deleteByProductId(productId);
-        productRepository.deleteAndFlush(product);
+        productRepository.delete(product);
+        productRepository.flush();
 
         // Only decrement after the product delete has been flushed successfully.
         storeUsageService.decrementProductCount(store);
