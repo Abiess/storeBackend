@@ -175,6 +175,9 @@ public class CartService {
             ProductVariant variant = productVariantRepository.findById(variantId)
                     .orElseThrow(() -> new RuntimeException("Product variant not found"));
 
+            if (variant.getProduct().getStatus() != ProductStatus.ACTIVE) {
+                throw new IllegalArgumentException("Product is not available");
+            }
             if (!variant.getProduct().getStore().getId().equals(cart.getStore().getId())) {
                 throw new IllegalArgumentException("Product does not belong to cart store");
             }
@@ -199,6 +202,9 @@ public class CartService {
             Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new RuntimeException("Product not found"));
 
+            if (product.getStatus() != ProductStatus.ACTIVE) {
+                throw new IllegalArgumentException("Product is not available");
+            }
             if (!product.getStore().getId().equals(cart.getStore().getId())) {
                 throw new IllegalArgumentException("Product does not belong to cart store");
             }
