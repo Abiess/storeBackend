@@ -52,6 +52,7 @@ public class ProductService {
     public List<ProductDTO> getProductsByStore(Store store) {
         // FIXED: Use JOIN FETCH to avoid LazyInitializationException
         return productRepository.findByStoreWithCategory(store).stream()
+                .filter(p -> p.getStatus() != ProductStatus.ARCHIVED)
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -69,6 +70,7 @@ public class ProductService {
         // FIXED: Use JOIN FETCH to avoid LazyInitializationException
         // Produkte nach Kategorie filtern
         return productRepository.findByStoreWithCategory(store).stream()
+                .filter(p -> p.getStatus() != ProductStatus.ARCHIVED)
                 .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(categoryId))
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -436,6 +438,7 @@ public class ProductService {
     public List<ProductDTO> getFeaturedProducts(Long storeId) {
         return productRepository.findByStoreIdAndIsFeaturedTrueOrderByFeaturedOrderAsc(storeId)
                 .stream()
+                .filter(p -> p.getStatus() != ProductStatus.ARCHIVED)
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -444,6 +447,7 @@ public class ProductService {
     public List<ProductDTO> getTopProducts(Long storeId, int limit) {
         return productRepository.findTop10ByStoreIdOrderBySalesCountDesc(storeId)
                 .stream()
+                .filter(p -> p.getStatus() != ProductStatus.ARCHIVED)
                 .limit(limit)
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -453,6 +457,7 @@ public class ProductService {
     public List<ProductDTO> getTrendingProducts(Long storeId, int limit) {
         return productRepository.findTop10ByStoreIdOrderByViewCountDesc(storeId)
                 .stream()
+                .filter(p -> p.getStatus() != ProductStatus.ARCHIVED)
                 .limit(limit)
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -462,6 +467,7 @@ public class ProductService {
     public List<ProductDTO> getNewArrivals(Long storeId, int limit) {
         return productRepository.findTop10ByStoreIdOrderByCreatedAtDesc(storeId)
                 .stream()
+                .filter(p -> p.getStatus() != ProductStatus.ARCHIVED)
                 .limit(limit)
                 .map(this::toDTO)
                 .collect(Collectors.toList());
