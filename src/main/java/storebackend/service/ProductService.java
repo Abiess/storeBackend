@@ -69,7 +69,6 @@ public class ProductService {
         // FIXED: Use JOIN FETCH to avoid LazyInitializationException
         // Produkte nach Kategorie filtern
         return productRepository.findByStoreWithCategory(store).stream()
-                .filter(p -> p.getStatus() != ProductStatus.ARCHIVED)
                 .filter(p -> p.getCategory() != null && p.getCategory().getId().equals(categoryId))
                 .map(this::toDTO)
                 .collect(Collectors.toList());
