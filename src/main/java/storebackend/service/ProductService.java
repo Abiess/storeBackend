@@ -21,6 +21,8 @@ import storebackend.enums.TaxCategory;
 import storebackend.repository.CategoryRepository;
 import storebackend.repository.ProductMediaRepository;
 import storebackend.repository.ProductRepository;
+import storebackend.repository.OrderItemRepository;
+import storebackend.repository.ProductTierPriceRepository;
 import storebackend.repository.ProductVariantRepository;
 
 import java.math.BigDecimal;
@@ -34,6 +36,8 @@ import java.util.stream.Collectors;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final ProductTierPriceRepository productTierPriceRepository;
     private final CategoryRepository categoryRepository;
     private final ProductMediaRepository productMediaRepository;
     private final ProductVariantRepository productVariantRepository;
@@ -260,11 +264,24 @@ public class ProductService {
     }
 
     @Transactional
-    public void deleteProduct(Long productId, Store store) {        Product product = productRepository.findByIdAndStore(productId, store)
+    public void deleteProduct(Long productId, Store store) {
+        Product product = productRepository.findByIdAndStore(productId, store)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-        productRepository.delete(product);
 
-        // Decrement product count
+        // Never remove historical order items. Archive products that have been ordered.
+        if (orderItemRepository.existsByProductId(productId)) {
+            product.setStatus(ProductStatus.ARCHIVED);
+            product.setIsFeatured(false);
+            productRepository.save(product);
+            log.info("Archived product {} in store {} because order history exists", productId, store.getId());
+            return;
+        }
+
+        // Tier prices belong exclusively to this product and must be removed first.
+        productTierPriceRepository.deleteByProductId(productId);
+        productRepository.deleteAndFlush(product);
+
+        // Only decrement after the product delete has been flushed successfully.
         storeUsageService.decrementProductCount(store);
     }
 
