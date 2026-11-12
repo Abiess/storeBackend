@@ -528,7 +528,7 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
         error: (err) => console.error('Error loading options:', err)
       });
 
-      this.productService.getProductVariants(this.storeId, this.productId).subscribe({
+      this.productService.getVariants(this.storeId, this.productId).subscribe({
         next: (variants) => {
           this.variants = variants;
         },
