@@ -208,9 +208,7 @@ public class ProductVariantService {
                 variant.setMediaUrls(json);
                 
                 // Setze auch imageUrl auf das erste Bild (Hauptbild)
-                if (!request.getImages().isEmpty()) {
-                    variant.setImageUrl(request.getImages().get(0));
-                }
+                variant.setImageUrl(request.getImages().isEmpty() ? null : request.getImages().get(0));
             } catch (Exception e) {
                 log.error("Error serializing images", e);
             }
@@ -252,11 +250,52 @@ public class ProductVariantService {
             throw new RuntimeException("No options provided");
         }
 
-        // Lösche existierende Varianten (optional - könnte auch nur neue hinzufügen)
+        // Keep existing variant IDs, prices, inventory, images and order references.
+        // Generation is additive: only combinations not already present are inserted.
+        if (request.getOptions().size() > 3 || request.getOptions().stream().anyMatch(o ->
+                o.getName() == null || o.getName().isBlank()
+                        || o.getValues() == null || o.getValues().isEmpty()
+                        || o.getValues().stream().anyMatch(v -> v == null || v.isBlank()))) {
+            throw new IllegalArgumentException("Provide 1 to 3 options with non-empty names and values");
+        }
+        Set<String> optionNames = new HashSet<>();
+        for (ProductOptionDTO option : request.getOptions()) {
+            if (!optionNames.add(option.getName().trim().toLowerCase(Locale.ROOT))) {
+                throw new IllegalArgumentException("Duplicate option names are not allowed");
+            }
+            Set<String> values = new HashSet<>();
+            for (String value : option.getValues()) {
+                if (!values.add(value.trim().toLowerCase(Locale.ROOT))) {
+                    throw new IllegalArgumentException("Duplicate option values are not allowed");
+                }
+            }
+        }
+        if (request.getBasePrice() == null || request.getBasePrice().signum() < 0
+                || (request.getBaseStock() != null && request.getBaseStock() < 0)) {
+            throw new IllegalArgumentException("Invalid variant price or stock");
+        }
+
         List<ProductVariant> existingVariants = variantRepository.findByProductId(request.getProductId());
-        if (!existingVariants.isEmpty()) {
-            log.info("Deleting {} existing variants for product {}", existingVariants.size(), request.getProductId());
-            variantRepository.deleteAll(existingVariants);
+        Set<List<String>> knownCombinations = new HashSet<>();
+        for (ProductVariant existing : existingVariants) {
+            Map<String, String> attrs = new HashMap<>();
+            if (existing.getAttributesJson() != null) {
+                try {
+                    attrs = objectMapper.readValue(existing.getAttributesJson(),
+                            new TypeReference<Map<String, String>>() {});
+                } catch (Exception e) {
+                    log.warn("Cannot read attributes for existing variant {}", existing.getId(), e);
+                }
+            }
+            List<String> existingValues = new ArrayList<>();
+            String[] legacyValues = {existing.getOption1(), existing.getOption2(), existing.getOption3()};
+            for (int i = 0; i < request.getOptions().size(); i++) {
+                String value = attrs.get(request.getOptions().get(i).getName());
+                existingValues.add(value != null ? value : legacyValues[i]);
+            }
+            if (existingValues.stream().allMatch(Objects::nonNull)) {
+                knownCombinations.add(existingValues);
+            }
         }
 
         // Generiere alle Kombinationen
@@ -264,6 +303,11 @@ public class ProductVariantService {
         List<ProductVariant> variants = new ArrayList<>();
 
         for (Map<String, String> combination : combinations) {
+            List<String> values = request.getOptions().stream()
+                    .map(o -> combination.get(o.getName())).toList();
+            if (!knownCombinations.add(values)) {
+                continue;
+            }
             ProductVariant variant = new ProductVariant();
             variant.setProduct(product);
 
@@ -297,9 +341,9 @@ public class ProductVariantService {
         }
 
         variants = variantRepository.saveAll(variants);
-        log.info("Generated {} variants for product {}", variants.size(), request.getProductId());
+        log.info("Added {} new variants for product {}", variants.size(), request.getProductId());
 
-        return variants.stream()
+        return variantRepository.findByProductId(request.getProductId()).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -330,15 +374,14 @@ public class ProductVariantService {
      * Generiert eine eindeutige SKU basierend auf Produktname und Attributen
      */
     private String generateSku(String productTitle, Map<String, String> attributes) {
-        String baseSku = productTitle.toUpperCase()
-                .replaceAll("[^A-Z0-9]", "")
-                .substring(0, Math.min(productTitle.length(), 8));
-
-        String attrSku = attributes.values().stream()
-                .map(v -> v.toUpperCase().replaceAll("[^A-Z0-9]", "").substring(0, Math.min(v.length(), 3)))
+        String cleaned = productTitle.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "");
+        String baseSku = cleaned.isEmpty() ? "PRODUCT" : cleaned.substring(0, Math.min(cleaned.length(), 8));
+        String attrSku = attributes.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> e.getValue().toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", ""))
+                .map(v -> v.isEmpty() ? "OPT" : v.substring(0, Math.min(v.length(), 3)))
                 .collect(Collectors.joining("-"));
-
-        return baseSku + "-" + attrSku + "-" + System.currentTimeMillis() % 10000;
+        return baseSku + "-" + attrSku + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
     }
 
     private ProductVariantDTO toDTO(ProductVariant variant) {
