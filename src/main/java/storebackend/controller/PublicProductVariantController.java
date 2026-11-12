@@ -70,7 +70,7 @@ public class PublicProductVariantController {
         }
 
         try {
-            List<ProductVariantDTO> variants = productVariantService.getVariantsByProduct(productId, store);
+            List<ProductVariantDTO> variants = productVariantService.getPublicVariantsByProduct(productId, storeId);
             log.info("PUBLIC: Returning {} variants for product {}", variants.size(), productId);
             return ResponseEntity.ok(variants);
         } catch (Exception e) {
@@ -96,6 +96,9 @@ public class PublicProductVariantController {
 
         try {
             ProductVariantDTO variant = productVariantService.getVariantById(variantId, productId, store);
+            if (!Boolean.TRUE.equals(variant.getIsActive())) {
+                return ResponseEntity.notFound().build();
+            }
             log.info("PUBLIC: Returning variant {} for product {}", variantId, productId);
             return ResponseEntity.ok(variant);
         } catch (Exception e) {

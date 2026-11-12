@@ -65,8 +65,8 @@ interface ProductOption {
         <div class="vp-values">
           <button *ngFor="let variant of variants" type="button" class="vp-btn"
             [class.vp-btn--selected]="selectedVariant?.id === variant.id"
-            [class.vp-btn--disabled]="variant.stockQuantity <= 0"
-            [disabled]="variant.stockQuantity <= 0"
+            [class.vp-btn--disabled]="(variant.stockQuantity <= 0 || variant.isActive === false)"
+            [disabled]="(variant.stockQuantity <= 0 || variant.isActive === false)"
             [attr.aria-pressed]="selectedVariant?.id === variant.id"
             (click)="selectVariant(variant)">
             <span>{{ variant.sku || ('quickView.selectVariantGroup' | translate) }}</span>
@@ -548,7 +548,7 @@ export class ProductVariantPickerComponent implements OnInit, OnChanges {
   preselectDefaultVariant() {
     if (!this.defaultVariantId || !this.variants?.length) return;
     const variant = this.variants.find(v => v.id === this.defaultVariantId);
-    if (variant) {
+    if (variant && variant.isActive !== false && variant.stockQuantity > 0) {
       this.selectedOptions = { ...(variant.attributes ?? {}) };
       this.selectedVariant = variant;
       this.variantSelected.emit(variant);
@@ -556,7 +556,7 @@ export class ProductVariantPickerComponent implements OnInit, OnChanges {
   }
 
   selectVariant(variant: ProductVariant): void {
-    if (variant.stockQuantity <= 0) return;
+    if (variant.isActive === false || variant.stockQuantity <= 0) return;
     this.selectedVariant = variant;
     this.selectedOptions = { ...(variant.attributes ?? {}) };
     this.variantSelected.emit(variant);
@@ -569,11 +569,14 @@ export class ProductVariantPickerComponent implements OnInit, OnChanges {
   }
 
   updateSelectedVariant() {
-    const selectedKeys = Object.keys(this.selectedOptions);
-    const variant = this.variants.find(v => {
-      if (!v.attributes) return false;
-      return selectedKeys.every(key => v.attributes![key] === this.selectedOptions[key]);
-    });
+    const allOptionsSelected = this.availableOptions.every(
+      option => this.selectedOptions[option.name] !== undefined
+    );
+    const variant = allOptionsSelected ? this.variants.find(v =>
+      v.isActive !== false && v.stockQuantity > 0 && v.attributes &&
+      this.availableOptions.every(option =>
+        v.attributes![option.name] === this.selectedOptions[option.name])
+    ) : null;
     this.selectedVariant = variant || null;
     this.variantSelected.emit(this.selectedVariant);
   }
@@ -584,12 +587,10 @@ export class ProductVariantPickerComponent implements OnInit, OnChanges {
 
   isAvailable(optionName: string, value: string): boolean {
     const tempSelection = { ...this.selectedOptions, [optionName]: value };
-    return this.variants.some(v => {
-      if (!v.attributes) return false;
-      return Object.entries(tempSelection).every(([key, val]) =>
-        v.attributes![key] === val || this.selectedOptions[key] === undefined
-      ) && v.stockQuantity > 0;
-    });
+    return this.variants.some(v =>
+      v.isActive !== false && v.stockQuantity > 0 && v.attributes &&
+      Object.entries(tempSelection).every(([key, val]) => v.attributes![key] === val)
+    );
   }
 
   isColorOption(name: string): boolean {
