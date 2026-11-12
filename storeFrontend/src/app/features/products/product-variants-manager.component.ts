@@ -11,7 +11,7 @@ import { ProductVariant } from '@app/core/models';
 import { DropshippingSource, formatMargin } from '@app/core/models/dropshipping.model';
 import { SupplierLinkFormComponent } from './supplier-link-form.component';
 import { ImageUploadComponent, UploadedImage } from '@app/shared/components/image-upload/image-upload.component';
-import { Subscription } from 'rxjs';
+import { forkJoin, map, of, Observable, Subscription } from 'rxjs';
 
 interface ProductOption {
   id?: number;
@@ -628,11 +628,18 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
     this.productService.generateVariants(this.storeId, this.productId, request).subscribe({
       next: (variants) => {
         this.variants = variants;
-        this.successMessage = `${variants.length} Varianten erfolgreich generiert!`;
-        this.generating = false;
-
-        // Speichere auch die Options
-        this.saveOptions();
+        // Persist options too; do not report success until all option requests complete.
+        this.saveOptions().subscribe({
+          next: () => {
+            this.successMessage = `${variants.length} Varianten vorhanden; Optionen gespeichert.`;
+            this.generating = false;
+          },
+          error: (err) => {
+            this.errorMessage = 'Varianten sind gespeichert, aber Optionen konnten nicht vollständig gespeichert werden: ' +
+              (err.error?.message || err.message);
+            this.generating = false;
+          }
+        });
       },
       error: (err) => {
         console.error('Error generating variants:', err);
@@ -642,28 +649,24 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
     });
   }
 
-  saveOptions() {
-    if (this.storeId === null) return;
-
-    // Speichere oder aktualisiere jede Option
-    this.options.forEach((option, index) => {
+  saveOptions(): Observable<unknown[]> {
+    if (this.storeId === null) {
+      throw new Error('Store-Kontext nicht verfügbar');
+    }
+    const storeId = this.storeId;
+    const requests = this.options.map((option, index) => {
       option.sortOrder = index;
-
-      if (option.id && this.storeId !== null) {
-        // Update existing
-        this.productService.updateProductOption(this.storeId, this.productId, option.id, option).subscribe({
-          error: (err) => console.error('Error updating option:', err)
-        });
-      } else if (this.storeId !== null) {
-        // Create new
-        this.productService.createProductOption(this.storeId, this.productId, option).subscribe({
-          next: (created) => {
-            option.id = created.id;
-          },
-          error: (err) => console.error('Error creating option:', err)
-        });
+      if (option.id) {
+        return this.productService.updateProductOption(storeId, this.productId, option.id, option);
       }
+      return this.productService.createProductOption(storeId, this.productId, option).pipe(
+        map(created => {
+          option.id = created.id;
+          return created;
+        })
+      );
     });
+    return requests.length ? forkJoin(requests) : of([]);
   }
 
   saveAllVariants() {
@@ -695,18 +698,21 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Warte auf alle Updates
-    Promise.all(updates.map(obs => obs.toPromise()))
-      .then(() => {
+    // Keep generated IDs in memory; a second save must UPDATE, never CREATE duplicates.
+    (updates.length ? forkJoin(updates) : of([] as ProductVariant[])).subscribe({
+      next: (saved) => {
+        this.variants = saved;
         this.successMessage = 'Alle Varianten erfolgreich gespeichert!';
         this.saving = false;
         setTimeout(() => this.successMessage = '', 3000);
-      })
-      .catch((err) => {
+      },
+      error: (err) => {
         console.error('Error saving variants:', err);
-        this.errorMessage = 'Fehler beim Speichern der Varianten: ' + (err.error?.message || err.message);
+        this.errorMessage = 'Nicht alle Varianten konnten gespeichert werden. Bitte neu laden und prüfen: ' +
+          (err.error?.message || err.message);
         this.saving = false;
-      });
+      }
+    });
   }
 
   removeVariant(index: number) {
