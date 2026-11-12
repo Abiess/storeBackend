@@ -258,9 +258,9 @@ public class ProductVariantService {
                         || o.getValues().stream().anyMatch(v -> v == null || v.isBlank()))) {
             throw new IllegalArgumentException("Provide 1 to 3 options with non-empty names and values");
         }
-        Set<String> optionNames = new HashSet<>();
+        Set<String> seenOptionNames = new HashSet<>();
         for (ProductOptionDTO option : request.getOptions()) {
-            if (!optionNames.add(option.getName().trim().toLowerCase(Locale.ROOT))) {
+            if (!seenOptionNames.add(option.getName().trim().toLowerCase(Locale.ROOT))) {
                 throw new IllegalArgumentException("Duplicate option names are not allowed");
             }
             Set<String> values = new HashSet<>();
