@@ -562,6 +562,8 @@ export interface ProductVariant {
   comparePrice?: number;
   costPrice?: number;
   stockQuantity: number; // Lagerbestand (einheitlich)
+  saleUnit?: string | null; // Optionale Verkaufseinheit, z.B. Karton
+  baseUnitFactor?: number | null; // Anzahl Basiseinheiten je Verkaufseinheit
   quantity?: number;     // Bestell-/Verpackungsmenge
   weight?: number;
   option1?: string;
