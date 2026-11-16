@@ -1122,9 +1122,10 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       if (!mounted || session != _customerSession || !_customerAuthenticated) return;
       setState(() { _cart = cart; _submittedOrderNumber = null; });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Zum Warenkorb hinzugefügt'),
+        backgroundColor: Colors.black,
+        content: const Text('Zum Warenkorb hinzugefügt', style: TextStyle(color: Colors.white)),
         duration: const Duration(seconds: 2),
-        action: SnackBarAction(label: 'Warenkorb', onPressed: () {
+        action: SnackBarAction(label: 'Warenkorb', textColor: Colors.white, onPressed: () {
           if (!mounted) return;
           setState(() { _selectedProduct = null; _selectedTab = 3; });
           _loadCart();
