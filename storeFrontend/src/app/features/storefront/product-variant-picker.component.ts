@@ -69,7 +69,8 @@ interface ProductOption {
             [disabled]="(variant.stockQuantity <= 0 || variant.isActive === false)"
             [attr.aria-pressed]="selectedVariant?.id === variant.id"
             (click)="selectVariant(variant)">
-            <span>{{ variant.sku || ('quickView.selectVariantGroup' | translate) }}</span>
+            <span>{{ variant.saleUnit || variant.sku || ('quickView.selectVariantGroup' | translate) }}</span>
+            <small *ngIf="variant.baseUnitFactor && variant.baseUnitFactor > 1">{{ variant.baseUnitFactor }} Stück / Einheit</small>
             <span>{{ variant.price | number:'1.2-2' }} €</span>
           </button>
         </div>
