@@ -209,7 +209,8 @@ interface ProductOption {
         </div>
         <div class="bulk-toolbar" *ngIf="showSaleUnitForm">
           <input class="bulk-input" type="text" [(ngModel)]="newSaleUnitSku" placeholder="Eindeutige SKU" maxlength="100" />
-          <input class="bulk-input" type="text" [(ngModel)]="newSaleUnitName" placeholder="z. B. Karton" maxlength="40" />
+          <input class="bulk-input" type="text" [(ngModel)]="newSaleUnitName" list="sale-unit-suggestions" placeholder="Verkaufseinheit (z. B. Karton)" maxlength="40" aria-label="Verkaufseinheit" />
+          <datalist id="sale-unit-suggestions"><option value="Stück"></option><option value="Packung"></option><option value="Karton"></option><option value="Kolli"></option><option value="Kiste"></option><option value="Sack"></option><option value="Palette"></option></datalist>
           <input class="bulk-input" type="number" [(ngModel)]="newSaleUnitFactor" placeholder="Stück je Einheit" min="0.001" step="0.001" />
           <input class="bulk-input" type="number" [(ngModel)]="newSaleUnitPrice" placeholder="Preis €" min="0" step="0.01" />
           <button type="button" class="bulk-btn" (click)="createSaleUnitVariant()" [disabled]="saving">Anlegen</button>
@@ -796,6 +797,11 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
     }
     if (this.variants.some(v => v.sku.toLowerCase() === sku.toLowerCase())) {
       this.errorMessage = 'Diese SKU ist bereits vorhanden.';
+      return;
+    }
+    if (this.variants.some(v => (v.saleUnit || '').trim().toLocaleLowerCase() === saleUnit.toLocaleLowerCase()
+        && v.baseUnitFactor != null && Number(v.baseUnitFactor) === factor)) {
+      this.errorMessage = 'Diese Verkaufseinheit mit demselben Verpackungsfaktor ist bereits vorhanden.';
       return;
     }
     this.saving = true;
