@@ -539,7 +539,7 @@ interface ProductOption {
 export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
   @Input() productId!: number;
   
-  private storeId: number | null = null;
+  storeId: number | null = null;
   private storeIdSubscription?: Subscription;
 
   sharedStockStatus: SharedStockStatus | null = null;
