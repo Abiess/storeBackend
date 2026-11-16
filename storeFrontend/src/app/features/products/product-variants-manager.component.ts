@@ -171,7 +171,7 @@ interface ProductOption {
           <button type="button" class="bulk-btn" (click)="showSaleUnitForm = !showSaleUnitForm">
             + Verkaufseinheit hinzufügen
           </button>
-          <span class="variant-toolbar-hint">Eigener Preis und SKU; noch kein gemeinsamer Lagerbestand</span>
+          <span class="variant-toolbar-hint">Eigener Preis und SKU; Lagerbestand bleibt vorerst getrennt</span>
         </div>
         <div class="bulk-toolbar" *ngIf="showSaleUnitForm">
           <input class="bulk-input" type="text" [(ngModel)]="newSaleUnitSku" placeholder="Eindeutige SKU" maxlength="100" />
@@ -276,6 +276,7 @@ interface ProductOption {
                 <div class="detail-field">
                   <label>{{ 'product.variants.stock' | translate }}</label>
                   <input type="number" [(ngModel)]="variant.stockQuantity" min="0" class="df-input" placeholder="0" />
+                  <small *ngIf="variant.saleUnit && (variant.baseUnitFactor || 1) > 1">Achtung: Dieser Bestand zählt aktuell {{ variant.saleUnit }} (nicht Einzelstücke). Noch keine gemeinsame Lagerführung. Nicht den Stückbestand hier eintragen.</small>
                 </div>
                 <div class="detail-field">
                   <label>Verkaufseinheit (optional)</label>
