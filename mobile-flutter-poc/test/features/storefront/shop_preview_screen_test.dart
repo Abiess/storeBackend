@@ -134,6 +134,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('18,00 MAD'), findsOneWidget);
     await tester.tap(find.byTooltip('Menge erhöhen'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('shop-add-to-cart')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('shop-add-to-cart')));
     await tester.pumpAndSettle();
     expect(additions, [{'storeId': 130, 'variantId': 53, 'quantity': 2}]);
