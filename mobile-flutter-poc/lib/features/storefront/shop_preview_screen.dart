@@ -908,11 +908,11 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
 
   Widget _buildCartPage(ColorScheme colors) {
     if (!_loginRequired || !_customerAuthenticated) {
-      return Column(children: [AppBar(title: const Text('Warenkorb'), centerTitle: true), const Expanded(child: Center(child: Text('Warenkorb folgt mit Backend-Anbindung')))]);
+      return Column(children: [AppBar(title: const Text('Warenkorb'), centerTitle: true), const Expanded(child: Center(child: Padding(padding: EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.shopping_bag_outlined, size: 48), SizedBox(height: 16), Text('Bitte melde dich an, um deinen Warenkorb und deine Bestellungen zu sehen.', textAlign: TextAlign.center)]))))]);
     }
     final cart = _cart;
     return Column(children: [
-      AppBar(title: const Text('Warenkorb'), centerTitle: true, actions: [IconButton(tooltip: 'Warenkorb aktualisieren', onPressed: _cartLoading || _cartMutating || _submittingOrder ? null : _loadCart, icon: const Icon(Icons.refresh))]),
+      AppBar(title: Text('Warenkorb${cart == null || cart.itemCount == 0 ? '' : ' (${cart.itemCount})'}'), centerTitle: true, actions: [IconButton(tooltip: 'Warenkorb aktualisieren', onPressed: _cartLoading || _cartMutating || _submittingOrder ? null : _loadCart, icon: const Icon(Icons.refresh))]),
       if (_submittedOrderNumber != null) Padding(
         padding: const EdgeInsets.all(16),
         child: Text('Anfrage $_submittedOrderNumber gesendet. Der Shop bereitet deine Bestellung vor.',
@@ -923,8 +923,9 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
           : _cartError != null
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [const Text('Warenkorb konnte nicht geladen werden.'), TextButton(onPressed: _loadCart, child: const Text('Erneut laden'))]))
               : cart == null || cart.items.isEmpty
-                  ? const Center(child: Text('Dein Warenkorb ist noch leer'))
+                  ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.shopping_cart_outlined, size: 52), SizedBox(height: 16), Text('Dein Warenkorb ist noch leer', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)), SizedBox(height: 8), Text('Entdecke unsere Produkte und füge deine Favoriten hinzu.', textAlign: TextAlign.center)])))
                   : ListView(children: [
+                      const Padding(padding: EdgeInsets.fromLTRB(20, 20, 20, 8), child: Text('Deine ausgewählten Produkte', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18))),
                       for (final item in cart.items) Card(
                         margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                         color: Colors.white,
@@ -932,8 +933,11 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFE6E8EB))),
                         child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        title: Text(item.name, style: const TextStyle(color: _marrakeschInk, fontWeight: FontWeight.w700, fontSize: 15)),
-                        subtitle: Row(mainAxisSize: MainAxisSize.min, children: [
+                        title: Text(item.name, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(color: _marrakeschInk, fontWeight: FontWeight.w700, fontSize: 15)),
+                        subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          const SizedBox(height: 8),
+                          Text('Menge auswählen', style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant)),
+                          Row(mainAxisSize: MainAxisSize.min, children: [
                           IconButton(
                             key: ValueKey('cart-decrease-${item.id}'),
                             tooltip: 'Menge verringern',
@@ -950,6 +954,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
                             icon: const Icon(Icons.add_circle_outline),
                           ),
                         ]),
+                        ]),
                         trailing: IconButton(
                           key: ValueKey('cart-remove-${item.id}'),
                           tooltip: 'Artikel entfernen',
@@ -959,10 +964,12 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
                         ),
                       )),
                       const Divider(),
+                      const Padding(padding: EdgeInsets.fromLTRB(20, 12, 20, 4), child: Text('Bestellübersicht', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
                       Padding(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), child: Row(children: [
-                        Expanded(child: Text('${cart.itemCount} Artikel', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
+                        Expanded(child: Text('Zwischensumme · ${cart.itemCount} Artikel', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
                         Text(_formatAmount(cart.subtotal, _store?.currencyCode ?? 'EUR'), style: const TextStyle(color: _marrakeschRed, fontWeight: FontWeight.w800, fontSize: 20)),
                       ])),
+                      const Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: Text('Die endgültigen Bestelldetails werden beim Absenden geprüft.', style: TextStyle(fontSize: 12))),
                       Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), child: SizedBox(width: double.infinity, height: 50, child: FilledButton(
                         key: const ValueKey('shop-submit-order'),
                         onPressed: _submittingOrder || _cartMutating ? null : _confirmOrderRequest,
