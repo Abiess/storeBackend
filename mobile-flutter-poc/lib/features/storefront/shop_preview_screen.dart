@@ -779,24 +779,6 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             Text('MwSt. ${tax.toStringAsFixed(tax == tax.roundToDouble() ? 0 : 2).replaceAll('.', ',')} %',
                 style: TextStyle(color: colors.onSurfaceVariant)),
           ],
-          if (_selectedVariant?.saleUnit != null) ...[
-            const SizedBox(height: 12),
-            Card(
-              key: const ValueKey('shop-sale-unit-summary'),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(_selectedVariant!.saleUnit!, style: const TextStyle(fontWeight: FontWeight.w800)),
-                  if ((_selectedVariant!.baseUnitFactor ?? 1) > 1)
-                    Text('1 ${_selectedVariant!.saleUnit} = ${_selectedVariant!.baseUnitFactor} Stück'),
-                  const SizedBox(height: 6),
-                  Text('$_quantity × ${_selectedVariant!.saleUnit} · Gesamt: ${_formatAmount(product.unitPriceFor(_quantity, variantPrice: _selectedVariant?.price) * _quantity, product.currencyCode)}',
-                    key: const ValueKey('shop-sale-unit-total'),
-                    style: const TextStyle(fontWeight: FontWeight.w700)),
-                ]),
-              ),
-            ),
-          ],
           if (!_loginRequired && product.tierPrices.isNotEmpty)
             ExpansionTile(
               key: const ValueKey('shop-tier-prices'),
@@ -825,21 +807,50 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
               onPressed: () => _loadProductVariants(product),
               icon: const Icon(Icons.refresh), label: const Text('Varianten erneut laden'))
           else if (_variants.isNotEmpty)
-            DropdownButton<int>(
-              key: const ValueKey('shop-variant-picker'),
-              isExpanded: true,
-              value: _selectedVariant?.id,
-              hint: const Text('Variante auswählen'),
-              onChanged: _addingProduct ? null : (id) => setState(() {
-                _selectedVariant = _variants.firstWhere((variant) => variant.id == id);
-                _quantity = 1;
-                _selectedGalleryImage = null;
-              }),
-              items: [for (final variant in _variants) DropdownMenuItem(
-                value: variant.id,
-                child: Text('${variant.saleUnit ?? variant.label}${variant.baseUnitFactor != null && variant.baseUnitFactor! > 1 ? ' · ${variant.baseUnitFactor} Stück' : ''}${variant.stock == 0 ? ' – Ausverkauft' : ''}',
-                  maxLines: 1, overflow: TextOverflow.ellipsis),
-              )],
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Verkaufseinheit wählen', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _marrakeschInk)),
+                const SizedBox(height: 6),
+                const Text('Wähle die passende Verpackung', style: TextStyle(color: Color(0xFF667085), fontSize: 13)),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int>(
+                  key: const ValueKey('shop-variant-picker'),
+                  isExpanded: true,
+                  value: _selectedVariant?.id,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: const Color(0xFFF8F9FB),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD9DDE4))),
+                  ),
+                  hint: const Text('Verkaufseinheit auswählen'),
+                  onChanged: _addingProduct ? null : (id) => setState(() {
+                    _selectedVariant = _variants.firstWhere((variant) => variant.id == id);
+                    _quantity = 1;
+                    _selectedGalleryImage = null;
+                  }),
+                  items: [for (final variant in _variants) DropdownMenuItem(
+                    value: variant.id,
+                    child: Text(
+                      '${variant.saleUnit?.trim().isNotEmpty == true ? variant.saleUnit : (variant.label.toUpperCase().contains('KARTON') || variant.label.toUpperCase().contains('KOLLI') ? 'Kolli' : variant.label.toUpperCase().contains('PALETTE') ? 'Palette' : variant.label.toUpperCase().contains('DEFAULT') ? 'Stück' : variant.label)}${variant.baseUnitFactor != null && variant.baseUnitFactor! > 1 ? ' · ${variant.baseUnitFactor!.toStringAsFixed(variant.baseUnitFactor! == variant.baseUnitFactor!.roundToDouble() ? 0 : 2)} Stück' : ''}${variant.stock == 0 ? ' · Ausverkauft' : ''}',
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                    ),
+                  )],
+                ),
+                if (_selectedVariant?.saleUnit != null && (_selectedVariant!.baseUnitFactor ?? 1) > 1) ...[
+                  const SizedBox(height: 10),
+                  Text('1 ${_selectedVariant!.saleUnit} enthält ${_selectedVariant!.baseUnitFactor!.toStringAsFixed(_selectedVariant!.baseUnitFactor! == _selectedVariant!.baseUnitFactor!.roundToDouble() ? 0 : 2)} Stück',
+                    key: const ValueKey('shop-sale-unit-summary'),
+                    style: const TextStyle(color: Color(0xFF667085), fontSize: 13)),
+                ],
+              ]),
             ),
           if (!_variantsLoading && _variantError == null)
             Padding(padding: const EdgeInsets.only(top: 8),
@@ -859,6 +870,18 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
               IconButton(tooltip: 'Menge erhöhen', onPressed: _variantsLoading || _variantError != null || _addingProduct ||
                   (stock != null && _quantity >= stock) ? null : () => setState(() => _quantity++), icon: const Icon(Icons.add_circle_outline)),
             ]),
+            const SizedBox(height: 12),
+            Container(
+              key: const ValueKey('shop-sale-unit-total'),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(color: const Color(0xFFF8F9FB), borderRadius: BorderRadius.circular(14)),
+              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                const Expanded(child: Text('Gesamtpreis', style: TextStyle(fontWeight: FontWeight.w700, color: _marrakeschInk))),
+                Flexible(child: Text('Gesamt: ${_formatAmount(product.unitPriceFor(_quantity, variantPrice: _selectedVariant?.price) * _quantity, product.currencyCode)}',
+                  textAlign: TextAlign.end, maxLines: 2,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _marrakeschRed))),
+              ]),
+            ),
             const SizedBox(height: 10),
             FilledButton.icon(
               key: const ValueKey('shop-add-to-cart'),
