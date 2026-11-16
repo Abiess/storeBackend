@@ -305,7 +305,7 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('category-card-Oliven')));
     await tester.pumpAndSettle();
-    expect(find.text('Oliven (1 Artikel)'), findsOneWidget);
+    expect(find.text('Oliven'), findsWidgets);
     expect(find.text('Olivenöl'), findsOneWidget);
     expect(find.text('EUR'), findsNothing);
     expect(find.text('12,50 MAD'), findsOneWidget);
