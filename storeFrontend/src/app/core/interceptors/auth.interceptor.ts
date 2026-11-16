@@ -74,6 +74,7 @@ export class AuthInterceptor implements HttpInterceptor {
     // WICHTIG: Management-Endpoints wie /tier-prices explizit ausschließen
     if (method === 'GET' && url.includes('/api/stores/') &&
         !url.includes('/tier-prices') &&
+        !url.includes('/variants') &&
         publicStoreSubRoutes.some(p => url.includes(p))) {
       return next.handle(req);
     }
