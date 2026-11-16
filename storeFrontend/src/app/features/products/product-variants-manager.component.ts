@@ -166,6 +166,21 @@ interface ProductOption {
           <span class="variant-toolbar-hint">Klicke auf eine Variante zum Bearbeiten</span>
         </div>
 
+        <!-- Additional sale units use the existing variant API; stock remains independent until shared inventory is implemented. -->
+        <div class="bulk-toolbar">
+          <button type="button" class="bulk-btn" (click)="showSaleUnitForm = !showSaleUnitForm">
+            + Verkaufseinheit hinzufügen
+          </button>
+          <span class="variant-toolbar-hint">Eigener Preis und SKU; noch kein gemeinsamer Lagerbestand</span>
+        </div>
+        <div class="bulk-toolbar" *ngIf="showSaleUnitForm">
+          <input class="bulk-input" type="text" [(ngModel)]="newSaleUnitSku" placeholder="Eindeutige SKU" maxlength="100" />
+          <input class="bulk-input" type="text" [(ngModel)]="newSaleUnitName" placeholder="z. B. Karton" maxlength="40" />
+          <input class="bulk-input" type="number" [(ngModel)]="newSaleUnitFactor" placeholder="Stück je Einheit" min="0.001" step="0.001" />
+          <input class="bulk-input" type="number" [(ngModel)]="newSaleUnitPrice" placeholder="Preis €" min="0" step="0.01" />
+          <button type="button" class="bulk-btn" (click)="createSaleUnitVariant()" [disabled]="saving">Anlegen</button>
+        </div>
+
         <!-- Bulk-Toolbar -->
         <div class="bulk-toolbar">
           <span class="bulk-label">Alle auf einmal setzen:</span>
@@ -500,6 +515,12 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
   bulkStock: number | null = null;
   readonly optionColors = ['#667eea', '#20c997', '#fd7e14', '#e91e63', '#9c27b0', '#2196f3'];
 
+  showSaleUnitForm = false;
+  newSaleUnitSku = '';
+  newSaleUnitName = '';
+  newSaleUnitFactor: number | null = null;
+  newSaleUnitPrice: number | null = null;
+
   generating = false;
   saving = false;
   successMessage = '';
@@ -676,6 +697,50 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
       );
     });
     return requests.length ? forkJoin(requests) : of([]);
+  }
+
+  createSaleUnitVariant() {
+    const sku = this.newSaleUnitSku.trim();
+    const saleUnit = this.newSaleUnitName.trim();
+    const factor = this.newSaleUnitFactor;
+    const price = this.newSaleUnitPrice;
+    if (this.storeId === null || !sku || !saleUnit || factor === null || !Number.isFinite(factor)
+        || factor <= 0 || price === null || !Number.isFinite(price) || price < 0) {
+      this.errorMessage = 'Bitte SKU, Verkaufseinheit, positiven Faktor und gültigen Preis eingeben.';
+      return;
+    }
+    if (this.variants.some(v => v.sku.toLowerCase() === sku.toLowerCase())) {
+      this.errorMessage = 'Diese SKU ist bereits vorhanden.';
+      return;
+    }
+    this.saving = true;
+    this.errorMessage = '';
+    this.productService.createProductVariant(this.storeId, this.productId, {
+      id: 0,
+      productId: this.productId,
+      sku,
+      saleUnit,
+      baseUnitFactor: factor,
+      price,
+      stockQuantity: 0,
+      isActive: true
+    }).subscribe({
+      next: (created) => {
+        this.variants.push(created);
+        this.expandedVariantIndex = this.variants.length - 1;
+        this.showSaleUnitForm = false;
+        this.newSaleUnitSku = '';
+        this.newSaleUnitName = '';
+        this.newSaleUnitFactor = null;
+        this.newSaleUnitPrice = null;
+        this.successMessage = 'Verkaufseinheit angelegt. Lagerbestand ist noch unabhängig.';
+        this.saving = false;
+      },
+      error: (err) => {
+        this.errorMessage = 'Verkaufseinheit konnte nicht angelegt werden: ' + (err.error?.message || err.message);
+        this.saving = false;
+      }
+    });
   }
 
   saveAllVariants() {
