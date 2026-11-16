@@ -44,6 +44,19 @@ public class SharedProductStockService {
         return baseStock;
     }
 
+    /**
+     * Converts a sale-unit quantity into base units and adjusts shared inventory.
+     * Intended for order/POS integration after all sales paths are switched.
+     * This method does not enable shared inventory.
+     */
+    @Transactional
+    public int adjustSaleUnits(Long productId, int saleQuantity, java.math.BigDecimal baseUnitFactor) {
+        int baseUnits = SaleUnitStockCalculator.baseUnitsForSale(
+                Math.abs(Math.toIntExact((long) saleQuantity)), baseUnitFactor);
+        int delta = saleQuantity < 0 ? Math.negateExact(baseUnits) : baseUnits;
+        return adjustEnabledStock(productId, delta);
+    }
+
     @Transactional
     public int adjustEnabledStock(Long productId, int baseUnitDelta) {
         SharedProductStock stock = repository.lockByProductId(productId)
