@@ -7,6 +7,13 @@ import { Product, CreateProductRequest, ProductVariant, AiProductSuggestion, AiP
 import { MockProductService } from '../mocks/mock-product.service';
 import { toDate } from '../utils/date.utils';
 
+export interface SharedStockStatus {
+  configured: boolean;
+  enabled: boolean;
+  baseStock: number | null;
+  units: Array<{ variantId: number; sku: string; saleUnit: string | null; factor: number; available: number | null }>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -56,6 +63,19 @@ export class ProductService {
       return this.mockService.deleteProduct(storeId, productId);
     }
     return this.http.delete<void>(`${environment.apiUrl}/stores/${storeId}/products/${productId}`);
+  }
+
+  getSharedStock(storeId: number, productId: number): Observable<SharedStockStatus> {
+    return this.http.get<SharedStockStatus>(
+      `${environment.apiUrl}/stores/${storeId}/products/${productId}/shared-stock`
+    );
+  }
+
+  configureSharedStock(storeId: number, productId: number, baseStock: number): Observable<SharedStockStatus> {
+    return this.http.post<SharedStockStatus>(
+      `${environment.apiUrl}/stores/${storeId}/products/${productId}/shared-stock/configure`,
+      { baseStock }
+    );
   }
 
   // Variants
