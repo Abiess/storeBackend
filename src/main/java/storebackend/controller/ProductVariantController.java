@@ -14,12 +14,10 @@ import storebackend.entity.Store;
 import storebackend.entity.User;
 import storebackend.enums.AppKey;
 import storebackend.repository.StoreRepository;
-import storebackend.repository.UserRepository;
 import storebackend.security.RequiresApp;
 import storebackend.service.ProductVariantService;
-import storebackend.service.StoreService;
+import storebackend.util.StoreAccessChecker;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/stores/{storeId}/products/{productId}/variants")
@@ -30,46 +28,8 @@ public class ProductVariantController {
 
     private final ProductVariantService variantService;
     private final StoreRepository storeRepository;
-    private final UserRepository userRepository;
-    private final StoreService storeService;
+    private final StoreAccessChecker storeAccessChecker;
 
-
-    /**
-     * Prüft, ob der Benutzer Zugriff auf den Store hat
-     * - Owner hat immer Zugriff
-     * - Prüft auch über StoreService.getStoresByUserId() für Team-Mitglieder
-     */
-    private boolean hasStoreAccess(Long storeId, User user) {
-        if (user == null) {
-            log.warn("hasStoreAccess: User is null");
-            return false;
-        }
-
-        Store store = storeRepository.findById(storeId).orElse(null);
-        if (store == null) {
-            log.warn("hasStoreAccess: Store {} not found", storeId);
-            return false;
-        }
-
-        // Owner hat immer Zugriff
-        boolean isOwner = store.getOwner().getId().equals(user.getId());
-        if (isOwner) {
-            log.info("hasStoreAccess: User {} is owner of store {}", user.getId(), storeId);
-            return true;
-        }
-
-        // Prüfe, ob der User über StoreService Zugriff hat (z.B. Team-Mitglied)
-        try {
-            List<Store> userStores = storeService.getStoresByUserId(user.getId());
-            boolean hasAccess = userStores.stream().anyMatch(s -> s.getId().equals(storeId));
-            log.info("hasStoreAccess: User {} has access via StoreService: {}", user.getId(), hasAccess);
-            return hasAccess;
-        } catch (Exception e) {
-            log.error("hasStoreAccess: Error checking access for user {} to store {}: {}",
-                user.getId(), storeId, e.getMessage());
-            return false;
-        }
-    }
 
     @Operation(summary = "Get all variants for a product")
     @GetMapping
@@ -78,7 +38,7 @@ public class ProductVariantController {
             @PathVariable Long productId,
             @AuthenticationPrincipal User user) {
 
-        if (!hasStoreAccess(storeId, user)) {
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
             return ResponseEntity.status(403).build();
         }
 
@@ -97,7 +57,7 @@ public class ProductVariantController {
             @PathVariable Long variantId,
             @AuthenticationPrincipal User user) {
 
-        if (!hasStoreAccess(storeId, user)) {
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
             return ResponseEntity.status(403).build();
         }
 
@@ -117,7 +77,7 @@ public class ProductVariantController {
             @RequestBody ProductVariantDTO request,
             @AuthenticationPrincipal User user) {
 
-        if (!hasStoreAccess(storeId, user)) {
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
             return ResponseEntity.status(403).build();
         }
 
@@ -142,7 +102,7 @@ public class ProductVariantController {
         log.info("Store ID: {}, Product ID: {}, Variant ID: {}", storeId, productId, variantId);
         log.info("Current user: {}", user != null ? user.getEmail() + " (ID: " + user.getId() + ")" : "NULL");
         
-        if (!hasStoreAccess(storeId, user)) {
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
             log.error("Access denied for user {} to store {}", user != null ? user.getId() : "null", storeId);
             return ResponseEntity.status(403).build();
         }
@@ -171,7 +131,7 @@ public class ProductVariantController {
             @PathVariable Long variantId,
             @AuthenticationPrincipal User user) {
 
-        if (!hasStoreAccess(storeId, user)) {
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
             return ResponseEntity.status(403).build();
         }
 
@@ -191,7 +151,7 @@ public class ProductVariantController {
             @RequestBody GenerateVariantsRequest request,
             @AuthenticationPrincipal User user) {
 
-        if (!hasStoreAccess(storeId, user)) {
+        if (!storeAccessChecker.hasStoreAccess(storeId)) {
             return ResponseEntity.status(403).build();
         }
 
