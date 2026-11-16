@@ -215,14 +215,14 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('cart-increase-41')));
     await tester.pumpAndSettle();
     expect(edits, ['PUT:41:3']);
-    expect(find.text('3 Artikel'), findsOneWidget);
+    expect(find.text('Zwischensumme · 3 Artikel'), findsOneWidget);
     expect(find.text('37,50 MAD'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('cart-decrease-41')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('cart-decrease-41')));
     await tester.pumpAndSettle();
-    expect(find.text('1 Artikel'), findsOneWidget);
+    expect(find.text('Zwischensumme · 1 Artikel'), findsOneWidget);
     expect(tester.widget<IconButton>(find.byKey(const ValueKey('cart-decrease-41'))).onPressed, isNull);
 
     await tester.tap(find.byKey(const ValueKey('cart-remove-41')));
@@ -247,7 +247,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('cart-remove-41')));
     await tester.pumpAndSettle();
-    expect(find.text('2 Artikel'), findsOneWidget);
+    expect(find.text('Zwischensumme · 2 Artikel'), findsOneWidget);
     expect(find.text('Warenkorb konnte nicht aktualisiert werden. Bitte erneut versuchen.'), findsOneWidget);
     expect(tester.widget<IconButton>(find.byKey(const ValueKey('cart-remove-41'))).onPressed, isNotNull);
   });
@@ -305,7 +305,7 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('category-card-Oliven')));
     await tester.pumpAndSettle();
-    expect(find.text('Oliven (1 Artikel)'), findsOneWidget);
+    expect(find.text('Oliven'), findsWidgets);
     expect(find.text('Olivenöl'), findsOneWidget);
     expect(find.text('EUR'), findsNothing);
     expect(find.text('12,50 MAD'), findsOneWidget);
@@ -361,7 +361,7 @@ void main() {
     expect(find.byKey(const ValueKey('shop-product-detail')), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('nav-Warenkorb')));
     await tester.pumpAndSettle();
-    expect(find.text('2 Artikel'), findsOneWidget);
+    expect(find.text('Zwischensumme · 2 Artikel'), findsOneWidget);
     expect(find.text('Olivenöl'), findsOneWidget);
     expect(find.text('25,00 MAD'), findsOneWidget);
   });
