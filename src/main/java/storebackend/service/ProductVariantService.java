@@ -97,6 +97,7 @@ public class ProductVariantService {
         variant.setStockQuantity(request.getStockQuantity() != null ? request.getStockQuantity() : 0);
         variant.setQuantity(request.getQuantity() != null ? request.getQuantity() : 0);
         variant.setWeight(request.getWeight());
+        applySaleUnit(variant, request);
         variant.setOption1(request.getOption1());
         variant.setOption2(request.getOption2());
         variant.setOption3(request.getOption3());
@@ -177,6 +178,10 @@ public class ProductVariantService {
         }
         if (request.getWeight() != null) {
             variant.setWeight(request.getWeight());
+        applySaleUnit(variant, request);
+        }
+        if (request.getSaleUnit() != null || request.getBaseUnitFactor() != null) {
+            applySaleUnit(variant, request);
         }
         if (request.getOption1() != null) {
             variant.setOption1(request.getOption1());
@@ -384,6 +389,22 @@ public class ProductVariantService {
         return baseSku + "-" + attrSku + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
     }
 
+    private void applySaleUnit(ProductVariant variant, ProductVariantDTO request) {
+        if (request.getSaleUnit() != null) {
+            String unit = request.getSaleUnit().trim();
+            if (unit.isEmpty() || unit.length() > 40 || !unit.matches("[\\p{L}0-9 _-]+")) {
+                throw new IllegalArgumentException("Invalid sale unit");
+            }
+            variant.setSaleUnit(unit);
+        }
+        if (request.getBaseUnitFactor() != null) {
+            if (request.getBaseUnitFactor().signum() <= 0 || request.getBaseUnitFactor().scale() > 3) {
+                throw new IllegalArgumentException("Base unit factor must be positive with up to 3 decimals");
+            }
+            variant.setBaseUnitFactor(request.getBaseUnitFactor());
+        }
+    }
+
     private ProductVariantDTO toDTO(ProductVariant variant) {
         ProductVariantDTO dto = new ProductVariantDTO();
         dto.setId(variant.getId());
@@ -396,6 +417,8 @@ public class ProductVariantService {
         dto.setStockQuantity(variant.getStockQuantity());
         dto.setQuantity(variant.getQuantity());
         dto.setWeight(variant.getWeight());
+        dto.setSaleUnit(variant.getSaleUnit());
+        dto.setBaseUnitFactor(variant.getBaseUnitFactor());
         dto.setOption1(variant.getOption1());
         dto.setOption2(variant.getOption2());
         dto.setOption3(variant.getOption3());

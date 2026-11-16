@@ -22,6 +22,8 @@ public class ProductVariantDTO {
     private Integer stockQuantity;
     private Integer quantity;
     private BigDecimal weight;
+    private String saleUnit;
+    private BigDecimal baseUnitFactor;
     private String option1;
     private String option2;
     private String option3;

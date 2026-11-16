@@ -45,6 +45,14 @@ public class ProductVariant {
     @Column(precision = 10, scale = 3)
     private BigDecimal weight;
 
+    /** Optional selling unit label, e.g. PIECE, PACK, CARTON; null means legacy variant. */
+    @Column(name = "sale_unit", length = 40)
+    private String saleUnit;
+
+    /** Number of base product units in one sale unit; null means legacy variant. */
+    @Column(name = "base_unit_factor", precision = 12, scale = 3)
+    private BigDecimal baseUnitFactor;
+
     @Column(length = 255)
     private String option1;
 
