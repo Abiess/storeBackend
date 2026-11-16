@@ -552,7 +552,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
     final children = _childrenOf(category);
     final showProducts = children.isEmpty || _showCategoryProducts;
     return CustomScrollView(key: const ValueKey('shop-category-products'), slivers: [
-      SliverAppBar(pinned: true, leading: IconButton(tooltip: 'Zurück zu Kategorien', onPressed: _backFromCategory, icon: const Icon(Icons.arrow_back)), title: Text('${category.name} (${products.length} Artikel)'), centerTitle: true, backgroundColor: colors.surface),
+      SliverAppBar(pinned: true, leading: IconButton(tooltip: 'Zurück zu Kategorien', onPressed: _backFromCategory, icon: const Icon(Icons.arrow_back)), title: Text(category.name, style: const TextStyle(color: _marrakeschInk, fontWeight: FontWeight.w700)), centerTitle: true, backgroundColor: Colors.white, foregroundColor: _marrakeschInk),
       SliverToBoxAdapter(
         child: SizedBox(
           height: 170,
@@ -981,26 +981,49 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
   }
 
   Widget _buildMorePage() => Column(children: [
-        AppBar(title: const Text('Mehr'), centerTitle: true),
-        if (_loginRequired) ...[
-          ListTile(leading: const Icon(Icons.person_outline), title: Text(_store?.name ?? 'Kundenkonto')),
-          ListTile(
-            key: const ValueKey('shop-orders'),
-            leading: const Icon(Icons.receipt_long_outlined),
-            title: const Text('Meine Bestellungen'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => ShopOrdersScreen(
-                storeId: _store!.id, currencyCode: _store!.currencyCode,
-                onSessionExpired: () {
-                  Navigator.of(context).pop();
-                  _handleSessionError(const ShopSessionExpired());
-                }),
-            )),
+        AppBar(title: const Text('Mein Konto', style: TextStyle(color: _marrakeschInk, fontWeight: FontWeight.w700)), centerTitle: true, backgroundColor: Colors.white, foregroundColor: _marrakeschInk),
+        Expanded(child: ListView(padding: const EdgeInsets.all(16), children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(color: const Color(0xFFF7F8FA), borderRadius: BorderRadius.circular(18)),
+            child: Row(children: [
+              const CircleAvatar(radius: 26, backgroundColor: _marrakeschInk, child: Icon(Icons.person_outline, color: Colors.white, size: 28)),
+              const SizedBox(width: 16),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Willkommen', style: TextStyle(color: Color(0xFF606A75), fontSize: 13)),
+                const SizedBox(height: 4),
+                Text(_store?.name ?? 'Kundenkonto', style: const TextStyle(color: _marrakeschInk, fontWeight: FontWeight.w800, fontSize: 18)),
+              ])),
+            ]),
           ),
-          ListTile(key: const ValueKey('shop-logout'), leading: const Icon(Icons.logout), title: const Text('Abmelden'), onTap: _cartMutating || _addingProduct || _submittingOrder ? null : _logoutCustomer),
-        ] else
-          const Expanded(child: Center(child: Text('Weitere Shop-Funktionen folgen.'))),
+          const SizedBox(height: 24),
+          const Padding(padding: EdgeInsets.only(left: 4, bottom: 10), child: Text('Konto & Bestellungen', style: TextStyle(color: _marrakeschInk, fontWeight: FontWeight.w800, fontSize: 16))),
+          Card(elevation: 0, color: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Color(0xFFE6E8EB))), child: Column(children: [
+            if (_loginRequired) ListTile(
+              key: const ValueKey('shop-orders'),
+              leading: const Icon(Icons.receipt_long_outlined, color: _marrakeschInk),
+              title: const Text('Meine Bestellungen'),
+              subtitle: const Text('Bestellungen und ihren Status ansehen'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _store == null ? null : () => Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => ShopOrdersScreen(
+                  storeId: _store!.id, currencyCode: _store!.currencyCode,
+                  onSessionExpired: () {
+                    Navigator.of(context).pop();
+                    _handleSessionError(const ShopSessionExpired());
+                  }),
+              )),
+            ),
+            if (_loginRequired) const Divider(height: 1, indent: 16, endIndent: 16),
+            if (_loginRequired) ListTile(
+              key: const ValueKey('shop-logout'),
+              leading: const Icon(Icons.logout, color: _marrakeschRed),
+              title: const Text('Abmelden'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _cartMutating || _addingProduct || _submittingOrder ? null : _logoutCustomer,
+            ),
+          ])),
+        ])),
       ]);
 
   Widget _buildBottomNavigation(ColorScheme colors) {
@@ -1121,16 +1144,6 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
       final cart = await _catalogService.addToCart(storeId: store.id, productId: product.id, variantId: _selectedVariant?.id, quantity: _quantity);
       if (!mounted || session != _customerSession || !_customerAuthenticated) return;
       setState(() { _cart = cart; _submittedOrderNumber = null; });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        backgroundColor: Colors.black,
-        content: const Text('Zum Warenkorb hinzugefügt', style: TextStyle(color: Colors.white)),
-        duration: const Duration(seconds: 2),
-        action: SnackBarAction(label: 'Warenkorb', textColor: Colors.white, onPressed: () {
-          if (!mounted) return;
-          setState(() { _selectedProduct = null; _selectedTab = 3; });
-          _loadCart();
-        }),
-      ));
     } catch (error) {
       if (!mounted || session != _customerSession || !_customerAuthenticated) return;
       if (_handleSessionError(error)) return;
