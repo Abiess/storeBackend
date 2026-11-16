@@ -18,6 +18,8 @@ import storebackend.security.RequiresApp;
 import storebackend.service.ProductVariantService;
 import storebackend.util.StoreAccessChecker;
 
+import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/stores/{storeId}/products/{productId}/variants")
