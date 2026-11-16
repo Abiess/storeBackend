@@ -200,6 +200,21 @@ interface ProductTierPrice {
             (variantSelected)="onVariantSelected($event)"
           ></app-product-variant-picker>
 
+          <!-- Sale unit summary: selected variant remains the cart's variantId. -->
+          <div class="sale-unit-summary" *ngIf="selectedVariant?.saleUnit">
+            <div class="sale-unit-summary__top">
+              <strong>{{ selectedVariant.saleUnit }}</strong>
+              <span>{{ getCurrentPrice() | number:'1.2-2' }} € / Einheit</span>
+            </div>
+            <p *ngIf="selectedVariant.baseUnitFactor && selectedVariant.baseUnitFactor > 1">
+              1 {{ selectedVariant.saleUnit }} = {{ selectedVariant.baseUnitFactor }} Stück
+            </p>
+            <div class="sale-unit-summary__total">
+              <span>{{ quantity }} × {{ selectedVariant.saleUnit }}</span>
+              <strong>{{ getTotalPrice() | number:'1.2-2' }} €</strong>
+            </div>
+          </div>
+
           <!-- Quantity Selector -->
           <div class="quantity-section">
             <label>{{ 'cart.quantity' | translate }}</label>
@@ -327,6 +342,12 @@ interface ProductTierPrice {
     </div>
   `,
     styles: [`
+    .sale-unit-summary { padding: 1rem; border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; margin: 1rem 0; }
+    .sale-unit-summary__top, .sale-unit-summary__total { display: flex; justify-content: space-between; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .sale-unit-summary__top { font-size: 0.95rem; }
+    .sale-unit-summary p { margin: 0.5rem 0; font-size: 0.85rem; color: #6b7280; }
+    .sale-unit-summary__total { border-top: 1px solid #e5e7eb; margin-top: 0.75rem; padding-top: 0.75rem; }
+    .sale-unit-summary__total strong { font-size: 1.3rem; }
     .product-detail-page {
       max-width: 1200px;
       margin: 0 auto;
