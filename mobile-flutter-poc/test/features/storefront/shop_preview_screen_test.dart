@@ -222,7 +222,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('cart-decrease-41')));
     await tester.pumpAndSettle();
-    expect(find.text('1 Artikel'), findsOneWidget);
+    expect(find.text('Zwischensumme · 1 Artikel'), findsOneWidget);
     expect(tester.widget<IconButton>(find.byKey(const ValueKey('cart-decrease-41'))).onPressed, isNull);
 
     await tester.tap(find.byKey(const ValueKey('cart-remove-41')));
