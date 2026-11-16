@@ -27,6 +27,27 @@ class SharedStockControllerTest {
     private final SharedStockController controller = new SharedStockController(access, products, variants, stock, sharedStockService);
 
     @Test
+    void rejectsNegativeSetupWithoutMutation() {
+        when(access.hasStoreAccess(121L)).thenReturn(true);
+        Store store = new Store();
+        store.setId(121L);
+        Product product = new Product();
+        product.setStore(store);
+        when(products.findById(645L)).thenReturn(Optional.of(product));
+        assertEquals(400, controller.configure(121L, 645L,
+                new SharedStockController.ConfigureStockRequest(-1)).getStatusCode().value());
+        verifyNoInteractions(sharedStockService);
+    }
+
+    @Test
+    void rejectsCrossStoreSetup() {
+        when(access.hasStoreAccess(121L)).thenReturn(false);
+        assertEquals(403, controller.configure(121L, 645L,
+                new SharedStockController.ConfigureStockRequest(997)).getStatusCode().value());
+        verifyNoInteractions(sharedStockService, products);
+    }
+
+    @Test
     void deniesOtherStoresBeforeReadingProducts() {
         when(access.hasStoreAccess(121L)).thenReturn(false);
         assertEquals(403, controller.getStatus(121L, 645L).getStatusCode().value());
