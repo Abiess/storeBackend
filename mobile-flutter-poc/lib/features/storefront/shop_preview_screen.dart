@@ -806,52 +806,61 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             TextButton.icon(key: const ValueKey('shop-retry-variants'),
               onPressed: () => _loadProductVariants(product),
               icon: const Icon(Icons.refresh), label: const Text('Varianten erneut laden'))
-          else if (_variants.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Verkaufseinheit wählen', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _marrakeschInk)),
-                const SizedBox(height: 6),
-                const Text('Wähle die passende Verpackung', style: TextStyle(color: Color(0xFF667085), fontSize: 13)),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<int>(
-                  key: const ValueKey('shop-variant-picker'),
-                  isExpanded: true,
-                  value: _selectedVariant?.id,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: const Color(0xFFF8F9FB),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFD9DDE4))),
-                  ),
-                  hint: const Text('Verkaufseinheit auswählen'),
-                  onChanged: _addingProduct ? null : (id) => setState(() {
-                    _selectedVariant = _variants.firstWhere((variant) => variant.id == id);
-                    _quantity = 1;
-                    _selectedGalleryImage = null;
+          else if (_variants.isNotEmpty) ...[
+            const Text('Verkaufseinheit', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _marrakeschInk)),
+            const SizedBox(height: 10),
+            Wrap(
+              key: const ValueKey('shop-variant-picker'),
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                for (final variant in _variants)
+                  Builder(builder: (context) {
+                    final unit = variant.saleUnit?.trim();
+                    final raw = variant.label.toUpperCase();
+                    final label = unit != null && unit.isNotEmpty
+                        ? (unit.toUpperCase() == 'PIECE' ? 'Stück' : unit.toUpperCase() == 'CARTON' ? 'Karton' : unit.toUpperCase() == 'PALLET' ? 'Palette' : unit)
+                        : raw.contains('KARTON') ? 'Karton'
+                        : raw.contains('KOLLI') ? 'Kolli'
+                        : raw.contains('PALETTE') ? 'Palette'
+                        : raw.startsWith('DEFAULT') ? 'Stück' : variant.label;
+                    final selected = _selectedVariant?.id == variant.id;
+                    final factor = variant.baseUnitFactor;
+                    return InkWell(
+                      key: ValueKey('shop-variant-${variant.id}'),
+                      onTap: _addingProduct ? null : () => setState(() {
+                        _selectedVariant = variant;
+                        _quantity = 1;
+                        _selectedGalleryImage = null;
+                      }),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        constraints: const BoxConstraints(minWidth: 138),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: selected ? const Color(0xFFFFF1F2) : Colors.white,
+                          border: Border.all(color: selected ? _marrakeschRed : const Color(0xFFD9DDE4), width: selected ? 2 : 1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                          Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(selected ? Icons.radio_button_checked : Icons.radio_button_unchecked, size: 18, color: selected ? _marrakeschRed : const Color(0xFF98A2B3)),
+                            const SizedBox(width: 7),
+                            Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800))),
+                          ]),
+                          if (factor != null && factor > 1)
+                            Padding(padding: const EdgeInsets.only(top: 5), child: Text('${factor.toStringAsFixed(factor == factor.roundToDouble() ? 0 : 2)} Stück', style: const TextStyle(fontSize: 12, color: Color(0xFF667085)))),
+                          if (variant.price != null)
+                            Padding(padding: const EdgeInsets.only(top: 6), child: Text(_formatAmount(variant.price!, product.currencyCode), style: const TextStyle(fontWeight: FontWeight.w800, color: _marrakeschRed))),
+                          if (variant.stock == 0)
+                            const Padding(padding: EdgeInsets.only(top: 4), child: Text('Ausverkauft', style: TextStyle(fontSize: 12, color: Color(0xFFB42318)))),
+                        ]),
+                      ),
+                    );
                   }),
-                  items: [for (final variant in _variants) DropdownMenuItem(
-                    value: variant.id,
-                    child: Text(
-                      '${variant.saleUnit?.trim().isNotEmpty == true ? variant.saleUnit : (variant.label.toUpperCase().contains('KARTON') || variant.label.toUpperCase().contains('KOLLI') ? 'Kolli' : variant.label.toUpperCase().contains('PALETTE') ? 'Palette' : variant.label.toUpperCase().contains('DEFAULT') ? 'Stück' : variant.label)}${variant.baseUnitFactor != null && variant.baseUnitFactor! > 1 ? ' · ${variant.baseUnitFactor!.toStringAsFixed(variant.baseUnitFactor! == variant.baseUnitFactor!.roundToDouble() ? 0 : 2)} Stück' : ''}${variant.stock == 0 ? ' · Ausverkauft' : ''}',
-                      maxLines: 1, overflow: TextOverflow.ellipsis,
-                    ),
-                  )],
-                ),
-                if (_selectedVariant?.saleUnit != null && (_selectedVariant!.baseUnitFactor ?? 1) > 1) ...[
-                  const SizedBox(height: 10),
-                  Text('1 ${_selectedVariant!.saleUnit} enthält ${_selectedVariant!.baseUnitFactor!.toStringAsFixed(_selectedVariant!.baseUnitFactor! == _selectedVariant!.baseUnitFactor!.roundToDouble() ? 0 : 2)} Stück',
-                    key: const ValueKey('shop-sale-unit-summary'),
-                    style: const TextStyle(color: Color(0xFF667085), fontSize: 13)),
-                ],
-              ]),
+              ],
             ),
+          ],
           if (!_variantsLoading && _variantError == null)
             Padding(padding: const EdgeInsets.only(top: 8),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
