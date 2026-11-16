@@ -263,6 +263,15 @@ interface ProductOption {
                   <input type="number" [(ngModel)]="variant.stockQuantity" min="0" class="df-input" placeholder="0" />
                 </div>
                 <div class="detail-field">
+                  <label>Verkaufseinheit (optional)</label>
+                  <input type="text" [(ngModel)]="variant.saleUnit" maxlength="40" class="df-input" placeholder="z. B. Stück, Packung, Karton" />
+                </div>
+                <div class="detail-field">
+                  <label>Verpackungsfaktor (optional)</label>
+                  <input type="number" [(ngModel)]="variant.baseUnitFactor" step="0.001" min="0.001" class="df-input" placeholder="z. B. 40" />
+                  <small>Basiseinheiten pro Verkaufseinheit. Noch keine automatische Lagerumrechnung.</small>
+                </div>
+                <div class="detail-field">
                   <label>{{ 'product.variants.weight' | translate }} (kg)</label>
                   <input type="number" [(ngModel)]="variant.weight" step="0.001" min="0" class="df-input" placeholder="0.000" />
                 </div>
