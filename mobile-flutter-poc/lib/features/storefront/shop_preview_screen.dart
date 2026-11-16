@@ -876,9 +876,10 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(color: const Color(0xFFF8F9FB), borderRadius: BorderRadius.circular(14)),
               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                const Text('Gesamtpreis', style: TextStyle(fontWeight: FontWeight.w700, color: _marrakeschInk)),
-                Text(_formatAmount(product.unitPriceFor(_quantity, variantPrice: _selectedVariant?.price) * _quantity, product.currencyCode),
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: _marrakeschRed)),
+                const Expanded(child: Text('Gesamtpreis', style: TextStyle(fontWeight: FontWeight.w700, color: _marrakeschInk))),
+                Flexible(child: Text('Gesamt: ${_formatAmount(product.unitPriceFor(_quantity, variantPrice: _selectedVariant?.price) * _quantity, product.currencyCode)}',
+                  textAlign: TextAlign.end, maxLines: 2,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _marrakeschRed))),
               ]),
             ),
             const SizedBox(height: 10),
