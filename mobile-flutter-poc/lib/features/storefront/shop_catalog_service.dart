@@ -452,7 +452,7 @@ class ShopTierPrice {
 
 class ShopVariant {
   const ShopVariant({required this.id, required this.label, this.price,
-    this.stock, this.imageUrl, this.isActive = true});
+    this.stock, this.imageUrl, this.isActive = true, this.saleUnit, this.baseUnitFactor});
 
   final int id;
   final String label;
@@ -460,6 +460,8 @@ class ShopVariant {
   final int? stock;
   final String? imageUrl;
   final bool isActive;
+  final String? saleUnit;
+  final double? baseUnitFactor;
 
   factory ShopVariant.fromJson(Map<String, dynamic> json) {
     final attributes = json['attributes'];
@@ -480,6 +482,8 @@ class ShopVariant {
       stock: stock == null ? null : _readInt(stock),
       imageUrl: _readString(json['imageUrl']),
       isActive: json['isActive'] != false,
+      saleUnit: _readString(json['saleUnit']),
+      baseUnitFactor: json['baseUnitFactor'] == null ? null : _readDouble(json['baseUnitFactor']),
     );
   }
 }
