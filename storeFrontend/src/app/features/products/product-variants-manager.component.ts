@@ -2,7 +2,7 @@ import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { ProductService } from '@app/core/services/product.service';
+import { ProductService, SharedStockStatus } from '@app/core/services/product.service';
 import { DropshippingService } from '@app/core/services/dropshipping.service';
 import { MediaService } from '@app/core/services/media.service';
 import { StoreContextService } from '@app/core/services/store-context.service';
@@ -37,6 +37,40 @@ interface ProductOption {
           <span class="vm-badge">{{ variants.length }} Varianten</span>
         </div>
       </div>
+
+      <!-- Shared stock setup is deliberately separate from activation and checkout rollout. -->
+      <section class="vm-card shared-stock-card" *ngIf="productId && storeId">
+        <div class="vm-card-header">
+          <div class="vm-card-header-left">
+            <h3 class="vm-card-title">📦 Gemeinsamer Lagerbestand</h3>
+          </div>
+          <span class="shared-stock-state" *ngIf="sharedStockStatus">
+            {{ sharedStockStatus.enabled ? 'Aktiv' : 'Noch nicht aktiviert' }}
+          </span>
+        </div>
+        <p class="vm-card-hint">Ein Grundbestand für Stück, Packung und Karton. Bestehende Variantenbestände werden nicht zusammengezählt oder verändert.</p>
+        <p *ngIf="sharedStockLoading">Lagerbestand wird geladen …</p>
+        <p *ngIf="sharedStockError" role="alert">{{ sharedStockError }}</p>
+        <div class="shared-stock-config" *ngIf="!sharedStockLoading && sharedStockStatus && !sharedStockStatus.enabled">
+          <label for="shared-base-stock">Grundbestand (Einzelstücke)</label>
+          <input id="shared-base-stock" type="number" min="0" step="1"
+                 [(ngModel)]="sharedStockInput" class="bulk-input" />
+          <button type="button" class="bulk-btn" (click)="saveSharedStock()"
+                  [disabled]="sharedStockSaving || sharedStockInput === null || sharedStockInput < 0 || sharedStockInput % 1 !== 0">
+            {{ sharedStockSaving ? 'Speichert …' : 'Startbestand speichern' }}
+          </button>
+        </div>
+        <p class="vm-card-hint" *ngIf="sharedStockStatus && !sharedStockStatus.enabled">
+          Nur Vorbereitung: Speichern aktiviert den gemeinsamen Lagerabzug noch nicht.
+        </p>
+        <p *ngIf="sharedStockStatus?.enabled">Gemeinsamer Grundbestand: <strong>{{ sharedStockStatus?.baseStock }}</strong> Stück</p>
+        <div class="shared-stock-units" *ngIf="sharedStockStatus?.enabled">
+          <div class="shared-stock-unit" *ngFor="let unit of sharedStockStatus?.units">
+            <span>{{ unit.saleUnit || 'Stück' }} · {{ unit.factor }} Stück/Einheit</span>
+            <strong>{{ unit.available }} verfügbar</strong>
+          </div>
+        </div>
+      </section>
 
       <!-- STEP PROGRESS -->
       <div class="vm-stepper">
@@ -342,6 +376,13 @@ interface ProductOption {
     </div>
   `,
     styles: [`
+    .shared-stock-card { border: 1px solid #d9e2eb; }
+    .shared-stock-config { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
+    .shared-stock-config label { font-weight: 600; }
+    .shared-stock-config input { max-width: 170px; }
+    .shared-stock-state { font-size: 0.8rem; padding: 0.35rem 0.65rem; border-radius: 1rem; background: #f1f3f5; }
+    .shared-stock-units { display: grid; gap: 0.5rem; margin-top: 0.75rem; }
+    .shared-stock-unit { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 0.65rem; border: 1px solid #e9ecef; border-radius: 0.5rem; }
     .vm-root { display: flex; flex-direction: column; gap: 1.5rem; }
 
     /* Header */
@@ -501,6 +542,12 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
   private storeId: number | null = null;
   private storeIdSubscription?: Subscription;
 
+  sharedStockStatus: SharedStockStatus | null = null;
+  sharedStockInput: number | null = null;
+  sharedStockLoading = false;
+  sharedStockSaving = false;
+  sharedStockError = '';
+
   options: ProductOption[] = [];
   variants: ProductVariant[] = [];
 
@@ -540,7 +587,44 @@ export class ProductVariantsManagerComponent implements OnInit, OnDestroy {
       if (id !== null) {
         this.storeId = id;
         this.loadExistingData();
+        this.loadSharedStock();
         this.loadSupplierLinks();
+      }
+    });
+  }
+
+  loadSharedStock() {
+    if (!this.storeId || !this.productId) return;
+    this.sharedStockLoading = true;
+    this.sharedStockError = '';
+    this.productService.getSharedStock(this.storeId, this.productId).subscribe({
+      next: status => {
+        this.sharedStockStatus = status;
+        this.sharedStockInput = status.baseStock;
+        this.sharedStockLoading = false;
+      },
+      error: () => {
+        this.sharedStockLoading = false;
+        this.sharedStockError = 'Gemeinsamer Lagerbestand konnte nicht geladen werden.';
+      }
+    });
+  }
+
+  saveSharedStock() {
+    if (!this.storeId || !this.productId || this.sharedStockSaving ||
+        this.sharedStockInput === null || !Number.isSafeInteger(this.sharedStockInput) ||
+        this.sharedStockInput < 0 || this.sharedStockStatus?.enabled) return;
+    this.sharedStockSaving = true;
+    this.sharedStockError = '';
+    this.productService.configureSharedStock(this.storeId, this.productId, this.sharedStockInput).subscribe({
+      next: status => {
+        this.sharedStockStatus = status;
+        this.sharedStockSaving = false;
+        this.successMessage = 'Startbestand gespeichert. Gemeinsame Lagerführung bleibt deaktiviert.';
+      },
+      error: () => {
+        this.sharedStockSaving = false;
+        this.sharedStockError = 'Startbestand konnte nicht gespeichert werden.';
       }
     });
   }
