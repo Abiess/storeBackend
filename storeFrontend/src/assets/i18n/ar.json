@@ -1093,7 +1093,10 @@
     "optional": "اختياري",
     "refresh": "تحديث",
     "save": "حفظ",
-    "characters": "أحرف"
+    "characters": "أحرف",
+    "yes": "نعم",
+    "no": "لا",
+    "cancel": "إلغاء"
   },
   "loading": {
     "orders": "جاري تحميل الطلبات..."

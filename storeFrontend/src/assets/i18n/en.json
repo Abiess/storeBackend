@@ -429,7 +429,10 @@
     "optional": "optional",
     "refresh": "Refresh",
     "save": "Save",
-    "characters": "characters"
+    "characters": "characters",
+    "yes": "Yes",
+    "no": "No",
+    "cancel": "Cancel"
   },
   "loading": {
     "orders": "Loading orders..."

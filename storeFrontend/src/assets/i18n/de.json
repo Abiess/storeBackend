@@ -550,7 +550,10 @@
     "optional": "optional",
     "refresh": "Aktualisieren",
     "save": "Speichern",
-    "characters": "Zeichen"
+    "characters": "Zeichen",
+    "yes": "Ja",
+    "no": "Nein",
+    "cancel": "Abbrechen"
   },
   "loading": {
     "orders": "Bestellungen werden geladen..."
