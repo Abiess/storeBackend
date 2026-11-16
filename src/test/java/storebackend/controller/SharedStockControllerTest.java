@@ -23,7 +23,8 @@ class SharedStockControllerTest {
     private final ProductRepository products = mock(ProductRepository.class);
     private final ProductVariantRepository variants = mock(ProductVariantRepository.class);
     private final SharedProductStockRepository stock = mock(SharedProductStockRepository.class);
-    private final SharedStockController controller = new SharedStockController(access, products, variants, stock);
+    private final storebackend.service.SharedProductStockService sharedStockService = mock(storebackend.service.SharedProductStockService.class);
+    private final SharedStockController controller = new SharedStockController(access, products, variants, stock, sharedStockService);
 
     @Test
     void deniesOtherStoresBeforeReadingProducts() {
