@@ -20,6 +20,8 @@ import java.util.List;
 public class InventoryService {
     private final InventoryLogRepository inventoryLogRepository;
     private final ProductVariantRepository productVariantRepository;
+    private final SharedProductStockService sharedProductStockService;
+    private final storebackend.repository.SharedProductStockRepository sharedStockRepository;
 
     @Transactional(readOnly = true)
     public List<InventoryLog> getInventoryLogsByVariant(Long variantId) {
@@ -35,6 +37,23 @@ public class InventoryService {
     public InventoryLog adjustInventory(Long variantId, Integer quantityChange, String reason, String notes, User user) {
         ProductVariant variant = productVariantRepository.findById(variantId)
                 .orElseThrow(() -> new RuntimeException("Product variant not found"));
+
+        // Shared stock is opt-in. Legacy variants continue using their own stock.
+        // The shared-stock service holds a pessimistic row lock for concurrent orders.
+        Long productId = variant.getProduct().getId();
+        boolean sharedEnabled = sharedStockRepository.findByProductId(productId)
+                .map(s -> Boolean.TRUE.equals(s.getEnabled())).orElse(false);
+        if (sharedEnabled) {
+            sharedProductStockService.adjustSaleUnits(productId, quantityChange,
+                    variant.getBaseUnitFactor() == null ? java.math.BigDecimal.ONE : variant.getBaseUnitFactor());
+            InventoryLog log = new InventoryLog();
+            log.setVariant(variant);
+            log.setQuantityChange(quantityChange);
+            log.setReason(reason);
+            log.setNotes(notes == null ? "Shared stock (sale units)" : notes + " [shared stock, sale units]");
+            log.setUser(user);
+            return inventoryLogRepository.save(log);
+        }
 
         // Update variant stock
         int newQuantity = variant.getStockQuantity() + quantityChange;
