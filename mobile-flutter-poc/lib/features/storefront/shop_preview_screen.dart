@@ -779,6 +779,24 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
             Text('MwSt. ${tax.toStringAsFixed(tax == tax.roundToDouble() ? 0 : 2).replaceAll('.', ',')} %',
                 style: TextStyle(color: colors.onSurfaceVariant)),
           ],
+          if (_selectedVariant?.saleUnit != null) ...[
+            const SizedBox(height: 12),
+            Card(
+              key: const ValueKey('shop-sale-unit-summary'),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(_selectedVariant!.saleUnit!, style: const TextStyle(fontWeight: FontWeight.w800)),
+                  if ((_selectedVariant!.baseUnitFactor ?? 1) > 1)
+                    Text('1 ${_selectedVariant!.saleUnit} = ${_selectedVariant!.baseUnitFactor} Stück'),
+                  const SizedBox(height: 6),
+                  Text('$_quantity × ${_selectedVariant!.saleUnit} · Gesamt: ${_formatAmount(product.unitPriceFor(_quantity, variantPrice: _selectedVariant?.price) * _quantity, product.currencyCode)}',
+                    key: const ValueKey('shop-sale-unit-total'),
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                ]),
+              ),
+            ),
+          ],
           if (!_loginRequired && product.tierPrices.isNotEmpty)
             ExpansionTile(
               key: const ValueKey('shop-tier-prices'),
@@ -819,7 +837,7 @@ class _ShopPreviewScreenState extends State<ShopPreviewScreen> {
               }),
               items: [for (final variant in _variants) DropdownMenuItem(
                 value: variant.id,
-                child: Text('${variant.label}${variant.stock == 0 ? ' – Ausverkauft' : ''}',
+                child: Text('${variant.saleUnit ?? variant.label}${variant.baseUnitFactor != null && variant.baseUnitFactor! > 1 ? ' · ${variant.baseUnitFactor} Stück' : ''}${variant.stock == 0 ? ' – Ausverkauft' : ''}',
                   maxLines: 1, overflow: TextOverflow.ellipsis),
               )],
             ),
