@@ -75,7 +75,9 @@ public class OrderCompletionService {
                 log.info("[INVENTORY] Inventory adjusted successfully for order {}", orderId);
             } catch (Exception e) {
                 log.error("[INVENTORY-ERROR] Failed to adjust inventory for order {}: {}", orderId, e.getMessage(), e);
-                // Weiter mit E-Mails trotz Inventory-Fehler
+                // Fail the transaction rather than committing a partially adjusted order.
+                // Payment completion can be retried after the inventory issue is resolved.
+                throw new IllegalStateException("Inventory adjustment failed for order " + orderId, e);
             }
         } else {
             log.debug("[INVENTORY] Inventory already adjusted for order {} (idempotent)", orderId);
